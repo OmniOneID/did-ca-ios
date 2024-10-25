@@ -1,0 +1,1109 @@
+{
+  "ABIRoot": {
+    "kind": "Root",
+    "name": "TopLevel",
+    "printedName": "TopLevel",
+    "children": [
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "DIDCommunicationSDK",
+        "declAttributes": [
+          "RawDocComment"
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CommnunicationProtocol",
+        "printedName": "CommnunicationProtocol",
+        "children": [
+          {
+            "kind": "Function",
+            "name": "doGet",
+            "printedName": "doGet(url:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Data",
+                "printedName": "Foundation.Data",
+                "usr": "s:10Foundation4DataV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "URL",
+                "printedName": "Foundation.URL",
+                "usr": "s:10Foundation3URLV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19DIDCommunicationSDK22CommnunicationProtocolP5doGet3url10Foundation4DataVAF3URLV_tYaKF",
+            "mangledName": "$s19DIDCommunicationSDK22CommnunicationProtocolP5doGet3url10Foundation4DataVAF3URLV_tYaKF",
+            "moduleName": "DIDCommunicationSDK",
+            "genericSig": "<τ_0_0 where τ_0_0 : DIDCommunicationSDK.CommnunicationProtocol>",
+            "sugared_genericSig": "<Self where Self : DIDCommunicationSDK.CommnunicationProtocol>",
+            "protocolReq": true,
+            "throwing": true,
+            "reqNewWitnessTableEntry": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "doPost",
+            "printedName": "doPost(url:requestJsonData:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Data",
+                "printedName": "Foundation.Data",
+                "usr": "s:10Foundation4DataV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "URL",
+                "printedName": "Foundation.URL",
+                "usr": "s:10Foundation3URLV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Data",
+                "printedName": "Foundation.Data",
+                "usr": "s:10Foundation4DataV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19DIDCommunicationSDK22CommnunicationProtocolP6doPost3url15requestJsonData10Foundation0J0VAG3URLV_AItYaKF",
+            "mangledName": "$s19DIDCommunicationSDK22CommnunicationProtocolP6doPost3url15requestJsonData10Foundation0J0VAG3URLV_AItYaKF",
+            "moduleName": "DIDCommunicationSDK",
+            "genericSig": "<τ_0_0 where τ_0_0 : DIDCommunicationSDK.CommnunicationProtocol>",
+            "sugared_genericSig": "<Self where Self : DIDCommunicationSDK.CommnunicationProtocol>",
+            "protocolReq": true,
+            "throwing": true,
+            "reqNewWitnessTableEntry": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Protocol",
+        "usr": "s:19DIDCommunicationSDK22CommnunicationProtocolP",
+        "mangledName": "$s19DIDCommunicationSDK22CommnunicationProtocolP",
+        "moduleName": "DIDCommunicationSDK",
+        "declAttributes": [
+          "AccessControl"
+        ]
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "DIDCommunicationSDK",
+        "declAttributes": [
+          "RawDocComment"
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CommunicationSDKError",
+        "printedName": "CommunicationSDKError",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "code",
+            "printedName": "code",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19DIDCommunicationSDK21CommunicationSDKErrorV4codeSSvp",
+            "mangledName": "$s19DIDCommunicationSDK21CommunicationSDKErrorV4codeSSvp",
+            "moduleName": "DIDCommunicationSDK",
+            "declAttributes": [
+              "HasStorage",
+              "AccessControl"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19DIDCommunicationSDK21CommunicationSDKErrorV4codeSSvg",
+                "mangledName": "$s19DIDCommunicationSDK21CommunicationSDKErrorV4codeSSvg",
+                "moduleName": "DIDCommunicationSDK",
+                "implicit": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19DIDCommunicationSDK21CommunicationSDKErrorV4codeSSvs",
+                "mangledName": "$s19DIDCommunicationSDK21CommunicationSDKErrorV4codeSSvs",
+                "moduleName": "DIDCommunicationSDK",
+                "implicit": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19DIDCommunicationSDK21CommunicationSDKErrorV4codeSSvM",
+                "mangledName": "$s19DIDCommunicationSDK21CommunicationSDKErrorV4codeSSvM",
+                "moduleName": "DIDCommunicationSDK",
+                "implicit": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "message",
+            "printedName": "message",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19DIDCommunicationSDK21CommunicationSDKErrorV7messageSSvp",
+            "mangledName": "$s19DIDCommunicationSDK21CommunicationSDKErrorV7messageSSvp",
+            "moduleName": "DIDCommunicationSDK",
+            "declAttributes": [
+              "HasStorage",
+              "AccessControl"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19DIDCommunicationSDK21CommunicationSDKErrorV7messageSSvg",
+                "mangledName": "$s19DIDCommunicationSDK21CommunicationSDKErrorV7messageSSvg",
+                "moduleName": "DIDCommunicationSDK",
+                "implicit": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19DIDCommunicationSDK21CommunicationSDKErrorV7messageSSvs",
+                "mangledName": "$s19DIDCommunicationSDK21CommunicationSDKErrorV7messageSSvs",
+                "moduleName": "DIDCommunicationSDK",
+                "implicit": true,
+                "accessorKind": "set"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Modify",
+                "printedName": "Modify()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19DIDCommunicationSDK21CommunicationSDKErrorV7messageSSvM",
+                "mangledName": "$s19DIDCommunicationSDK21CommunicationSDKErrorV7messageSSvM",
+                "moduleName": "DIDCommunicationSDK",
+                "implicit": true,
+                "accessorKind": "_modify"
+              }
+            ]
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:19DIDCommunicationSDK21CommunicationSDKErrorV",
+        "mangledName": "$s19DIDCommunicationSDK21CommunicationSDKErrorV",
+        "moduleName": "DIDCommunicationSDK",
+        "declAttributes": [
+          "AccessControl"
+        ],
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Error",
+            "printedName": "Error",
+            "usr": "s:s5ErrorP",
+            "mangledName": "$ss5ErrorP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          }
+        ]
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "DIDCommunicationSDK",
+        "declAttributes": [
+          "RawDocComment"
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CommnunicationClient",
+        "printedName": "CommnunicationClient",
+        "children": [
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CommnunicationClient",
+                "printedName": "DIDCommunicationSDK.CommnunicationClient",
+                "usr": "s:19DIDCommunicationSDK20CommnunicationClientC"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:19DIDCommunicationSDK20CommnunicationClientCACycfc",
+            "mangledName": "$s19DIDCommunicationSDK20CommnunicationClientCACycfc",
+            "moduleName": "DIDCommunicationSDK",
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "doGet",
+            "printedName": "doGet(url:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Data",
+                "printedName": "Foundation.Data",
+                "usr": "s:10Foundation4DataV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "URL",
+                "printedName": "Foundation.URL",
+                "usr": "s:10Foundation3URLV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19DIDCommunicationSDK20CommnunicationClientC5doGet3url10Foundation4DataVAF3URLV_tYaKF",
+            "mangledName": "$s19DIDCommunicationSDK20CommnunicationClientC5doGet3url10Foundation4DataVAF3URLV_tYaKF",
+            "moduleName": "DIDCommunicationSDK",
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "doPost",
+            "printedName": "doPost(url:requestJsonData:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Data",
+                "printedName": "Foundation.Data",
+                "usr": "s:10Foundation4DataV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "URL",
+                "printedName": "Foundation.URL",
+                "usr": "s:10Foundation3URLV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Data",
+                "printedName": "Foundation.Data",
+                "usr": "s:10Foundation4DataV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19DIDCommunicationSDK20CommnunicationClientC6doPost3url15requestJsonData10Foundation0J0VAG3URLV_AItYaKF",
+            "mangledName": "$s19DIDCommunicationSDK20CommnunicationClientC6doPost3url15requestJsonData10Foundation0J0VAG3URLV_AItYaKF",
+            "moduleName": "DIDCommunicationSDK",
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "s:19DIDCommunicationSDK20CommnunicationClientC",
+        "mangledName": "$s19DIDCommunicationSDK20CommnunicationClientC",
+        "moduleName": "DIDCommunicationSDK",
+        "declAttributes": [
+          "AccessControl"
+        ],
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "CommnunicationProtocol",
+            "printedName": "CommnunicationProtocol",
+            "usr": "s:19DIDCommunicationSDK22CommnunicationProtocolP",
+            "mangledName": "$s19DIDCommunicationSDK22CommnunicationProtocolP"
+          }
+        ]
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "DIDCommunicationSDK",
+        "declAttributes": [
+          "RawDocComment"
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CommunicationLogLevel",
+        "printedName": "CommunicationLogLevel",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "verbose",
+            "printedName": "verbose",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(DIDCommunicationSDK.CommunicationLogLevel.Type) -> DIDCommunicationSDK.CommunicationLogLevel",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CommunicationLogLevel",
+                    "printedName": "DIDCommunicationSDK.CommunicationLogLevel",
+                    "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "DIDCommunicationSDK.CommunicationLogLevel.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CommunicationLogLevel",
+                        "printedName": "DIDCommunicationSDK.CommunicationLogLevel",
+                        "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO7verboseyA2CmF",
+            "mangledName": "$s19DIDCommunicationSDK21CommunicationLogLevelO7verboseyA2CmF",
+            "moduleName": "DIDCommunicationSDK"
+          },
+          {
+            "kind": "Var",
+            "name": "debug",
+            "printedName": "debug",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(DIDCommunicationSDK.CommunicationLogLevel.Type) -> DIDCommunicationSDK.CommunicationLogLevel",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CommunicationLogLevel",
+                    "printedName": "DIDCommunicationSDK.CommunicationLogLevel",
+                    "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "DIDCommunicationSDK.CommunicationLogLevel.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CommunicationLogLevel",
+                        "printedName": "DIDCommunicationSDK.CommunicationLogLevel",
+                        "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO5debugyA2CmF",
+            "mangledName": "$s19DIDCommunicationSDK21CommunicationLogLevelO5debugyA2CmF",
+            "moduleName": "DIDCommunicationSDK"
+          },
+          {
+            "kind": "Var",
+            "name": "info",
+            "printedName": "info",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(DIDCommunicationSDK.CommunicationLogLevel.Type) -> DIDCommunicationSDK.CommunicationLogLevel",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CommunicationLogLevel",
+                    "printedName": "DIDCommunicationSDK.CommunicationLogLevel",
+                    "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "DIDCommunicationSDK.CommunicationLogLevel.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CommunicationLogLevel",
+                        "printedName": "DIDCommunicationSDK.CommunicationLogLevel",
+                        "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO4infoyA2CmF",
+            "mangledName": "$s19DIDCommunicationSDK21CommunicationLogLevelO4infoyA2CmF",
+            "moduleName": "DIDCommunicationSDK"
+          },
+          {
+            "kind": "Var",
+            "name": "warning",
+            "printedName": "warning",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(DIDCommunicationSDK.CommunicationLogLevel.Type) -> DIDCommunicationSDK.CommunicationLogLevel",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CommunicationLogLevel",
+                    "printedName": "DIDCommunicationSDK.CommunicationLogLevel",
+                    "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "DIDCommunicationSDK.CommunicationLogLevel.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CommunicationLogLevel",
+                        "printedName": "DIDCommunicationSDK.CommunicationLogLevel",
+                        "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO7warningyA2CmF",
+            "mangledName": "$s19DIDCommunicationSDK21CommunicationLogLevelO7warningyA2CmF",
+            "moduleName": "DIDCommunicationSDK"
+          },
+          {
+            "kind": "Var",
+            "name": "error",
+            "printedName": "error",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(DIDCommunicationSDK.CommunicationLogLevel.Type) -> DIDCommunicationSDK.CommunicationLogLevel",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CommunicationLogLevel",
+                    "printedName": "DIDCommunicationSDK.CommunicationLogLevel",
+                    "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "DIDCommunicationSDK.CommunicationLogLevel.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CommunicationLogLevel",
+                        "printedName": "DIDCommunicationSDK.CommunicationLogLevel",
+                        "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO5erroryA2CmF",
+            "mangledName": "$s19DIDCommunicationSDK21CommunicationLogLevelO5erroryA2CmF",
+            "moduleName": "DIDCommunicationSDK"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(rawValue:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "DIDCommunicationSDK.CommunicationLogLevel?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CommunicationLogLevel",
+                    "printedName": "DIDCommunicationSDK.CommunicationLogLevel",
+                    "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO8rawValueACSgSS_tcfc",
+            "mangledName": "$s19DIDCommunicationSDK21CommunicationLogLevelO8rawValueACSgSS_tcfc",
+            "moduleName": "DIDCommunicationSDK",
+            "implicit": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Var",
+            "name": "rawValue",
+            "printedName": "rawValue",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO8rawValueSSvp",
+            "mangledName": "$s19DIDCommunicationSDK21CommunicationLogLevelO8rawValueSSvp",
+            "moduleName": "DIDCommunicationSDK",
+            "implicit": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO8rawValueSSvg",
+                "mangledName": "$s19DIDCommunicationSDK21CommunicationLogLevelO8rawValueSSvg",
+                "moduleName": "DIDCommunicationSDK",
+                "implicit": true,
+                "accessorKind": "get"
+              }
+            ]
+          }
+        ],
+        "declKind": "Enum",
+        "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO",
+        "mangledName": "$s19DIDCommunicationSDK21CommunicationLogLevelO",
+        "moduleName": "DIDCommunicationSDK",
+        "declAttributes": [
+          "AccessControl"
+        ],
+        "enumRawTypeName": "String",
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          },
+          {
+            "kind": "Conformance",
+            "name": "RawRepresentable",
+            "printedName": "RawRepresentable",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "RawValue",
+                "printedName": "RawValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:SY",
+            "mangledName": "$sSY"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CommunicationLogger",
+        "printedName": "CommunicationLogger",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "shared",
+            "printedName": "shared",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CommunicationLogger",
+                "printedName": "DIDCommunicationSDK.CommunicationLogger",
+                "usr": "s:19DIDCommunicationSDK19CommunicationLoggerC"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:19DIDCommunicationSDK19CommunicationLoggerC6sharedACvpZ",
+            "mangledName": "$s19DIDCommunicationSDK19CommunicationLoggerC6sharedACvpZ",
+            "moduleName": "DIDCommunicationSDK",
+            "static": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "Final",
+              "HasStorage",
+              "AccessControl"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CommunicationLogger",
+                    "printedName": "DIDCommunicationSDK.CommunicationLogger",
+                    "usr": "s:19DIDCommunicationSDK19CommunicationLoggerC"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:19DIDCommunicationSDK19CommunicationLoggerC6sharedACvgZ",
+                "mangledName": "$s19DIDCommunicationSDK19CommunicationLoggerC6sharedACvgZ",
+                "moduleName": "DIDCommunicationSDK",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Final"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Function",
+            "name": "setEnable",
+            "printedName": "setEnable(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19DIDCommunicationSDK19CommunicationLoggerC9setEnableyySbF",
+            "mangledName": "$s19DIDCommunicationSDK19CommunicationLoggerC9setEnableyySbF",
+            "moduleName": "DIDCommunicationSDK",
+            "declAttributes": [
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "setLogLevel",
+            "printedName": "setLogLevel(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CommunicationLogLevel",
+                "printedName": "DIDCommunicationSDK.CommunicationLogLevel",
+                "usr": "s:19DIDCommunicationSDK21CommunicationLogLevelO"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19DIDCommunicationSDK19CommunicationLoggerC11setLogLevelyyAA0cfG0OF",
+            "mangledName": "$s19DIDCommunicationSDK19CommunicationLoggerC11setLogLevelyyAA0cfG0OF",
+            "moduleName": "DIDCommunicationSDK",
+            "declAttributes": [
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "debug",
+            "printedName": "debug(_:function:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "hasDefaultArg": true,
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19DIDCommunicationSDK19CommunicationLoggerC5debug_8functionySS_SStF",
+            "mangledName": "$s19DIDCommunicationSDK19CommunicationLoggerC5debug_8functionySS_SStF",
+            "moduleName": "DIDCommunicationSDK",
+            "declAttributes": [
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "info",
+            "printedName": "info(_:function:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "hasDefaultArg": true,
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19DIDCommunicationSDK19CommunicationLoggerC4info_8functionySS_SStF",
+            "mangledName": "$s19DIDCommunicationSDK19CommunicationLoggerC4info_8functionySS_SStF",
+            "moduleName": "DIDCommunicationSDK",
+            "declAttributes": [
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "warning",
+            "printedName": "warning(_:function:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "hasDefaultArg": true,
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19DIDCommunicationSDK19CommunicationLoggerC7warning_8functionySS_SStF",
+            "mangledName": "$s19DIDCommunicationSDK19CommunicationLoggerC7warning_8functionySS_SStF",
+            "moduleName": "DIDCommunicationSDK",
+            "declAttributes": [
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "verbose",
+            "printedName": "verbose(_:function:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "hasDefaultArg": true,
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19DIDCommunicationSDK19CommunicationLoggerC7verbose_8functionySS_SStF",
+            "mangledName": "$s19DIDCommunicationSDK19CommunicationLoggerC7verbose_8functionySS_SStF",
+            "moduleName": "DIDCommunicationSDK",
+            "declAttributes": [
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "error",
+            "printedName": "error(_:function:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "hasDefaultArg": true,
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:19DIDCommunicationSDK19CommunicationLoggerC5error_8functionySS_SStF",
+            "mangledName": "$s19DIDCommunicationSDK19CommunicationLoggerC5error_8functionySS_SStF",
+            "moduleName": "DIDCommunicationSDK",
+            "declAttributes": [
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "s:19DIDCommunicationSDK19CommunicationLoggerC",
+        "mangledName": "$s19DIDCommunicationSDK19CommunicationLoggerC",
+        "moduleName": "DIDCommunicationSDK",
+        "declAttributes": [
+          "AccessControl"
+        ],
+        "hasMissingDesignatedInitializers": true
+      }
+    ],
+    "json_format_version": 8
+  },
+  "ConstValues": [
+    {
+      "filePath": "\/Users\/dongjunpark\/github\/did-client-sdk-ios-fork\/source\/DIDClientSDK\/did-communication-sdk-ios\/DIDCommunicationSDK\/CommunicationLogger.swift",
+      "kind": "StringLiteral",
+      "offset": 676,
+      "length": 9,
+      "value": "\"VERBOSE\""
+    },
+    {
+      "filePath": "\/Users\/dongjunpark\/github\/did-client-sdk-ios-fork\/source\/DIDClientSDK\/did-communication-sdk-ios\/DIDCommunicationSDK\/CommunicationLogger.swift",
+      "kind": "StringLiteral",
+      "offset": 703,
+      "length": 7,
+      "value": "\"DEBUG\""
+    },
+    {
+      "filePath": "\/Users\/dongjunpark\/github\/did-client-sdk-ios-fork\/source\/DIDClientSDK\/did-communication-sdk-ios\/DIDCommunicationSDK\/CommunicationLogger.swift",
+      "kind": "StringLiteral",
+      "offset": 727,
+      "length": 6,
+      "value": "\"INFO\""
+    },
+    {
+      "filePath": "\/Users\/dongjunpark\/github\/did-client-sdk-ios-fork\/source\/DIDClientSDK\/did-communication-sdk-ios\/DIDCommunicationSDK\/CommunicationLogger.swift",
+      "kind": "StringLiteral",
+      "offset": 753,
+      "length": 9,
+      "value": "\"WARNING\""
+    },
+    {
+      "filePath": "\/Users\/dongjunpark\/github\/did-client-sdk-ios-fork\/source\/DIDClientSDK\/did-communication-sdk-ios\/DIDCommunicationSDK\/CommunicationLogger.swift",
+      "kind": "StringLiteral",
+      "offset": 780,
+      "length": 7,
+      "value": "\"ERROR\""
+    },
+    {
+      "filePath": "\/Users\/dongjunpark\/github\/did-client-sdk-ios-fork\/source\/DIDClientSDK\/did-communication-sdk-ios\/DIDCommunicationSDK\/CommunicationLogger.swift",
+      "kind": "StringLiteral",
+      "offset": 676,
+      "length": 9,
+      "value": "\"VERBOSE\""
+    },
+    {
+      "filePath": "\/Users\/dongjunpark\/github\/did-client-sdk-ios-fork\/source\/DIDClientSDK\/did-communication-sdk-ios\/DIDCommunicationSDK\/CommunicationLogger.swift",
+      "kind": "StringLiteral",
+      "offset": 703,
+      "length": 7,
+      "value": "\"DEBUG\""
+    },
+    {
+      "filePath": "\/Users\/dongjunpark\/github\/did-client-sdk-ios-fork\/source\/DIDClientSDK\/did-communication-sdk-ios\/DIDCommunicationSDK\/CommunicationLogger.swift",
+      "kind": "StringLiteral",
+      "offset": 727,
+      "length": 6,
+      "value": "\"INFO\""
+    },
+    {
+      "filePath": "\/Users\/dongjunpark\/github\/did-client-sdk-ios-fork\/source\/DIDClientSDK\/did-communication-sdk-ios\/DIDCommunicationSDK\/CommunicationLogger.swift",
+      "kind": "StringLiteral",
+      "offset": 753,
+      "length": 9,
+      "value": "\"WARNING\""
+    },
+    {
+      "filePath": "\/Users\/dongjunpark\/github\/did-client-sdk-ios-fork\/source\/DIDClientSDK\/did-communication-sdk-ios\/DIDCommunicationSDK\/CommunicationLogger.swift",
+      "kind": "StringLiteral",
+      "offset": 780,
+      "length": 7,
+      "value": "\"ERROR\""
+    },
+    {
+      "filePath": "\/Users\/dongjunpark\/github\/did-client-sdk-ios-fork\/source\/DIDClientSDK\/did-communication-sdk-ios\/DIDCommunicationSDK\/CommunicationLogger.swift",
+      "kind": "BooleanLiteral",
+      "offset": 976,
+      "length": 5,
+      "value": "false"
+    }
+  ]
+}

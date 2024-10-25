@@ -1,0 +1,6 @@
+framework module Pods_DIDCA {
+  umbrella header "Pods-DIDCA-umbrella.h"
+
+  export *
+  module * { export * }
+}

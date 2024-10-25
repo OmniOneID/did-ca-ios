@@ -1,0 +1,6 @@
+framework module DIDDataModelSDK {
+  umbrella header "DIDDataModelSDK.h"
+  export *
+
+  module * { export * }
+}

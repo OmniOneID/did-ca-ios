@@ -1,0 +1,146 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 5.10 (swiftlang-5.10.0.13 clang-1500.3.9.4)
+// swift-module-flags: -target arm64-apple-ios15.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -enable-bare-slash-regex -module-name DIDUtilitySDK
+import CommonCrypto
+import CryptoKit
+@_exported import DIDUtilitySDK
+import Foundation
+import Swift
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+@_hasMissingDesignatedInitializers public class MultibaseUtils {
+  public static func encode(type: DIDUtilitySDK.MultibaseType, data: Foundation.Data) -> Swift.String
+  public static func decode(encoded: Swift.String) throws -> Foundation.Data
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers public class DigestUtils {
+  public static func getDigest(source: Foundation.Data, digestEnum: DIDUtilitySDK.DigestEnum) -> Foundation.Data
+  @objc deinit
+}
+public enum ECType : Swift.String {
+  case secp256r1
+  case secp256k1
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public enum EncryptionType : Swift.String {
+  case aes
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public enum EncryptionMode : Swift.String {
+  case cbc
+  case ecb
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public enum SymmetricKeySize : Swift.UInt {
+  case size128
+  case size256
+  public init?(rawValue: Swift.UInt)
+  public typealias RawValue = Swift.UInt
+  public var rawValue: Swift.UInt {
+    get
+  }
+}
+public enum SymmetricCipherType : Swift.String {
+  case aes128CBC
+  case aes128ECB
+  case aes256CBC
+  case aes256ECB
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public enum SymmetricPaddingType : Swift.String {
+  case noPad
+  case pkcs5
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public enum MultibaseType : Swift.String {
+  case base16
+  case base16Upper
+  case base58BTC
+  case base64
+  case base64URL
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public enum DigestEnum : Swift.String {
+  case sha256
+  case sha384
+  case sha512
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
+@_hasMissingDesignatedInitializers public class CryptoUtils {
+  public static func generateNonce(size: Swift.UInt) throws -> Foundation.Data
+  public static func generateECKeyPair(ecType: DIDUtilitySDK.ECType) throws -> DIDUtilitySDK.ECKeyPair
+  public static func generateSharedSecret(ecType: DIDUtilitySDK.ECType, privateKey: Foundation.Data, publicKey: Foundation.Data) throws -> Foundation.Data
+  public static func pbkdf2(password: Foundation.Data, salt: Foundation.Data, iterations: Swift.UInt32, derivedKeyLength: Swift.UInt) throws -> Foundation.Data
+  public static func encrypt(plain: Foundation.Data, info: DIDUtilitySDK.CipherInfo, key: Foundation.Data, iv: Foundation.Data) throws -> Foundation.Data
+  public static func decrypt(cipher: Foundation.Data, info: DIDUtilitySDK.CipherInfo, key: Foundation.Data, iv: Foundation.Data) throws -> Foundation.Data
+  @objc deinit
+}
+public struct ECKeyPair {
+  public var ecType: DIDUtilitySDK.ECType
+  public var privateKey: Foundation.Data
+  public var publicKey: Foundation.Data
+}
+public struct CipherInfo {
+  public var type: DIDUtilitySDK.EncryptionType
+  public var mode: DIDUtilitySDK.EncryptionMode
+  public var size: DIDUtilitySDK.SymmetricKeySize
+  public var padding: DIDUtilitySDK.SymmetricPaddingType
+  public init(cipherType: DIDUtilitySDK.SymmetricCipherType, padding: DIDUtilitySDK.SymmetricPaddingType)
+}
+public struct UtilityError : Swift.Error {
+  public var code: Swift.String
+  public var message: Swift.String
+}
+extension DIDUtilitySDK.ECType : Swift.Equatable {}
+extension DIDUtilitySDK.ECType : Swift.Hashable {}
+extension DIDUtilitySDK.ECType : Swift.RawRepresentable {}
+extension DIDUtilitySDK.EncryptionType : Swift.Equatable {}
+extension DIDUtilitySDK.EncryptionType : Swift.Hashable {}
+extension DIDUtilitySDK.EncryptionType : Swift.RawRepresentable {}
+extension DIDUtilitySDK.EncryptionMode : Swift.Equatable {}
+extension DIDUtilitySDK.EncryptionMode : Swift.Hashable {}
+extension DIDUtilitySDK.EncryptionMode : Swift.RawRepresentable {}
+extension DIDUtilitySDK.SymmetricKeySize : Swift.Equatable {}
+extension DIDUtilitySDK.SymmetricKeySize : Swift.Hashable {}
+extension DIDUtilitySDK.SymmetricKeySize : Swift.RawRepresentable {}
+extension DIDUtilitySDK.SymmetricCipherType : Swift.Equatable {}
+extension DIDUtilitySDK.SymmetricCipherType : Swift.Hashable {}
+extension DIDUtilitySDK.SymmetricCipherType : Swift.RawRepresentable {}
+extension DIDUtilitySDK.SymmetricPaddingType : Swift.Equatable {}
+extension DIDUtilitySDK.SymmetricPaddingType : Swift.Hashable {}
+extension DIDUtilitySDK.SymmetricPaddingType : Swift.RawRepresentable {}
+extension DIDUtilitySDK.MultibaseType : Swift.Equatable {}
+extension DIDUtilitySDK.MultibaseType : Swift.Hashable {}
+extension DIDUtilitySDK.MultibaseType : Swift.RawRepresentable {}
+extension DIDUtilitySDK.DigestEnum : Swift.Equatable {}
+extension DIDUtilitySDK.DigestEnum : Swift.Hashable {}
+extension DIDUtilitySDK.DigestEnum : Swift.RawRepresentable {}

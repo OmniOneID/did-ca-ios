@@ -54,7 +54,7 @@ Please refer to the respective links for their own licenses for third-party libr
 [Client SDK License-dependencies](https://github.com/OmniOneID/did-client-sdk-ios/blob/main/dependencies-license.md)
                                 
 <br>
-How to apply DIDClientSDK frameworks to DIDCA project in Xcode
+How to apply DIDClientSDK frameworks to DIDCA project in Xcode  
 1. Preparing DIDClientSDK frameworks files
 
     - If DIDClientSDK frameworks are not present, you need to build from each framework repository to generate .framework files. You can use xcframework by building each simulator and device and using the build_xcframework script for each repository. 
@@ -69,7 +69,7 @@ How to apply DIDClientSDK frameworks to DIDCA project in Xcode
     - In the pop-up that appears, select **Add Other... > Add Files...**, select the DIDClientSDK frameworks files, and click the Add button.
     - Once the DIDClientSDK frameworks are added, you need to enable the Embed & Sign option.
       - If you do not have the above library files, you need to build them from the SDK repository to generate the framework files.
-        [Move to Client SDK]((https://github.com/OmniOneID/did-client-sdk-ios/tree/main)
+        [Move to Client SDK](https://github.com/OmniOneID/did-client-sdk-ios/tree/main)
 
 
 1. Modify Build Settings

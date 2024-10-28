@@ -55,6 +55,7 @@ Please refer to the respective links for their own licenses for third-party libr
                                 
 <br>
 How to apply DIDClientSDK frameworks to DIDCA project in Xcode  
+
 1. Preparing DIDClientSDK frameworks files
 
     - If DIDClientSDK frameworks are not present, you need to build from each framework repository to generate .framework files. You can use xcframework by building each simulator and device and using the build_xcframework script for each repository. 

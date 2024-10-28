@@ -40,7 +40,7 @@ How to compile and test your app using Xcode's default build system.
 ## SDK Application Method
 Below, we refer to `iOS frameworks as DIDClientSDK`. We recommend that you clone and check out the DIDClientSDK project and download the latest version to the release folder to use it.
 ```
-git https://https://github.com/OmniOneID/did-client-sdk-ios
+git https://github.com/OmniOneID/did-client-sdk-ios
 ```
 - `DIDWalletSDK.framework`
 - `DIDDataModelSDK.framework`
@@ -51,8 +51,8 @@ git https://https://github.com/OmniOneID/did-client-sdk-ios
 
 Please refer to the respective links for their own licenses for third-party libraries used by each SDK.
 <br>
-[Client SDK License-dependencies](https://github.com/OmniOneID/did-client-sdk-ios/-/blob/main/LICENSE-dependencies.md)
-
+[Client SDK License-dependencies](https://github.com/OmniOneID/did-client-sdk-ios/blob/main/dependencies-license.md)
+                                
 <br>
 How to apply DIDClientSDK frameworks to DIDCA project in Xcode
 1. Preparing DIDClientSDK frameworks files

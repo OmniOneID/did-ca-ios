@@ -3,6 +3,7 @@
 ![Platform](https://img.shields.io/cocoapods/p/SquishButton.svg?style=flat)
 [![Swift](https://img.shields.io/badge/Swift-5-orange.svg?style=flat)](https://developer.apple.com/swift)
 
+
 ## Overview
 This document is a guide for using the OpenDID authentication client, and provides users with the ability to create, store, and manage the WalletToken, Lock/Unlock, Key, DID Document, and Verifiable Credential (hereinafter referred to as VC) information required for OpenDID.
 
@@ -142,3 +143,21 @@ Task { @MainActor in
         - Signing & Capabilities: Check if the code signing and certificate settings are set correctly.
         - Dependencies: Check if there are any other libraries that the DIDClientSDK frameworks additionally depend on.
 
+## Change Log
+
+ChangeLog can be found : 
+<br>
+- [CA IOS](CHANGELOG.md)  
+
+## Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details on our code of conduct, and the process for submitting pull requests to us.
+
+
+## License
+[Apache 2.0](LICENSE)
+
+## OpenDID Demonstration Videos <br>
+To watch our demonstration videos of the OpenDID system in action, please visit our [Demo Repository](https://github.com/OmniOneID/did-demo-server). <br>
+
+These videos showcase key features including user registration, VC issuance, and VP submission processes.

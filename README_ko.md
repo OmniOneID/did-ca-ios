@@ -141,3 +141,17 @@ Task { @MainActor in
         - Signing & Capabilities: 코드 서명 및 인증서 설정이 올바르게 되어 있는지 확인합니다.
         - Dependencies: DIDClientSDK frameworks가 추가적으로 의존하는 다른 라이브러리가 있는지 확인합니다.
 
+## 수정내역
+
+ChangeLog는 아래에서 확인할 수 있습니다.
+<br>
+- [CA IOS](CHANGELOG.md)   
+
+## 데모 영상 <br>
+OpenDID 시스템의 실제 동작을 보여주는 데모 영상은 [Demo Repository](https://github.com/OmniOneID/did-demo-server) 에서 확인하실 수 있습니다. <br>
+사용자 등록, VC 발급, VP 제출 등 주요 기능들을 영상으로 확인하실 수 있습니다.
+
+## 기여
+
+Contributing 및 pull request 제출 절차에 대한 자세한 내용은 [CONTRIBUTING.md](CONTRIBUTING.md)와 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) 를 참조하세요.
+

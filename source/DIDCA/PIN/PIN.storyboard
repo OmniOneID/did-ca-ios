@@ -11,7 +11,7 @@
         <!--PincodeViewController-->
         <scene sceneID="Wrj-7P-GmK">
             <objects>
-                <viewController storyboardIdentifier="PincodeViewController" id="5ER-9f-oAc" userLabel="PincodeViewController" customClass="PincodeViewController" customModule="CASample" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="PincodeViewController" id="5ER-9f-oAc" userLabel="PincodeViewController" customClass="PincodeViewController" customModule="DIDCA" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="yfb-6r-cz2"/>
                         <viewControllerLayoutGuide type="bottom" id="hfz-wp-tAd"/>
@@ -219,9 +219,9 @@
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" usesAttributedText="YES" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="aK3-gP-oED">
                                         <rect key="frame" x="30" y="94.666666666666657" width="333" height="25"/>
                                         <attributedString key="attributedText">
-                                            <fragment content="Input PIN">
+                                            <fragment content="Please input a PIN">
                                                 <attributes>
-                                                    <color key="NSColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                                    <color key="NSColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                                     <font key="NSFont" size="20" name="SUIT-Bold"/>
                                                     <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0"/>
                                                 </attributes>

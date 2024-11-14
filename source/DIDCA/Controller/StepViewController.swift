@@ -332,12 +332,5 @@ class StepViewController: UIViewController {
     private func presentSubmitViewController() {
         self.setStepType(stepType: StepTypeEnum.STEP_TYPE_3)
         showUI()
-        
-//        let stepVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "StepViewController") as! StepViewController
-
-//        stepVC.modalPresentationStyle = .fullScreen
-//        DispatchQueue.main.async {
-//            self.present(stepVC, animated: false, completion: nil)
-//        }
     }
 }

@@ -27,6 +27,7 @@ public enum PinCodeTypeEnum: Int {
     case PIN_CODE_AUTHENTICATION_LOCK_TYPE
     case PIN_CODE_REGISTRATION_SIGNATURE_TYPE
     case PIN_CODE_AUTHENTICATION_SIGNATURE_TYPE
+    case PIN_CODE_CHANGE_SIGNATURE_TYPE
 }
 
 class PincodeViewController: UIViewController {
@@ -54,6 +55,10 @@ class PincodeViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        if requestType == .PIN_CODE_CHANGE_SIGNATURE_TYPE {
+            self.messageLbl.text = "Please input new PIN"
+        }
     }
     
     public func setRequestType(type: PinCodeTypeEnum) {
@@ -97,7 +102,7 @@ class PincodeViewController: UIViewController {
         if securityNumber.count == 6 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 Task { @MainActor in
-            try self.completeInputPassword(passcode: self.securityNumber)
+                    try self.completeInputPassword(passcode: self.securityNumber)
                 }
             }
         }
@@ -122,7 +127,7 @@ class PincodeViewController: UIViewController {
         case 0:
             passwordTempValue = String(passcode)
             passwordCnt += 1
-            self.messageLbl.text = "Please re-enter your password"
+            self.messageLbl.text = "Please re-enter your PIN"
             resetWithUI()
             break
         case 1:
@@ -132,7 +137,7 @@ class PincodeViewController: UIViewController {
                     self.dismiss(animated: false, completion: nil)
                 }
             } else {
-                self.messageLbl.text = "Password does not match"
+                self.messageLbl.text = "PIN does not match"
                 resetWithUI()
             }
             passwordCnt = 0
@@ -149,7 +154,7 @@ class PincodeViewController: UIViewController {
             if try WalletAPI.shared.authenticateLock(passcode: passcode) == nil {
                 passwordCnt += 1
                 
-                self.messageLbl.text = "Password does not match"
+                self.messageLbl.text = "PIN does not match"
                 resetWithUI()
                 
             } else {
@@ -179,7 +184,7 @@ class PincodeViewController: UIViewController {
         case 0:
             passwordTempValue = String(passcode)
             passwordCnt += 1
-            self.messageLbl.text = "Please re-enter your password"
+            self.messageLbl.text = "Please re-enter your PIN"
             resetWithUI()
             break
         case 1:
@@ -190,7 +195,7 @@ class PincodeViewController: UIViewController {
                     self.dismiss(animated: false, completion: nil)
                 }
             } else {
-                self.messageLbl.text = "Password does not match"
+                self.messageLbl.text = "PIN does not match"
                 resetWithUI()
             }
             passwordCnt = 0
@@ -222,6 +227,34 @@ class PincodeViewController: UIViewController {
         }
     }
     
+    private func changeSignature(passcode: String) {
+        print("passwordCnt: \(passwordCnt)")
+        print("passwordTempValue: \(passwordTempValue)")
+        switch passwordCnt {
+        case 0:
+            passwordTempValue = String(passcode)
+            passwordCnt += 1
+            self.messageLbl.text = "Please re-enter your PIN"
+            resetWithUI()
+            break
+        case 1:
+            if passwordTempValue == passcode {
+                if let confirmButtonCompleteClosure = confirmButtonCompleteClosure {
+                    confirmButtonCompleteClosure(passcode)
+                    self.dismiss(animated: false, completion: nil)
+                }
+            } else {
+                self.messageLbl.text = "PIN does not match"
+                resetWithUI()
+            }
+            passwordCnt = 0
+            passwordTempValue = ""
+            break
+        default:
+            break
+        }
+    }
+    
     
     private func completeInputPassword(passcode: String) throws {
         
@@ -241,6 +274,10 @@ class PincodeViewController: UIViewController {
         case .PIN_CODE_AUTHENTICATION_SIGNATURE_TYPE:
             print("auth signature")
             authSignature(passcode: passcode)
+            break;
+        case .PIN_CODE_CHANGE_SIGNATURE_TYPE:
+            print("change signature")
+            changeSignature(passcode: passcode)
             break;
         default:
             break

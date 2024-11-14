@@ -51,6 +51,7 @@ public protocol WalletCoreImpl {
   func getKeyInfos(keyType: DIDDataModelSDK.VerifyAuthType) throws -> [DIDCoreSDK.KeyInfo]
   func getKeyInfos(ids: [Swift.String]) throws -> [DIDCoreSDK.KeyInfo]
   func isAnyKeysSaved() throws -> Swift.Bool
+  func changePin(id: Swift.String, oldPIN: Swift.String, newPIN: Swift.String) throws
 }
 public protocol WalletServiceImpl {
   func deleteWallet() throws -> Swift.Bool
@@ -178,6 +179,7 @@ extension DIDWalletSDK.WalletAPI {
   public func getKeyInfos(keyType: DIDDataModelSDK.VerifyAuthType) throws -> [DIDCoreSDK.KeyInfo]
   public func getKeyInfos(ids: [Swift.String]) throws -> [DIDCoreSDK.KeyInfo]
   public func isAnyKeysSaved() throws -> Swift.Bool
+  public func changePin(id: Swift.String, oldPIN: Swift.String, newPIN: Swift.String) throws
 }
 public class WalletUtil {
   public init()

@@ -17,6 +17,7 @@
 		7C285E592C53393400136B91 /* SUIT-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 7C285E502C53393400136B91 /* SUIT-Bold.otf */; };
 		7C285E5A2C53393400136B91 /* SUIT-SemiBold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 7C285E512C53393400136B91 /* SUIT-SemiBold.otf */; };
 		7C285E5B2C53393400136B91 /* SUIT-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 7C285E522C53393400136B91 /* SUIT-Regular.otf */; };
+		7C537DA82CE31D7100C7E2F3 /* AuthSettingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C537DA72CE31D7100C7E2F3 /* AuthSettingViewController.swift */; };
 		7C5835DC2C87EE7700365849 /* SettingCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C5835DB2C87EE7700365849 /* SettingCell.swift */; };
 		7C5835DE2C87F5EE00365849 /* ErrorDialogViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C5835DD2C87F5EE00365849 /* ErrorDialogViewController.swift */; };
 		7CA9822B2C85CBEE00EDF367 /* SDKUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA981F72C85CBEE00EDF367 /* SDKUtils.swift */; };
@@ -122,6 +123,7 @@
 		7C285E502C53393400136B91 /* SUIT-Bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SUIT-Bold.otf"; sourceTree = "<group>"; };
 		7C285E512C53393400136B91 /* SUIT-SemiBold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SUIT-SemiBold.otf"; sourceTree = "<group>"; };
 		7C285E522C53393400136B91 /* SUIT-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SUIT-Regular.otf"; sourceTree = "<group>"; };
+		7C537DA72CE31D7100C7E2F3 /* AuthSettingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSettingViewController.swift; sourceTree = "<group>"; };
 		7C5835DB2C87EE7700365849 /* SettingCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingCell.swift; sourceTree = "<group>"; };
 		7C5835DD2C87F5EE00365849 /* ErrorDialogViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ErrorDialogViewController.swift; sourceTree = "<group>"; };
 		7C8E5F1B2C91663200BAFE2C /* DIDCommunicationSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDCommunicationSDK.xcframework; path = "../../../../openDID/did-client-sdk-ios/source/DIDClientSDK/release/did-communication-sdk-ios-1.0.0/DIDCommunicationSDK.xcframework"; sourceTree = "<group>"; };
@@ -357,6 +359,7 @@
 			isa = PBXGroup;
 			children = (
 				7CA9821B2C85CBEE00EDF367 /* SettingViewController.swift */,
+				7C537DA72CE31D7100C7E2F3 /* AuthSettingViewController.swift */,
 			);
 			path = Setting;
 			sourceTree = "<group>";
@@ -641,6 +644,7 @@
 				7CA982302C85CBEE00EDF367 /* IssueCompletedViewController.swift in Sources */,
 				7CA982382C85CBEE00EDF367 /* StepViewController.swift in Sources */,
 				7CA982432C85CBEE00EDF367 /* CommonProtocol.swift in Sources */,
+				7C537DA82CE31D7100C7E2F3 /* AuthSettingViewController.swift in Sources */,
 				7CB772892C86ABBC00E05B5D /* Properties.swift in Sources */,
 				7CA9822C2C85CBEE00EDF367 /* UIImage.swift in Sources */,
 				7CA982522C85CBEE00EDF367 /* SceneDelegate.swift in Sources */,

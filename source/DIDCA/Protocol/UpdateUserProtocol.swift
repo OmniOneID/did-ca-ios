@@ -48,7 +48,7 @@ class UpdateUserProtocol: CommonProtocol {
             throw NSError(domain: "getDidAuth error", code: 1)
         }
         
-        return try await WalletAPI.shared.requestUpdateUser(tasURL: URLs.TAS_URL + "/tas/api/v1/request-restore-diddoc", txId: super.txId, hWalletToken: super.hWalletToken, serverToken: super.hServerToken, didAuth: didAuth, signedDIDDoc: signedDidDoc)
+        return try await WalletAPI.shared.requestUpdateUser(tasURL: URLs.TAS_URL + "/tas/api/v1/request-update-diddoc", txId: super.txId, hWalletToken: super.hWalletToken, serverToken: super.hServerToken, didAuth: didAuth, signedDIDDoc: signedDidDoc)
     }
     
     @discardableResult

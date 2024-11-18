@@ -40,7 +40,7 @@ Each module (repository) is managed independently, following these steps:
    - Merge the validated Release branch (release/QA-VX.Y.Z) into both `main` and `develop` branches.
 
 5. **Create a Release for Each Repository**  
-   - When the validated branch is merged into `main`, trigger the [CI/CD pipeline](https://github.com/OmniOneID/did-release/blob/main/docs/CI_CD_PIPELINE.md) using GitHub Actions to create the Release and perform version tagging. The generated [Release](https://github.com/OmniOneID/did-client-sdk-aos/releases) includes the following:
+   - When the validated branch is merged into `main`, trigger the [CI/CD pipeline](https://github.com/OmniOneID/did-release/blob/main/docs/CI_CD_PIPELINE.md) using GitHub Actions to create the Release and perform version tagging. The generated [Release](https://github.com/OmniOneID/did-client-sdk-ios/releases) includes the following:
      - Version name
      - Summary of the changelog
      - Source code archive

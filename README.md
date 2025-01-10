@@ -9,13 +9,13 @@ This document is a guide for using the OpenDID authentication client, and provid
 
 
 ## S/W Specifications
-| Category | Details                |
-|------|----------------------------|
-| OS  | iOS 15.0+|
-| Language  | swift 5.0+|
-| IDE  | xCode 14.x|
-| Build System  | Xcode Basic build system |
-| Compatibility | minSDK 15 or iOS 15 higher  |
+| Category      | Details                     |
+|---------------|-----------------------------|
+| OS            | iOS 15.0+                   |
+| Language      | swift 5.0+                  |
+| IDE           | Xcode 14.x                  |
+| Build System  | Xcode Basic build system    |
+| Compatibility | iOS 15.0 or higher          |
 
 ## Clone and checkout the DIDCA project
 ```git
@@ -25,7 +25,7 @@ git clone https://github.com/OmniOneID/did-ca-ios.git
 ## Build Method
 How to compile and test your app using Xcode's default build system.
 1. Install Xcode
-    - Run Xcode and open the desired project file (.xcodeproj or .xcworkspace) by selecting File > Open from the top menu.
+    - Run Xcode and open the project file (.xcodeproj) by selecting File > Open from the top menu.
 2. Open the project
     - When the project is opened, you can check the source files, resource files, and settings files in the Project Navigator on the left side of the Xcode window.
 3. Select a simulator or actual device
@@ -70,11 +70,10 @@ How to apply DIDClientSDK frameworks to DIDCA project in Xcode
     - Click the + button at the bottom of this section.
     - In the pop-up that appears, select **Add Other... > Add Files...**, select the DIDClientSDK frameworks files, and click the Add button.
     - Once the DIDClientSDK frameworks are added, you need to enable the Embed & Sign option.
-      - If you do not have the above library files, you need to build them from the SDK repository to generate the framework files.
+    - If you do not have the above library files, you need to build them from the SDK repository to generate the framework files.
         [Move to Client SDK](https://github.com/OmniOneID/did-client-sdk-ios/tree/main)
 
-
-1. Modify Build Settings
+3. Modify Build Settings
 
     - Setting the Framework Search Path
         - Click the Build Settings tab in your project, and then find Framework Search Paths in the search box. 
@@ -82,7 +81,7 @@ How to apply DIDClientSDK frameworks to DIDCA project in Xcode
     - Set Runpath Search Paths
         - In the search bar, find Runpath Search Paths. If the added framework is not running properly, add the @executable_path/Frameworks value. This sets the path to find the framework when running the app.
 
-2. Import and Use
+4. Import and Use
 
 First, modify the URL information for each business in the URLs.swift file.
 ```swift
@@ -154,11 +153,8 @@ To watch our demonstration videos of the OpenDID system in action, please visit 
 
 These videos showcase key features including user registration, VC issuance, and VP submission processes.
 
-
 ## Contributing
-
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details on our code of conduct, and the process for submitting pull requests to us.
-
 
 ## License
 [Apache 2.0](LICENSE)

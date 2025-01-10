@@ -8,13 +8,13 @@
 
 
 ## S/W 사양
-| 구분 | 내용                |
-|------|----------------------------|
-| OS  | iOS 15.0+|
-| Language  | swift 5.0+|
-| IDE  | xCode 14.x|
-| Build System  | Xcode 기본 빌드 시스템 |
-| Compatibility | minSDK 15 or iOS 15 higher  |
+| 구분           | 내용                         |
+|---------------|----------------------------|
+| OS            | iOS 15.0+                  |
+| Language      | swift 5.0+                 |
+| IDE           | Xcode 14.x                 |
+| Build System  | Xcode 기본 빌드 시스템         |
+| Compatibility | iOS 15.0 or higher         |
 
 ## DIDCA 프로젝트 클론 및 체크아웃
 ```git
@@ -24,7 +24,7 @@ git clone https://github.com/OmniOneID/did-ca-ios.git
 ## 빌드 방법
 Xcode의 기본 빌드 시스템을 사용하여 앱을 컴파일하고 테스트하는 방법이다.
 1. Xcode 설치
-    - Xcode를 실행하고, 상단 메뉴에서 File > Open을 선택하여 원하는 프로젝트 파일(.xcodeproj 또는 .xcworkspace)을 엽니다.
+    - Xcode를 실행하고, 상단 메뉴에서 File > Open을 선택하여 프로젝트 파일(.xcodeproj)을 엽니다.
 2. 프로젝트 열기
     - 프로젝트가 열리면 Xcode 창 좌측의 Project Navigator에서 소스 파일, 리소스 파일 및 설정 파일을 확인 할 수 있다.
 3. 시뮬레이터 또는 실제 기기 선택
@@ -68,8 +68,7 @@ Xcode에서 DIDClientSDK frameworks를 DIDCA 프로젝트에 적용하는 방법
     - 이 섹션 하단에 있는 + 버튼을 클릭합니다.
     - 나타나는 팝업에서 **Add Other... > Add Files...** 를 선택하고, DIDClientSDK frameworks 파일들을 선택한 후, Add 버튼을 클릭합니다.
     - DIDClientSDK frameworks가 추가되면, Embed & Sign 옵션을 활성화 해야 합니다.
-
-- 만약 위의 라이브러리 파일이 없는 경우, 각 SDK의 레포지토리에서 빌드하여 jar 파일들을 생성해야 합니다.
+    - 만약 위의 라이브러리 파일이 없는 경우, 각 SDK의 레포지토리에서 빌드하여 framework 파일들을 생성해야 합니다.
 [Move to Client SDK](https://github.com/OmniOneID/did-client-sdk-ios/tree/main)
 
 3. Build Settings 수정
@@ -152,6 +151,7 @@ OpenDID 시스템의 실제 동작을 보여주는 데모 영상은 [Demo Reposi
 사용자 등록, VC 발급, VP 제출 등 주요 기능들을 영상으로 확인하실 수 있습니다.
 
 ## 기여
-
 Contributing 및 pull request 제출 절차에 대한 자세한 내용은 [CONTRIBUTING.md](CONTRIBUTING.md)와 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) 를 참조하세요.
 
+## 라이선스
+[Apache 2.0](LICENSE)

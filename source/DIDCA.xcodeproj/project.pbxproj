@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		7350EFB3CE1CCB30FC48B0C3 /* Pods_DIDCA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C65E097C23C1F83328B3AF5D /* Pods_DIDCA.framework */; };
 		7C285E532C53393400136B91 /* SUIT-Light.otf in Resources */ = {isa = PBXBuildFile; fileRef = 7C285E4A2C53393400136B91 /* SUIT-Light.otf */; };
 		7C285E542C53393400136B91 /* SUIT-ExtraBold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 7C285E4B2C53393400136B91 /* SUIT-ExtraBold.otf */; };
 		7C285E552C53393400136B91 /* SUIT-ExtraLight.otf in Resources */ = {isa = PBXBuildFile; fileRef = 7C285E4C2C53393400136B91 /* SUIT-ExtraLight.otf */; };
@@ -76,6 +75,8 @@
 		7CFA78042CBE519700893B70 /* DIDUtilitySDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA78022CBE519700893B70 /* DIDUtilitySDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		7CFA78062CBE519A00893B70 /* DIDWalletSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA78052CBE519A00893B70 /* DIDWalletSDK.xcframework */; };
 		7CFA78072CBE519A00893B70 /* DIDWalletSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA78052CBE519A00893B70 /* DIDWalletSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		C9C7C9DF2D2F93350023D8E5 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = C9C7C9DE2D2F93350023D8E5 /* FirebaseAnalytics */; };
+		C9C7C9E12D2F93350023D8E5 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = C9C7C9E02D2F93350023D8E5 /* FirebaseMessaging */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -126,11 +127,6 @@
 		7C537DA72CE31D7100C7E2F3 /* AuthSettingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSettingViewController.swift; sourceTree = "<group>"; };
 		7C5835DB2C87EE7700365849 /* SettingCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingCell.swift; sourceTree = "<group>"; };
 		7C5835DD2C87F5EE00365849 /* ErrorDialogViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ErrorDialogViewController.swift; sourceTree = "<group>"; };
-		7C8E5F1B2C91663200BAFE2C /* DIDCommunicationSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDCommunicationSDK.xcframework; path = "../../../../openDID/did-client-sdk-ios/source/DIDClientSDK/release/did-communication-sdk-ios-1.0.0/DIDCommunicationSDK.xcframework"; sourceTree = "<group>"; };
-		7C8E5F1F2C91663600BAFE2C /* DIDCoreSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDCoreSDK.xcframework; path = "../../../../openDID/did-client-sdk-ios/source/DIDClientSDK/release/did-core-sdk-ios-1.0.0/DIDCoreSDK.xcframework"; sourceTree = "<group>"; };
-		7C8E5F222C91663900BAFE2C /* DIDDataModelSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDDataModelSDK.xcframework; path = "../../../../openDID/did-client-sdk-ios/source/DIDClientSDK/release/did-datamodel-sdk-ios-1.0.0/DIDDataModelSDK.xcframework"; sourceTree = "<group>"; };
-		7C8E5F252C91663C00BAFE2C /* DIDUtilitySDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDUtilitySDK.xcframework; path = "../../../../openDID/did-client-sdk-ios/source/DIDClientSDK/release/did-utility-sdk-ios-1.0.0/DIDUtilitySDK.xcframework"; sourceTree = "<group>"; };
-		7C8E5F282C91664000BAFE2C /* DIDWalletSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDWalletSDK.xcframework; path = "../../../../openDID/did-client-sdk-ios/source/DIDClientSDK/release/did-wallet-sdk-ios-1.0.0/DIDWalletSDK.xcframework"; sourceTree = "<group>"; };
 		7C985EA82BC9292A00AF788F /* DIDCA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DIDCA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7CA981F72C85CBEE00EDF367 /* SDKUtils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SDKUtils.swift; sourceTree = "<group>"; };
 		7CA981F82C85CBEE00EDF367 /* UIImage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIImage.swift; sourceTree = "<group>"; };
@@ -186,9 +182,6 @@
 		7CFA77FF2CBE519500893B70 /* DIDDataModelSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDDataModelSDK.xcframework; path = "Framework/did-datamodel-sdk-ios-1.0.0/DIDDataModelSDK.xcframework"; sourceTree = "<group>"; };
 		7CFA78022CBE519700893B70 /* DIDUtilitySDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDUtilitySDK.xcframework; path = "Framework/did-utility-sdk-ios-1.0.0/DIDUtilitySDK.xcframework"; sourceTree = "<group>"; };
 		7CFA78052CBE519A00893B70 /* DIDWalletSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDWalletSDK.xcframework; path = "Framework/did-wallet-sdk-ios-1.0.0/DIDWalletSDK.xcframework"; sourceTree = "<group>"; };
-		C65E097C23C1F83328B3AF5D /* Pods_DIDCA.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_DIDCA.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		D827043B4612D807220B076C /* Pods-DIDCA.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-DIDCA.release.xcconfig"; path = "Target Support Files/Pods-DIDCA/Pods-DIDCA.release.xcconfig"; sourceTree = "<group>"; };
-		FDFDCAA2899BC4F35C94C4BB /* Pods-DIDCA.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-DIDCA.debug.xcconfig"; path = "Target Support Files/Pods-DIDCA/Pods-DIDCA.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -198,8 +191,9 @@
 			files = (
 				7CFA78032CBE519700893B70 /* DIDUtilitySDK.xcframework in Frameworks */,
 				7CFA78002CBE519500893B70 /* DIDDataModelSDK.xcframework in Frameworks */,
+				C9C7C9E12D2F93350023D8E5 /* FirebaseMessaging in Frameworks */,
+				C9C7C9DF2D2F93350023D8E5 /* FirebaseAnalytics in Frameworks */,
 				7CFA77FD2CBE519200893B70 /* DIDCoreSDK.xcframework in Frameworks */,
-				7350EFB3CE1CCB30FC48B0C3 /* Pods_DIDCA.framework in Frameworks */,
 				7CFA77F92CBE518F00893B70 /* DIDCommunicationSDK.xcframework in Frameworks */,
 				7CFA78062CBE519A00893B70 /* DIDWalletSDK.xcframework in Frameworks */,
 			);
@@ -230,12 +224,6 @@
 				7CFA77FF2CBE519500893B70 /* DIDDataModelSDK.xcframework */,
 				7CFA77FC2CBE519200893B70 /* DIDCoreSDK.xcframework */,
 				7CFA77F82CBE518F00893B70 /* DIDCommunicationSDK.xcframework */,
-				7C8E5F282C91664000BAFE2C /* DIDWalletSDK.xcframework */,
-				7C8E5F252C91663C00BAFE2C /* DIDUtilitySDK.xcframework */,
-				7C8E5F222C91663900BAFE2C /* DIDDataModelSDK.xcframework */,
-				7C8E5F1F2C91663600BAFE2C /* DIDCoreSDK.xcframework */,
-				7C8E5F1B2C91663200BAFE2C /* DIDCommunicationSDK.xcframework */,
-				C65E097C23C1F83328B3AF5D /* Pods_DIDCA.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -265,7 +253,6 @@
 				7CA982692C85CD1E00EDF367 /* DIDCAUITests */,
 				7C985EA92BC9292A00AF788F /* Products */,
 				51C2D5ECF3D26ECA1BF8BCD2 /* Frameworks */,
-				96F439FFDD1956B24D7033D7 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -414,15 +401,6 @@
 			path = VO;
 			sourceTree = "<group>";
 		};
-		96F439FFDD1956B24D7033D7 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				FDFDCAA2899BC4F35C94C4BB /* Pods-DIDCA.debug.xcconfig */,
-				D827043B4612D807220B076C /* Pods-DIDCA.release.xcconfig */,
-			);
-			path = Pods;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -430,11 +408,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7C985ED52BC9292B00AF788F /* Build configuration list for PBXNativeTarget "DIDCA" */;
 			buildPhases = (
-				0077F86C5EF3B0D224C27B1F /* [CP] Check Pods Manifest.lock */,
 				7C985EA42BC9292A00AF788F /* Sources */,
 				7C985EA52BC9292A00AF788F /* Frameworks */,
 				7C985EA62BC9292A00AF788F /* Resources */,
-				BC050DC2247CC1AEC16E579A /* [CP] Embed Pods Frameworks */,
 				7CFA77FB2CBE518F00893B70 /* Embed Frameworks */,
 			);
 			buildRules = (
@@ -514,6 +490,9 @@
 				Base,
 			);
 			mainGroup = 7C985E9F2BC9292A00AF788F;
+			packageReferences = (
+				C9C7C9DD2D2F93350023D8E5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			productRefGroup = 7C985EA92BC9292A00AF788F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -563,48 +542,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		0077F86C5EF3B0D224C27B1F /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-DIDCA-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		BC050DC2247CC1AEC16E579A /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-DIDCA/Pods-DIDCA-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-DIDCA/Pods-DIDCA-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-DIDCA/Pods-DIDCA-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		7C985EA42BC9292A00AF788F /* Sources */ = {
@@ -822,7 +759,6 @@
 		};
 		7C985ED62BC9292B00AF788F /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = FDFDCAA2899BC4F35C94C4BB /* Pods-DIDCA.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -861,7 +797,6 @@
 		};
 		7C985ED72BC9292B00AF788F /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D827043B4612D807220B076C /* Pods-DIDCA.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -1030,6 +965,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C9C7C9DD2D2F93350023D8E5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C9C7C9DE2D2F93350023D8E5 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C9C7C9DD2D2F93350023D8E5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		C9C7C9E02D2F93350023D8E5 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C9C7C9DD2D2F93350023D8E5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCVersionGroup section */
 		7CA982532C85CC1700EDF367 /* DIDCA.xcdatamodeld */ = {

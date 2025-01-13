@@ -11,11 +11,11 @@ This document is a guide for using the OpenDID authentication client, and provid
 ## S/W Specifications
 | Category      | Details                     |
 |---------------|-----------------------------|
-| OS            | iOS 15.0+                   |
+| OS            | iOS 15.6+                   |
 | Language      | swift 5.0+                  |
 | IDE           | Xcode 14.x                  |
 | Build System  | Xcode Basic build system    |
-| Compatibility | iOS 15.0 or higher          |
+| Compatibility | iOS 15.6 or higher          |
 
 ## Clone and checkout the DIDCA project
 ```git

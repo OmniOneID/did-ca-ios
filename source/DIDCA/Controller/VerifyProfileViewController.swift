@@ -51,18 +51,52 @@ class VerifyProfileViewController: UIViewController {
             pinVC.confirmButtonCompleteClosure = { [self] passcode in
                 Task { @MainActor in
                     do {
-                        var claimCode = [String]()
-                        let schemas = VerifyVcProtocol.shared.verifyProfile!.profile.profile.filter.credentialSchemas
-
-                        for schema in schemas {
-                            print("schema: \(try schema.toJson())")
-                            for claim in schema.requiredClaims! {
-                                claimCode.append(claim)
-                            }
-                        }
-
                         if let vcs = try WalletAPI.shared.getAllCrentials(hWalletToken: VerifyVcProtocol.shared.getWalletToken()) {
-                            let claimInfos:[ClaimInfo] = [ClaimInfo(credentialId: vcs[0].id, claimCodes: claimCode)]
+                            
+                            let schemas = VerifyVcProtocol.shared.verifyProfile!.profile.profile.filter.credentialSchemas
+                            
+                            
+                            var claimInfos:[ClaimInfo] = .init()
+                            
+                            loop : for schema in schemas {
+                                print("schema: \(try schema.toJson())")
+                                
+                                let filtered = vcs.filter { vc in
+                                    let isEqShema = vc.credentialSchema.id == schema.id
+                                    let isAllowedIssuer = schema.allowedIssuers?.contains(vc.issuer.id) ?? true
+                                    
+                                    return isEqShema && isAllowedIssuer
+                                }.compactMap { vc in
+                                    if schema.presentAll ?? false {
+                                        let claims = vc.credentialSubject.claims.map { $0.code }
+                                        return ClaimInfo(credentialId: vc.id, claimCodes: claims)
+                                    }
+                                    else{
+                                        if let required = schema.requiredClaims{
+                                            let claims = Set(vc.credentialSubject.claims.map { $0.code })
+                                            if Set(required).isSubset(of: claims){
+                                                return ClaimInfo(credentialId: vc.id, claimCodes: required)
+                                            }
+                                            else{
+                                                return nil
+                                            }
+                                        }
+                                        else{
+                                            let claim = vc.credentialSubject.claims.first!.code
+                                            return ClaimInfo(credentialId: vc.id, claimCodes: [claim])
+                                        }
+                                    }
+                                }
+                                if !filtered.isEmpty{
+                                    claimInfos.append(filtered.first!)
+                                    break loop
+                                }
+                            }
+                            
+                            if claimInfos.isEmpty{
+                                PopupUtils.showAlertPopup(title: "Insufficient claim", content: "Not found any claim", VC: self)
+                                return
+                            }
                             
                             try await VerifyVcProtocol().process(hWalletToken: VerifyVcProtocol.shared.getWalletToken(),txId: VerifyVcProtocol.shared.getTxId(), claimInfos: claimInfos, verifierProfile: VerifyVcProtocol.shared.getVerifyProfile()!, passcode: passcode)
                             

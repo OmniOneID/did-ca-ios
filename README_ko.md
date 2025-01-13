@@ -10,11 +10,11 @@
 ## S/W 사양
 | 구분           | 내용                         |
 |---------------|----------------------------|
-| OS            | iOS 15.0+                  |
+| OS            | iOS 15.6+                  |
 | Language      | swift 5.0+                 |
 | IDE           | Xcode 14.x                 |
 | Build System  | Xcode 기본 빌드 시스템         |
-| Compatibility | iOS 15.0 or higher         |
+| Compatibility | iOS 15.6 or higher         |
 
 ## DIDCA 프로젝트 클론 및 체크아웃
 ```git

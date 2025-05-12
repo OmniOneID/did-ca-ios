@@ -75,6 +75,10 @@
 		7CFA78042CBE519700893B70 /* DIDUtilitySDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA78022CBE519700893B70 /* DIDUtilitySDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		7CFA78062CBE519A00893B70 /* DIDWalletSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA78052CBE519A00893B70 /* DIDWalletSDK.xcframework */; };
 		7CFA78072CBE519A00893B70 /* DIDWalletSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA78052CBE519A00893B70 /* DIDWalletSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		C91179332DD1B6F000F3B573 /* RoundedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91179322DD1B6EC00F3B573 /* RoundedView.swift */; };
+		C936B5742DCDDA3700ADA345 /* RoundedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */; };
+		C936B5782DCDDBA100ADA345 /* ColorAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C936B5772DCDDBA100ADA345 /* ColorAssets.xcassets */; };
+		C936B57A2DCDDDFB00ADA345 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = C936B5792DCDDDF600ADA345 /* ColorPalette.swift */; };
 		C9C7C9DF2D2F93350023D8E5 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = C9C7C9DE2D2F93350023D8E5 /* FirebaseAnalytics */; };
 		C9C7C9E12D2F93350023D8E5 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = C9C7C9E02D2F93350023D8E5 /* FirebaseMessaging */; };
 /* End PBXBuildFile section */
@@ -182,6 +186,10 @@
 		7CFA77FF2CBE519500893B70 /* DIDDataModelSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDDataModelSDK.xcframework; path = "Framework/did-datamodel-sdk-ios-1.0.0/DIDDataModelSDK.xcframework"; sourceTree = "<group>"; };
 		7CFA78022CBE519700893B70 /* DIDUtilitySDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDUtilitySDK.xcframework; path = "Framework/did-utility-sdk-ios-1.0.0/DIDUtilitySDK.xcframework"; sourceTree = "<group>"; };
 		7CFA78052CBE519A00893B70 /* DIDWalletSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDWalletSDK.xcframework; path = "Framework/did-wallet-sdk-ios-1.0.0/DIDWalletSDK.xcframework"; sourceTree = "<group>"; };
+		C91179322DD1B6EC00F3B573 /* RoundedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedView.swift; sourceTree = "<group>"; };
+		C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedButton.swift; sourceTree = "<group>"; };
+		C936B5772DCDDBA100ADA345 /* ColorAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ColorAssets.xcassets; sourceTree = "<group>"; };
+		C936B5792DCDDDF600ADA345 /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -354,6 +362,7 @@
 		7CA982292C85CBEE00EDF367 /* DIDCA */ = {
 			isa = PBXGroup;
 			children = (
+				C936B5722DCDD9FB00ADA345 /* Custom */,
 				7CB772C32C871FA900E05B5D /* VO */,
 				7CA981F92C85CBEE00EDF367 /* Common */,
 				7CA981FC2C85CBEE00EDF367 /* Cell */,
@@ -363,6 +372,7 @@
 				7CA9821A2C85CBEE00EDF367 /* Protocol */,
 				7CA9821C2C85CBEE00EDF367 /* Setting */,
 				7CA9821D2C85CBEE00EDF367 /* AppDelegate.swift */,
+				C936B5772DCDDBA100ADA345 /* ColorAssets.xcassets */,
 				7CA9821E2C85CBEE00EDF367 /* Assets.xcassets */,
 				7CA982212C85CBEE00EDF367 /* GoogleService-Info.plist */,
 				7CA982552C85CC1700EDF367 /* DIDCA.entitlements */,
@@ -399,6 +409,16 @@
 				7CFA77EB2CBDFDCB00893B70 /* UpdatePushTokenVO.swift */,
 			);
 			path = VO;
+			sourceTree = "<group>";
+		};
+		C936B5722DCDD9FB00ADA345 /* Custom */ = {
+			isa = PBXGroup;
+			children = (
+				C936B5792DCDDDF600ADA345 /* ColorPalette.swift */,
+				C91179322DD1B6EC00F3B573 /* RoundedView.swift */,
+				C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */,
+			);
+			path = Custom;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -467,6 +487,7 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1530;
 				LastUpgradeCheck = 1430;
+				ORGANIZATIONNAME = OmniOne;
 				TargetAttributes = {
 					7C985EA72BC9292A00AF788F = {
 						CreatedOnToolsVersion = 14.3;
@@ -511,6 +532,7 @@
 			files = (
 				7CA9824D2C85CBEE00EDF367 /* GoogleService-Info.plist in Resources */,
 				7C285E582C53393400136B91 /* SUIT-Heavy.otf in Resources */,
+				C936B5782DCDDBA100ADA345 /* ColorAssets.xcassets in Resources */,
 				7C285E572C53393400136B91 /* SUIT-Medium.otf in Resources */,
 				7CA9824F2C85CBEE00EDF367 /* LaunchScreen.storyboard in Resources */,
 				7C285E542C53393400136B91 /* SUIT-ExtraBold.otf in Resources */,
@@ -571,13 +593,16 @@
 				7CA982562C85CC1700EDF367 /* DIDCA.xcdatamodeld in Sources */,
 				7CA982512C85CBEE00EDF367 /* URLs.swift in Sources */,
 				7C5835DE2C87F5EE00365849 /* ErrorDialogViewController.swift in Sources */,
+				C936B57A2DCDDDFB00ADA345 /* ColorPalette.swift in Sources */,
 				7CA982442C85CBEE00EDF367 /* IssueVcProtocol.swift in Sources */,
 				7CA9822E2C85CBEE00EDF367 /* VCCell.swift in Sources */,
+				C936B5742DCDDA3700ADA345 /* RoundedButton.swift in Sources */,
 				7CA9824A2C85CBEE00EDF367 /* AppDelegate.swift in Sources */,
 				7CA982402C85CBEE00EDF367 /* OneButtonDialogViewController.swift in Sources */,
 				7CA982372C85CBEE00EDF367 /* SplashViewController.swift in Sources */,
 				7CA9822D2C85CBEE00EDF367 /* AddVCCell.swift in Sources */,
 				7CA9822B2C85CBEE00EDF367 /* SDKUtils.swift in Sources */,
+				C91179332DD1B6F000F3B573 /* RoundedView.swift in Sources */,
 				7CA982302C85CBEE00EDF367 /* IssueCompletedViewController.swift in Sources */,
 				7CA982382C85CBEE00EDF367 /* StepViewController.swift in Sources */,
 				7CA982432C85CBEE00EDF367 /* CommonProtocol.swift in Sources */,
@@ -766,7 +791,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = GZZD25P96B;
+				DEVELOPMENT_TEAM = "";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/framework",
@@ -781,7 +806,7 @@
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 15;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -804,7 +829,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = GZZD25P96B;
+				DEVELOPMENT_TEAM = "";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/framework",
@@ -819,7 +844,7 @@
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 15;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

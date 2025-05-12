@@ -25,6 +25,7 @@ class IssueVCWebViewController: UIViewController {
 
     weak var delegate: DismissDelegate?
     private let hostUrlString = URLs.DEMO_URL + "/addVcInfo?did="
+    public var vcSchemaId : String!
     
     private var webView: WKWebView!
     
@@ -82,7 +83,7 @@ class IssueVCWebViewController: UIViewController {
         do {
             let holderDidDoc = try WalletAPI.shared.getDidDocument(type: DidDocumentType.HolderDidDocumnet)
             
-            let serviceUrl = URL(string: hostUrlString+holderDidDoc.id+"&userName="+Properties.getUserName()!)
+            let serviceUrl = URL(string:"\(hostUrlString)\(holderDidDoc.id)&userName=\(Properties.getUserName()!)&vcSchemaId=\(vcSchemaId!)") 
             print("servierUrl: \(serviceUrl!)")
             urlRequest = URLRequest(url: serviceUrl!)
             // progress 바 구현시 사용

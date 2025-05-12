@@ -131,11 +131,14 @@ extension AddVcViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let vcPlan = vcPlans[indexPath.row]
-        print("vcPlan: \(try! vcPlan.toJson(isPretty: true))")        
+        let vcSchemaId = vcPlan.credentialSchema.id.components(separatedBy: "=").last!
+         
+        print("vcPlan: \(try! vcPlan.toJson(isPretty: true))")
         let vcOffer = IssueOfferPayload(type: OfferTypeEnum.IssueOffer, vcPlanId: vcPlan.vcPlanId, issuer: vcPlan.allowedIssuers![0])
         print("vcOffer JSON: \(try! vcOffer.toJson())")
         
         let issueProfileVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "IssueProfileViewController") as! IssueProfileViewController
+        issueProfileVC.vcSchemaId = vcSchemaId
         issueProfileVC.setVcOffer(vcOfferPayload: vcOffer, isWebView: true)
         issueProfileVC.modalPresentationStyle = .fullScreen
         DispatchQueue.main.async {

@@ -65,17 +65,10 @@
 		7CB772C22C871FA200E05B5D /* UserVO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB772C12C871FA200E05B5D /* UserVO.swift */; };
 		7CFA77EC2CBDFDCB00893B70 /* UpdatePushTokenVO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CFA77EB2CBDFDCB00893B70 /* UpdatePushTokenVO.swift */; };
 		7CFA77F02CBE06DB00893B70 /* UpdateUserProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CFA77EF2CBE06DB00893B70 /* UpdateUserProtocol.swift */; };
-		7CFA77F92CBE518F00893B70 /* DIDCommunicationSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA77F82CBE518F00893B70 /* DIDCommunicationSDK.xcframework */; };
-		7CFA77FA2CBE518F00893B70 /* DIDCommunicationSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA77F82CBE518F00893B70 /* DIDCommunicationSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		7CFA77FD2CBE519200893B70 /* DIDCoreSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA77FC2CBE519200893B70 /* DIDCoreSDK.xcframework */; };
-		7CFA77FE2CBE519200893B70 /* DIDCoreSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA77FC2CBE519200893B70 /* DIDCoreSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		7CFA78002CBE519500893B70 /* DIDDataModelSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA77FF2CBE519500893B70 /* DIDDataModelSDK.xcframework */; };
-		7CFA78012CBE519500893B70 /* DIDDataModelSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA77FF2CBE519500893B70 /* DIDDataModelSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		7CFA78032CBE519700893B70 /* DIDUtilitySDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA78022CBE519700893B70 /* DIDUtilitySDK.xcframework */; };
-		7CFA78042CBE519700893B70 /* DIDUtilitySDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA78022CBE519700893B70 /* DIDUtilitySDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		7CFA78062CBE519A00893B70 /* DIDWalletSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA78052CBE519A00893B70 /* DIDWalletSDK.xcframework */; };
-		7CFA78072CBE519A00893B70 /* DIDWalletSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7CFA78052CBE519A00893B70 /* DIDWalletSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		C91179332DD1B6F000F3B573 /* RoundedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91179322DD1B6EC00F3B573 /* RoundedView.swift */; };
+		C91179372DD1BEE100F3B573 /* DIDWalletSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C91179342DD1B8B800F3B573 /* DIDWalletSDK.xcframework */; };
+		C91179382DD1BEE100F3B573 /* DIDWalletSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C91179342DD1B8B800F3B573 /* DIDWalletSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		C911793C2DD1C07400F3B573 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = C911793B2DD1C07400F3B573 /* OrderedCollections */; };
 		C936B5742DCDDA3700ADA345 /* RoundedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */; };
 		C936B5782DCDDBA100ADA345 /* ColorAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C936B5772DCDDBA100ADA345 /* ColorAssets.xcassets */; };
 		C936B57A2DCDDDFB00ADA345 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = C936B5792DCDDDF600ADA345 /* ColorPalette.swift */; };
@@ -101,17 +94,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		7CFA77FB2CBE518F00893B70 /* Embed Frameworks */ = {
+		C91179392DD1BEE200F3B573 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				7CFA78072CBE519A00893B70 /* DIDWalletSDK.xcframework in Embed Frameworks */,
-				7CFA77FA2CBE518F00893B70 /* DIDCommunicationSDK.xcframework in Embed Frameworks */,
-				7CFA77FE2CBE519200893B70 /* DIDCoreSDK.xcframework in Embed Frameworks */,
-				7CFA78012CBE519500893B70 /* DIDDataModelSDK.xcframework in Embed Frameworks */,
-				7CFA78042CBE519700893B70 /* DIDUtilitySDK.xcframework in Embed Frameworks */,
+				C91179382DD1BEE100F3B573 /* DIDWalletSDK.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -181,12 +170,8 @@
 		7CB772C12C871FA200E05B5D /* UserVO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserVO.swift; sourceTree = "<group>"; };
 		7CFA77EB2CBDFDCB00893B70 /* UpdatePushTokenVO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatePushTokenVO.swift; sourceTree = "<group>"; };
 		7CFA77EF2CBE06DB00893B70 /* UpdateUserProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateUserProtocol.swift; sourceTree = "<group>"; };
-		7CFA77F82CBE518F00893B70 /* DIDCommunicationSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDCommunicationSDK.xcframework; path = "Framework/did-communication-sdk-ios-1.0.0/DIDCommunicationSDK.xcframework"; sourceTree = "<group>"; };
-		7CFA77FC2CBE519200893B70 /* DIDCoreSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDCoreSDK.xcframework; path = "Framework/did-core-sdk-ios-1.0.0/DIDCoreSDK.xcframework"; sourceTree = "<group>"; };
-		7CFA77FF2CBE519500893B70 /* DIDDataModelSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDDataModelSDK.xcframework; path = "Framework/did-datamodel-sdk-ios-1.0.0/DIDDataModelSDK.xcframework"; sourceTree = "<group>"; };
-		7CFA78022CBE519700893B70 /* DIDUtilitySDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDUtilitySDK.xcframework; path = "Framework/did-utility-sdk-ios-1.0.0/DIDUtilitySDK.xcframework"; sourceTree = "<group>"; };
-		7CFA78052CBE519A00893B70 /* DIDWalletSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDWalletSDK.xcframework; path = "Framework/did-wallet-sdk-ios-1.0.0/DIDWalletSDK.xcframework"; sourceTree = "<group>"; };
 		C91179322DD1B6EC00F3B573 /* RoundedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedView.swift; sourceTree = "<group>"; };
+		C91179342DD1B8B800F3B573 /* DIDWalletSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDWalletSDK.xcframework; path = "Framework/did-wallet-sdk-ios-2.0.0/DIDWalletSDK.xcframework"; sourceTree = "<group>"; };
 		C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedButton.swift; sourceTree = "<group>"; };
 		C936B5772DCDDBA100ADA345 /* ColorAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ColorAssets.xcassets; sourceTree = "<group>"; };
 		C936B5792DCDDDF600ADA345 /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
@@ -197,13 +182,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7CFA78032CBE519700893B70 /* DIDUtilitySDK.xcframework in Frameworks */,
-				7CFA78002CBE519500893B70 /* DIDDataModelSDK.xcframework in Frameworks */,
 				C9C7C9E12D2F93350023D8E5 /* FirebaseMessaging in Frameworks */,
 				C9C7C9DF2D2F93350023D8E5 /* FirebaseAnalytics in Frameworks */,
-				7CFA77FD2CBE519200893B70 /* DIDCoreSDK.xcframework in Frameworks */,
-				7CFA77F92CBE518F00893B70 /* DIDCommunicationSDK.xcframework in Frameworks */,
-				7CFA78062CBE519A00893B70 /* DIDWalletSDK.xcframework in Frameworks */,
+				C911793C2DD1C07400F3B573 /* OrderedCollections in Frameworks */,
+				C91179372DD1BEE100F3B573 /* DIDWalletSDK.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -227,11 +209,7 @@
 		51C2D5ECF3D26ECA1BF8BCD2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				7CFA78052CBE519A00893B70 /* DIDWalletSDK.xcframework */,
-				7CFA78022CBE519700893B70 /* DIDUtilitySDK.xcframework */,
-				7CFA77FF2CBE519500893B70 /* DIDDataModelSDK.xcframework */,
-				7CFA77FC2CBE519200893B70 /* DIDCoreSDK.xcframework */,
-				7CFA77F82CBE518F00893B70 /* DIDCommunicationSDK.xcframework */,
+				C91179342DD1B8B800F3B573 /* DIDWalletSDK.xcframework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -431,7 +409,7 @@
 				7C985EA42BC9292A00AF788F /* Sources */,
 				7C985EA52BC9292A00AF788F /* Frameworks */,
 				7C985EA62BC9292A00AF788F /* Resources */,
-				7CFA77FB2CBE518F00893B70 /* Embed Frameworks */,
+				C91179392DD1BEE200F3B573 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -513,6 +491,7 @@
 			mainGroup = 7C985E9F2BC9292A00AF788F;
 			packageReferences = (
 				C9C7C9DD2D2F93350023D8E5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				C911793A2DD1C07400F3B573 /* XCRemoteSwiftPackageReference "swift-collections" */,
 			);
 			productRefGroup = 7C985EA92BC9292A00AF788F /* Products */;
 			projectDirPath = "";
@@ -992,6 +971,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		C911793A2DD1C07400F3B573 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-collections.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.1.4;
+			};
+		};
 		C9C7C9DD2D2F93350023D8E5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
@@ -1003,6 +990,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		C911793B2DD1C07400F3B573 /* OrderedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C911793A2DD1C07400F3B573 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = OrderedCollections;
+		};
 		C9C7C9DE2D2F93350023D8E5 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C9C7C9DD2D2F93350023D8E5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

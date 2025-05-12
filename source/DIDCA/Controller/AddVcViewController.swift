@@ -16,11 +16,7 @@
 
 import Foundation
 import UIKit
-import DIDUtilitySDK
-import DIDDataModelSDK
-import DIDCoreSDK
 import DIDWalletSDK
-import DIDCommunicationSDK
 
 class AddVcViewController: UIViewController {
     

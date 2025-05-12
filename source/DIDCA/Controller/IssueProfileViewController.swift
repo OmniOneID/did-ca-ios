@@ -17,10 +17,6 @@
 import Foundation
 import UIKit
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
-import DIDCoreSDK
-import DIDUtilitySDK
 
 protocol DismissDelegate: AnyObject {
     func didDidmissWithData()

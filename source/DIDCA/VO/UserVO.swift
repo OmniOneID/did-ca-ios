@@ -15,7 +15,7 @@
  */
 
 import Foundation
-import DIDDataModelSDK
+import DIDWalletSDK
 
 struct User: Jsonable {
     public var userId: String

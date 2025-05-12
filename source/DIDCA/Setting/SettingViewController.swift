@@ -16,8 +16,6 @@
 
 import UIKit
 import DIDWalletSDK
-import DIDCoreSDK
-import DIDCommunicationSDK
 
 class SettingViewController: UITableViewController {
     

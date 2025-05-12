@@ -15,10 +15,10 @@
  */
 
 import Foundation
-import DIDUtilitySDK
+
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
+
+
 
 class UpdateUserProtocol: CommonProtocol {
     public static let shared: UpdateUserProtocol = {

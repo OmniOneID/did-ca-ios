@@ -16,11 +16,11 @@
 
 import Foundation
 import UIKit
-import DIDUtilitySDK
-import DIDCoreSDK
+
+
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
+
+
 
 class MainViewController: UIViewController, DismissDelegate {
     @IBOutlet weak var vcCollectionView: UICollectionView!

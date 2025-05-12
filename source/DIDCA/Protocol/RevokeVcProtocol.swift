@@ -15,10 +15,10 @@
  */
 
 import Foundation
-import DIDCoreSDK
+
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
+
+
 
 class RevokeVcProtocol : CommonProtocol {
     public static let shared: RevokeVcProtocol = {

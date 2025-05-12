@@ -16,11 +16,7 @@
 
 import Foundation
 import UIKit
-import DIDCoreSDK
-import DIDUtilitySDK
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
 
 class IssueCompletedViewController: UIViewController {
  

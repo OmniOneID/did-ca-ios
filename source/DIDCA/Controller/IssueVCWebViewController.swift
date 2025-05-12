@@ -17,9 +17,7 @@
 import Foundation
 import WebKit
 import UIKit
-import DIDDataModelSDK
 import DIDWalletSDK
-import DIDCommunicationSDK
 
 class IssueVCWebViewController: UIViewController {
 
@@ -83,7 +81,7 @@ class IssueVCWebViewController: UIViewController {
         do {
             let holderDidDoc = try WalletAPI.shared.getDidDocument(type: DidDocumentType.HolderDidDocumnet)
             
-            let serviceUrl = URL(string:"\(hostUrlString)\(holderDidDoc.id)&userName=\(Properties.getUserName()!)&vcSchemaId=\(vcSchemaId!)") 
+            let serviceUrl = URL(string:"\(hostUrlString)\(holderDidDoc.id)&userName=\(Properties.getUserName()!)&vcSchemaId=\(vcSchemaId!)")
             print("servierUrl: \(serviceUrl!)")
             urlRequest = URLRequest(url: serviceUrl!)
             // progress 바 구현시 사용

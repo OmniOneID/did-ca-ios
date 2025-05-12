@@ -15,11 +15,11 @@
  */
 
 import Foundation
-import DIDUtilitySDK
-import DIDDataModelSDK
-import DIDCoreSDK
+
+
+
 import DIDWalletSDK
-import DIDCommunicationSDK
+
 
 class CommonProtocol {
     // 

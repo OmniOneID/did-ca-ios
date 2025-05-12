@@ -18,9 +18,9 @@ import Foundation
 import UIKit
 
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
-import DIDCoreSDK
+
+
+
 
 class SubmitViewController: UIViewController {
     

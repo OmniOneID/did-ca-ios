@@ -15,10 +15,10 @@
  */
 
 import Foundation
-import DIDUtilitySDK
+
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
+
+
 
 class RestoreUserProtocol: CommonProtocol {
     public static let shared: RestoreUserProtocol = {

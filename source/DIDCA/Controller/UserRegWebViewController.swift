@@ -17,11 +17,11 @@
 import Foundation
 import WebKit
 import UIKit
-import DIDUtilitySDK
-import DIDCoreSDK
+
+
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
+
+
 
 
 class UserRegWebViewController: UIViewController {

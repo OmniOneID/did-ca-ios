@@ -1,6 +1,0 @@
-framework module DIDCoreSDK {
-  umbrella header "DIDCoreSDK.h"
-  export *
-
-  module * { export * }
-}

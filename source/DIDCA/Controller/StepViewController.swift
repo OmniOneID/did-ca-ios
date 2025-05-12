@@ -16,11 +16,11 @@
 
 import Foundation
 import UIKit
-import DIDUtilitySDK
-import DIDCoreSDK
+
+
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
+
+
 
 public enum StepTypeEnum: String {
     case STEP_TYPE_1 = "Step1"

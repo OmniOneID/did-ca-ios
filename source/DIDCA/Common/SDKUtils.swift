@@ -16,17 +16,14 @@
 
 import UIKit
 import CryptoKit
-import DIDUtilitySDK
-import DIDDataModelSDK
-import DIDCoreSDK
 import DIDWalletSDK
-import DIDCommunicationSDK
+
 
 /// for CA SDK
 public class SDKUtils {
     
     public static func createWalletToken(purpose: WalletTokenPurposeEnum, userId: String) async throws -> String {
-        // 개인화 + 월렛잠금 설정 토큰 Seed요청
+        // Request for Personalization + Wallet Lock Configuration Token Seed
         let parameter = try WalletAPI.shared.createWalletTokenSeed(purpose: purpose, pkgName: Bundle.main.bundleIdentifier!, userId: userId).toJsonData()
         
         let responseData = try await CommnunicationClient().doPost(url: URL(string: URLs.CAS_URL + "/cas/api/v1/request-wallet-tokendata")!, requestJsonData: parameter)
@@ -81,12 +78,12 @@ public class SDKUtils {
         let certVcData = try await CommnunicationClient().doGet(url: URL(string: url)!)
         var certVc = try VerifiableCredential.init(from: certVcData)
         
-        // did 비교
+        // DID comparison
         if did != certVc.credentialSubject.id {
             throw NSError(domain: "did matching fail", code: 1)
         }
         
-        // 2번통신 - CAS DIDDoc 가져오기
+        // Fetch CAS DIDDoc
         let didDocData = try await CommnunicationClient().doGet(url: URL(string: URLs.API_URL+"/api-gateway/api/v1/did-doc?did=" + certVc.issuer.id)!)
         let _didDoc = try DIDDocVO(from: didDocData)
         
@@ -95,7 +92,7 @@ public class SDKUtils {
         
         WalletLogger.shared.debug("didDoc: \(try didDoc.toJson(isPretty: true))")
         
-        // rule 확인
+        // check rule
         let schemaUrl = certVc.credentialSchema.id
         let schemaData = try await CommnunicationClient().doGet(url: URL(string: schemaUrl)!)
         
@@ -126,7 +123,7 @@ public class SDKUtils {
         }
         
         
-        // 가입 증명서 vc 서명검증
+        // Membership credential VC signature verification
         for method in didDoc.verificationMethod {
             if method.id == "assert" {
                 let pubKey = try MultibaseUtils.decode(encoded: method.publicKeyMultibase)
@@ -140,8 +137,6 @@ public class SDKUtils {
         }
     }
     
-    /// <#Description#>
-    /// - Returns: <#description#>
     public static func generateMessageID() -> String {
         let currentDate = Date()
         let dateFormatter = DateFormatter()
@@ -152,17 +147,12 @@ public class SDKUtils {
         return messageID
     }
     
-    
-    
-    /// <#Description#>
-    /// - Parameter base64String: <#base64String description#>
-    /// - Returns: <#description#>
     public static func generateImg(base64String: String) throws -> UIImage {
         
-        // Base64 문자열에서 접두사를 제거
+        // Remove the prefix from the Base64 string
         let base64StringWithoutPrefix = base64String.replacingOccurrences(of: "data:image/png;base64,", with: "")
         if let imageData = Data(base64Encoded: base64StringWithoutPrefix, options: .ignoreUnknownCharacters) {
-            // Data 객체를 UIImage 객체로 변환
+            // Convert a Data object to a UIImage object
             if let image = UIImage(data: imageData) {
                 return image
             }
@@ -170,11 +160,6 @@ public class SDKUtils {
         throw NSError(domain: "generateImg error", code: 1)
     }
     
-    /// <#Description#>
-    /// - Parameters:
-    ///   - clientNonce: <#clientNonce description#>
-    ///   - serverNonce: <#serverNonce description#>
-    /// - Returns: <#description#>
     public static func mergeNonce(clientNonce: Data?, serverNonce: Data?) throws -> Data {
         guard let clientNonce = clientNonce, let serverNonce = serverNonce else {
             throw NSError(domain: "mergeNonce error", code: 1)
@@ -187,13 +172,7 @@ public class SDKUtils {
         return DigestUtils.getDigest(source: combinedData, digestEnum: DigestEnum.sha256)
     }
     
-    /// <#Description#>
-    /// - Parameters:
-    ///   - sharedSecret: <#sharedSecret description#>
-    ///   - nonce: <#nonce description#>
-    ///   - symmetricCipherType: <#symmetricCipherType description#>
-    /// - Returns: <#description#>
-    public static func mergeSharedSecretAndNonce(sharedSecret: Data, nonce: Data, symmetricCipherType: DIDUtilitySDK.SymmetricCipherType) -> Data {
+    public static func mergeSharedSecretAndNonce(sharedSecret: Data, nonce: Data, symmetricCipherType: SymmetricCipherType) -> Data {
         
         var digest = Data()
         digest.append(sharedSecret)
@@ -202,9 +181,9 @@ public class SDKUtils {
         let combinedResult = DigestUtils.getDigest(source: digest, digestEnum: DigestEnum.sha256)
         
         switch symmetricCipherType {
-        case DIDUtilitySDK.SymmetricCipherType.aes128CBC, DIDUtilitySDK.SymmetricCipherType.aes128ECB:
+        case SymmetricCipherType.aes128CBC, SymmetricCipherType.aes128ECB:
             return combinedResult.prefix(16)
-        case DIDUtilitySDK.SymmetricCipherType.aes256CBC, DIDUtilitySDK.SymmetricCipherType.aes256ECB:
+        case SymmetricCipherType.aes256CBC, SymmetricCipherType.aes256ECB:
             return combinedResult.prefix(32)
         @unknown default:
             fatalError()
@@ -212,8 +191,6 @@ public class SDKUtils {
         
     }
     
-    /// <#Description#>
-    /// - Returns: <#description#>
     func generateRandomBytes() -> Data {
         var data = Data(count: 16)
         let result = data.withUnsafeMutableBytes { mutableBytes in

@@ -16,30 +16,51 @@
 
 import Foundation
 import UIKit
-
-
 import DIDWalletSDK
-
-
 
 class MainViewController: UIViewController, DismissDelegate {
     @IBOutlet weak var vcCollectionView: UICollectionView!
-    @IBOutlet weak var userInfoLbl: UILabel!
+    @IBOutlet weak var userInfoLbl: UILabel!{
+        didSet
+        {
+            userInfoLbl.text = Properties.getUserName()
+        }
+    }
+    
     @IBOutlet weak var addDocBtn: UIButton!
     @IBOutlet weak var showQrBtn: UIButton!
     @IBOutlet weak var vcDescLbl: UILabel!
     private var vcs = [VerifiableCredential]()
+    private var zkpIncludedStates : [String : Bool] = [:]
+    
+    private var zkpSchemas : [String : ZKPCredentialSchema] = [:]
     
     func didDidmissWithData() {
         showUI()
     }
     
+    func updateZKPIncludedStates() async throws
+    {
+        let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.LIST_VC, userId: Properties.getUserId()!)
+        
+        if let zkpCredentials = try WalletAPI.shared.getAllZKPCrentials(hWalletToken: hWalletToken)
+        {
+            zkpIncludedStates = zkpCredentials.reduce(into: [String:Bool](), { $0[$1.credentialId] = true })
+        }
+    }
+    
     func showUI() {
         Task { @MainActor in
             do {
-                userInfoLbl.text = Properties.getUserName()
+                
+//                try await updateZKPIncludedStates()
                 
                 let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.LIST_VC, userId: Properties.getUserId()!)
+                
+                if let zkpCredentials = try WalletAPI.shared.getAllZKPCrentials(hWalletToken: hWalletToken)
+                {
+                    zkpIncludedStates = zkpCredentials.reduce(into: [String:Bool](), { $0[$1.credentialId] = true })
+                }
                 
                 if let credentials = try WalletAPI.shared.getAllCrentials(hWalletToken: hWalletToken) {
                     vcs = credentials
@@ -121,14 +142,28 @@ class MainViewController: UIViewController, DismissDelegate {
         }
     }
     
-    @IBAction func showQrBtnAction(_ sender: Any) {
+    @IBAction func showQrBtnAction(_ sender: Any)
+    {
+        
+#if targetEnvironment(simulator)
+        PopupUtils.showInputPopUp(title: "Simulator Scan", subtitle: "Please Input scanned QR string", VC: self) { text in
+            
+            self.extractStringfromQRCode(qrString: text)
+            
+        }
+#else
         let qrVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "QRScanViewController") as! QRScanViewController
         qrVC.delegate = self
         qrVC.modalPresentationStyle = .popover
-
+        
         DispatchQueue.main.async {
             self.present(qrVC, animated: false, completion: nil)
         }
+#endif
+        
+        
+        
+        
     }
 }
 
@@ -174,11 +209,16 @@ extension MainViewController: UICollectionViewDataSource {
 
         cell.layer.cornerRadius = 10
         cell.layer.masksToBounds = true
+        let vc = vcs[indexPath.row]
+        let isZkpIncluded = zkpIncludedStates[vc.id] ?? false
+        
         DispatchQueue.main.async { [self] in
             Task {
                 do {
                     // http://192.168.3.130:8093/api-gateway/api/v1/vc-meta
-                    try await cell.drowVcInfo(data: try vcs[indexPath.row].toJsonData(), type: indexPath.row)
+                    try await cell.drowVcInfo(data: try vc.toJsonData(),
+                                              type: indexPath.row,
+                                              isZkpIncluded: isZkpIncluded)
                 } catch let error as WalletSDKError {
                     print("error code: \(error.code), message: \(error.message)")
                     PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
@@ -205,7 +245,28 @@ extension MainViewController: UICollectionViewDataSource {
             let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.DETAIL_VC, userId: Properties.getUserId()!)
             let vcId = vcs[indexPath.row].id
             let vc = try WalletAPI.shared.getCredentials(hWalletToken: hWalletToken, ids: [vcId])
-            detialVC.setVcInfo(vc:vc.first)
+            
+            var zkpVC: ZKPCredential?
+            var zkpSchema : ZKPCredentialSchema?
+            if WalletAPI.shared.isZKPCredentialSaved(id : vcId)
+            {
+                zkpVC = try WalletAPI.shared.getZKPCredentials(hWalletToken: hWalletToken, ids: [vcId]).first!
+                if let schema = zkpSchemas[zkpVC!.schemaId]
+                {
+                    zkpSchema = schema
+                }
+                else
+                {
+                    zkpSchema = try await CommnunicationClient.getZKPCredentialSchama(hostUrlString: URLs.API_URL,
+                                                                                      id: zkpVC!.schemaId)
+                    zkpSchemas[zkpVC!.schemaId] = zkpSchema!
+                }
+                
+            }
+            
+            detialVC.setVcInfo(vc: vc.first!,
+                               zkpVC: zkpVC,
+                               zkpSchema: zkpSchema)
             
             DispatchQueue.main.async {
                 self.present(detialVC, animated: false, completion: nil)

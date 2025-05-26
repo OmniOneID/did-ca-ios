@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-import Foundation
 import UIKit
-
-
-
 import DIDWalletSDK
 
 
 class VerifyProfileViewController: UIViewController {
 
     @IBOutlet weak var verifierLbl: UILabel!
-    @IBOutlet weak var issuanceDateLbl: UILabel!
     @IBOutlet weak var subjectLbl: UILabel!
     @IBOutlet weak var contentsTxtView: UITextView!
     
@@ -35,8 +30,95 @@ class VerifyProfileViewController: UIViewController {
     private var vpOffer: VerifyOfferPayload? = nil
     private var offerTxId: String? = nil
     
-    @IBAction func submitBtnAction(_ sender: Any) {
+    private var zkpSchemas : [String : ZKPCredentialSchema] = [:]
+    private var zkpDefs : [String : ZKPCredentialDefinition] = [:]
+    private var referentNameMap : [String : String] = [:]
+    
+    public func setVpOffer(vpOffer: VerifyOfferPayload)
+    {
+        self.vpOffer = vpOffer
+    }
+    
+    override func viewDidLoad()
+    {
+        super.viewDidLoad()
         
+        if vpOffer!.type == .VerifyOffer
+        {
+            self.preProcessForVP()
+        }
+        else
+        {
+            self.preProcessForZKP()
+        }
+    }
+    
+    @IBAction func submitBtnAction(_ sender: Any)
+    {
+        
+        if vpOffer!.type == .VerifyOffer
+        {
+            submitVP()
+        }
+        else
+        {
+            searchCredentials()
+        }
+    }
+    
+    @IBAction func cancelBtnAction(_ sender: Any) {
+        DispatchQueue.main.async {
+            self.dismiss(animated: false, completion: nil)
+        }
+    }
+}
+    
+//MARK: Verifiable Presentation
+extension VerifyProfileViewController
+{
+    func preProcessForVP()
+    {
+        Task { @MainActor in
+            do {
+                try await VerifyVcProtocol.shared.preProcess(id:SDKUtils.generateMessageID(),
+                                                             txId: self.offerTxId,
+                                                             offerId: vpOffer?.offerId )
+                
+                verifierLbl.text = "The following certificate is submitted to the "+(VerifyVcProtocol.shared.verifyProfile?.profile.profile.verifier.name)!
+                                
+                let schemaData = try await CommnunicationClient.doGet(url: URL(string: (VerifyVcProtocol.shared.verifyProfile?.profile.profile.filter.credentialSchemas[0].id)!)!)
+                let schema = try VCSchema.init(from: schemaData)
+                    
+        //        subjectLbl.text = schema.title
+                subjectLbl.text = VerifyVcProtocol.shared.verifyProfile?.profile.title
+                
+                let attributedString = NSMutableAttributedString()
+                
+                let schemas = VerifyVcProtocol.shared.verifyProfile?.profile.profile.filter.credentialSchemas
+                attributedString.append(NSAttributedString(string: "Required information\n\n"))
+                for schema in schemas! {
+                    print("schema: \(try schema.toJson())")
+                    for claim in schema.requiredClaims! {
+                        attributedString.append(NSAttributedString(string: claim))
+                        attributedString.append(NSAttributedString(string: "\n"))
+                    }
+                    self.contentsTxtView.attributedText = attributedString
+                }
+            } catch let error as WalletSDKError {
+                print("error code: \(error.code), message: \(error.message)")
+                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
+            } catch let error as WalletCoreError {
+                print("error code: \(error.code), message: \(error.message)")
+                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
+            } catch let error as CommunicationSDKError {
+                print("error code: \(error.code), message: \(error.message)")
+                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
+            }
+        }
+    }
+    
+    func submitVP()
+    {
         do {
             try WalletAPI.shared.getKeyInfos(ids: ["pin","bio"])
             
@@ -118,54 +200,101 @@ class VerifyProfileViewController: UIViewController {
                     }
                 }
             }
-            pinVC.cancelButtonCompleteClosure = { 
+            pinVC.cancelButtonCompleteClosure = {
                 PopupUtils.showAlertPopup(title: "Notification", content: "canceled by user", VC: self)
             }
             DispatchQueue.main.async { self.present(pinVC, animated: false, completion: nil) }
         }
     }
+}
+
+//MARK: Zero-Knowledge Proof
+extension VerifyProfileViewController
+{
+    func extractDefsBy(proofRequest : ProofRequest) -> [String]
+    {
+        
+        let attributeDefs = proofRequest.requestedAttributes?
+            .values
+            .flatMap { $0.restrictions.compactMap { $0["credDefId"] } } ?? []
+
+        let predicatesDefs = proofRequest.requestedPredicates?
+            .values
+            .flatMap { $0.restrictions.compactMap { $0["credDefId"] } } ?? []
+        
+        return Array(Set(attributeDefs + predicatesDefs))
+    }
     
-    @IBAction func cancelBtnAction(_ sender: Any) {
-        DispatchQueue.main.async {
-            self.dismiss(animated: false, completion: nil)
+    func retrieveDefsAndSchema(credDefIds : [String]) async throws
+    {
+        var schemaIds : Set<String> = []
+        for credDefId in credDefIds
+        {
+            let def = try await CommnunicationClient.getZKPCredentialDefinition(hostUrlString: URLs.API_URL,
+                                                                                id: credDefId)
+            schemaIds.insert(def.schemaId)
+            zkpDefs[credDefId] = def
+        }
+        for schemaId in schemaIds {
+            let schema = try await CommnunicationClient.getZKPCredentialSchama(hostUrlString: URLs.API_URL,
+                                                                               id: schemaId)
+            zkpSchemas[schemaId] = schema
         }
     }
     
-    public func setVpOffer(vpOffer: VerifyOfferPayload) {
-        self.vpOffer = vpOffer
+    func makeReferentNameMap()
+    {
+        referentNameMap = zkpSchemas.values.map {
+            $0.attrTypes
+                .flatMap { attr in
+                    attr.items.map { item in
+                        (attr.namespace.id + "." + item.label, item.caption)
+                    }
+                }
+                .reduce(into: [String: String]()) { dict, pair in
+                    dict[pair.0] = pair.1
+                }
+        }
+        .reduce(into: [String: String]()) { result, dict in
+            dict.forEach { key, value in
+                result[key] = value
+            }
+        }
     }
     
-    override func viewDidLoad() {
-        
-        super.viewDidLoad()
-        
-        cancelBtn.layer.borderWidth = 1
-        cancelBtn.layer.borderColor = UIColor(hexCode: "FF8400").cgColor
-        
+    
+    func preProcessForZKP()
+    {
         Task { @MainActor in
             do {
-                try await VerifyVcProtocol.shared.preProcess(id:SDKUtils.generateMessageID(), txId: self.offerTxId, offerId: vpOffer?.offerId )
+                try await VerifyZKProofProtocol.shared.preProcess(id:SDKUtils.generateMessageID(),
+                                                                  txId: self.offerTxId,
+                                                                  offerId: vpOffer?.offerId )
                 
-                verifierLbl.text = "The following certificate is submitted to the "+(VerifyVcProtocol.shared.verifyProfile?.profile.profile.verifier.name)!
+                verifierLbl.text = "The following certificate is submitted to the " + (VerifyZKProofProtocol.shared.verifyProfile?.profile.profile.verifier.name ?? "Verifier")
                                 
-                let schemaData = try await CommnunicationClient().doGet(url: URL(string: (VerifyVcProtocol.shared.verifyProfile?.profile.profile.filter.credentialSchemas[0].id)!)!)
-                let schema = try VCSchema.init(from: schemaData)
+
                     
-                subjectLbl.text = schema.title
-                issuanceDateLbl.text = VerifyVcProtocol.shared.verifyProfile?.profile.proof?.created
+                subjectLbl.text = VerifyZKProofProtocol.shared.proofRequestProfile?.proofRequestProfile.title
+                
+                let proofRequest = VerifyZKProofProtocol.shared.proofRequestProfile?.proofRequestProfile.profile.proofRequest
+                
+                let defs = extractDefsBy(proofRequest: proofRequest!)
+                try await retrieveDefsAndSchema(credDefIds: defs)
+                
+                let attributeNames = proofRequest?.requestedAttributes.map { $0.values.map { $0.name } } ?? []
+                let predicatesNames = proofRequest?.requestedPredicates.map { $0.values.map { $0.name } } ?? []
                 
                 let attributedString = NSMutableAttributedString()
                 
-                let schemas = VerifyVcProtocol.shared.verifyProfile?.profile.profile.filter.credentialSchemas
-                attributedString.append(NSAttributedString(string: "Personal infomation submitted\n\n"))
-                for schema in schemas! {
-                    print("schema: \(try schema.toJson())")
-                    for claim in schema.requiredClaims! {
-                        attributedString.append(NSAttributedString(string: claim))
-                        attributedString.append(NSAttributedString(string: "\n"))
-                    }
-                    self.contentsTxtView.attributedText = attributedString
+                attributedString.append(NSAttributedString(string: "Required information\n\n"))
+                for name in Array(attributeNames + predicatesNames)
+                {
+                    let referentName = referentNameMap[name] ?? name
+                    attributedString.append(NSAttributedString(string: referentName))
+                    attributedString.append(NSAttributedString(string: "\n"))
                 }
+                self.contentsTxtView.attributedText = attributedString
             } catch let error as WalletSDKError {
                 print("error code: \(error.code), message: \(error.message)")
                 PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
@@ -178,7 +307,44 @@ class VerifyProfileViewController: UIViewController {
             }
         }
     }
-}
     
-
-
+    func searchCredentials()
+    {
+        Task { @MainActor in
+            do {
+                let proofRequest = VerifyZKProofProtocol.shared.proofRequestProfile?.proofRequestProfile.profile.proofRequest
+                
+                let hWalletToken = try await SDKUtils.createWalletToken(purpose: .PRESENT_VP, userId: Properties.getUserId()!)
+                let availableReferent = try WalletAPI.shared.searchCredentials(hWalletToken: hWalletToken,
+                                                                               proofRequest: proofRequest!)
+                moveToSubmissionView(availableReferent: availableReferent)
+                
+            } catch let error as WalletSDKError {
+                print("error code: \(error.code), message: \(error.message)")
+                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
+            } catch let error as WalletCoreError {
+                print("error code: \(error.code), message: \(error.message)")
+                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
+            } catch let error as CommunicationSDKError {
+                print("error code: \(error.code), message: \(error.message)")
+                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
+            }
+        }
+        
+    }
+    
+    func moveToSubmissionView(availableReferent : AvailableReferent)
+    {
+        let submissionZKP = UIStoryboard.init(name: "ZKP", bundle: nil).instantiateViewController(withIdentifier: "ZKPSubmissionViewController") as! ZKPSubmissionViewController
+        submissionZKP.availableReferent = availableReferent
+        submissionZKP.zkpDefs = self.zkpDefs
+        submissionZKP.zkpSchemas = self.zkpSchemas
+        submissionZKP.referentNameMap = self.referentNameMap
+        submissionZKP.modalPresentationStyle = .fullScreen
+        
+        DispatchQueue.main.async
+        {
+            self.present(submissionZKP, animated: false, completion: nil)
+        }
+    }
+}

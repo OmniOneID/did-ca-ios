@@ -50,11 +50,23 @@ public protocol WalletCoreImpl {
   func getKeyInfos(ids: [Swift.String]) throws -> [DIDWalletSDK.KeyInfo]
   func isAnyKeysSaved() throws -> Swift.Bool
   func changePin(id: Swift.String, oldPIN: Swift.String, newPIN: Swift.String) throws
+  func isAnyZKPCredentialsSaved() -> Swift.Bool
+  func isZKPCredentialSaved(id: Swift.String) -> Swift.Bool
+  func createZKPCredentialRequest(proverDid: Swift.String, credentialDefinition: DIDWalletSDK.ZKPCredentialDefinition, credOffer: DIDWalletSDK.ZKPCredentialOffer) throws -> DIDWalletSDK.ZKPCredentialRequestContainer
+  @discardableResult
+  func verifyAndStoreZKPCredential(credentialMeta: DIDWalletSDK.ZKPCredentialRequestMeta, credentialDefinition: DIDWalletSDK.ZKPCredentialDefinition, credential: DIDWalletSDK.ZKPCredential) throws -> Swift.Bool
+  @discardableResult
+  func deleteZKPCredential(ids: [Swift.String]) throws -> Swift.Bool
+  func getZKPCredential(ids: [Swift.String]) throws -> [DIDWalletSDK.ZKPCredential]
+  func getAllZKPCredentials() throws -> [DIDWalletSDK.ZKPCredential]
+  func searchZKPCredentials(proofRequest: DIDWalletSDK.ProofRequest) throws -> DIDWalletSDK.AvailableReferent
+  func createZKProof(proofRequest: DIDWalletSDK.ProofRequest, selectedReferents: [DIDWalletSDK.UserReferent], proofParam: DIDWalletSDK.ZKProofParam) throws -> DIDWalletSDK.ZKProof
 }
 public protocol WalletServiceImpl {
   func deleteWallet() throws -> Swift.Bool
   func createWallet(tasURL: Swift.String, walletURL: Swift.String) async throws -> Swift.Bool
   func requestVp(hWalletToken: Swift.String, claimInfos: [DIDWalletSDK.ClaimInfo]?, verifierProfile: DIDWalletSDK._RequestProfile?, APIGatewayURL: Swift.String, passcode: Swift.String?) async throws -> (DIDWalletSDK.AccE2e, Foundation.Data)
+  func requestZKProof(hWalletToken: Swift.String, selectedReferents: [DIDWalletSDK.UserReferent], proofParam: DIDWalletSDK.ZKProofParam, proofRequestProfile: DIDWalletSDK._RequestProofRequestProfile?, APIGatewayURL: Swift.String) async throws -> (DIDWalletSDK.AccE2e, Foundation.Data)
   func createSignedDIDDoc(passcode: Swift.String?) throws -> DIDWalletSDK.SignedDIDDoc
   func createProofs(ownerDidDoc: DIDWalletSDK.DIDDocument?, proofPurpose: Swift.String) throws -> Foundation.Data
   func createDeviceDocument() throws -> DIDWalletSDK.DIDDocument
@@ -133,11 +145,13 @@ public struct CommunicationSDKError : Swift.Error {
   }
   public init(wrappedValue: Swift.String)
 }
-public class CommnunicationClient : DIDWalletSDK.CommnunicationProtocol {
-  public init()
-  public func doGet(url: Foundation.URL) async throws -> Foundation.Data
-  public func doPost(url: Foundation.URL, requestJsonData: Foundation.Data) async throws -> Foundation.Data
-  @objc deinit
+public struct CommnunicationClient : DIDWalletSDK.CommnunicationProtocol {
+  public static func doGet(url: Foundation.URL) async throws -> Foundation.Data
+  public static func doPost(url: Foundation.URL, requestJsonData: Foundation.Data) async throws -> Foundation.Data
+}
+extension DIDWalletSDK.CommnunicationClient : DIDWalletSDK.ZKPCommunicationProtocol {
+  public static func getZKPCredentialSchama(hostUrlString: Swift.String, id: Swift.String) async throws -> DIDWalletSDK.ZKPCredentialSchema
+  public static func getZKPCredentialDefinition(hostUrlString: Swift.String, id: Swift.String) async throws -> DIDWalletSDK.ZKPCredentialDefinition
 }
 extension DIDWalletSDK.BigUInt {
   public subscript(bitAt index: Swift.Int) -> Swift.Bool {
@@ -576,6 +590,12 @@ extension DIDWalletSDK.BigInt {
   public func power(_ exponent: Swift.Int) -> DIDWalletSDK.BigInt
   public func power(_ exponent: DIDWalletSDK.BigInt, modulus: DIDWalletSDK.BigInt) -> DIDWalletSDK.BigInt
 }
+public struct CredInfo : DIDWalletSDK.Jsonable {
+  public let vc: DIDWalletSDK.VerifiableCredential
+  public let credential: DIDWalletSDK.ZKPCredential?
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
 extension DIDWalletSDK.BigUInt {
   public func greatestCommonDivisor(with b: DIDWalletSDK.BigUInt) -> DIDWalletSDK.BigUInt
   public func inverse(_ modulus: DIDWalletSDK.BigUInt) -> DIDWalletSDK.BigUInt?
@@ -771,6 +791,12 @@ extension DIDWalletSDK.BigInt {
   public static func + (a: DIDWalletSDK.BigInt, b: DIDWalletSDK.BigInt) -> DIDWalletSDK.BigInt
   public static func += (a: inout DIDWalletSDK.BigInt, b: DIDWalletSDK.BigInt)
 }
+public struct CredSchemaVO : DIDWalletSDK.Jsonable {
+  public var credSchema: Swift.String
+  public init(credSchema: Swift.String)
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
 extension DIDWalletSDK.BigUInt {
   public init?<T>(exactly source: T) where T : Swift.BinaryFloatingPoint
   public init<T>(_ source: T) where T : Swift.BinaryFloatingPoint
@@ -910,8 +936,12 @@ extension DIDWalletSDK.BigUInt {
   public func signum() -> DIDWalletSDK.BigUInt
 }
 public protocol CommnunicationProtocol {
-  func doGet(url: Foundation.URL) async throws -> Foundation.Data
-  func doPost(url: Foundation.URL, requestJsonData: Foundation.Data) async throws -> Foundation.Data
+  static func doGet(url: Foundation.URL) async throws -> Foundation.Data
+  static func doPost(url: Foundation.URL, requestJsonData: Foundation.Data) async throws -> Foundation.Data
+}
+public protocol ZKPCommunicationProtocol {
+  static func getZKPCredentialSchama(hostUrlString: Swift.String, id: Swift.String) async throws -> DIDWalletSDK.ZKPCredentialSchema
+  static func getZKPCredentialDefinition(hostUrlString: Swift.String, id: Swift.String) async throws -> DIDWalletSDK.ZKPCredentialDefinition
 }
 public struct ClaimInfo {
   public var credentialId: Swift.String
@@ -1029,7 +1059,38 @@ public struct ZKPCredentialSchema : DIDWalletSDK.Jsonable {
   public let name: Swift.String
   public let version: Swift.String
   public let attrNames: [Swift.String]
+  public let attrTypes: [DIDWalletSDK.ZKPCredentialSchema.AttributeType]
   public let tag: Swift.String
+  public struct AttributeType : DIDWalletSDK.Jsonable {
+    public struct Namespace : DIDWalletSDK.Jsonable {
+      public var id: Swift.String
+      public var name: Swift.String
+      public var ref: Swift.String?
+      public func encode(to encoder: any Swift.Encoder) throws
+      public init(from decoder: any Swift.Decoder) throws
+    }
+    public struct AttributeDef : DIDWalletSDK.Jsonable {
+      public var label: Swift.String
+      public var caption: DIDWalletSDK.CaptionString
+      public var type: DIDWalletSDK.ZKPCredentialSchema.AttributeType.AttributeValueType
+      public var i18n: [Swift.String : DIDWalletSDK.CaptionString]?
+      public func encode(to encoder: any Swift.Encoder) throws
+      public init(from decoder: any Swift.Decoder) throws
+    }
+    public enum AttributeValueType : Swift.String, Swift.Codable {
+      case STRING
+      case NUMBER
+      public init?(rawValue: Swift.String)
+      public typealias RawValue = Swift.String
+      public var rawValue: Swift.String {
+        get
+      }
+    }
+    public var namespace: DIDWalletSDK.ZKPCredentialSchema.AttributeType.Namespace
+    public var items: [DIDWalletSDK.ZKPCredentialSchema.AttributeType.AttributeDef]
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
   public func encode(to encoder: any Swift.Encoder) throws
   public init(from decoder: any Swift.Decoder) throws
 }
@@ -1048,8 +1109,8 @@ public struct ProofRequest : DIDWalletSDK.Jsonable {
   public let name: Swift.String
   public let version: Swift.String
   public let nonce: DIDWalletSDK.BigIntString
-  public let requestedAttributes: [Swift.String : DIDWalletSDK.AttributeInfo]
-  public let requestedPredicates: [Swift.String : DIDWalletSDK.PredicateInfo]
+  public let requestedAttributes: [Swift.String : DIDWalletSDK.AttributeInfo]?
+  public let requestedPredicates: [Swift.String : DIDWalletSDK.PredicateInfo]?
   public func encode(to encoder: any Swift.Encoder) throws
   public init(from decoder: any Swift.Decoder) throws
 }
@@ -1067,16 +1128,16 @@ public struct PredicateInfo : DIDWalletSDK.Jsonable {
   public func encode(to encoder: any Swift.Encoder) throws
   public init(from decoder: any Swift.Decoder) throws
 }
-public struct ZKPProof : DIDWalletSDK.Jsonable {
-  public let proofs: [DIDWalletSDK.ZKPProof.SubProof]
-  public let aggregatedProof: DIDWalletSDK.ZKPProof.AggregatedProof
-  public let requestedProof: DIDWalletSDK.ZKPProof.RequestedProof
-  public let identifiers: [DIDWalletSDK.ZKPProof.Identifier]
+public struct ZKProof : DIDWalletSDK.Jsonable {
+  public let proofs: [DIDWalletSDK.ZKProof.SubProof]
+  public let aggregatedProof: DIDWalletSDK.ZKProof.AggregatedProof
+  public let requestedProof: DIDWalletSDK.ZKProof.RequestedProof
+  public let identifiers: [DIDWalletSDK.ZKProof.Identifier]
   public struct SubProof : Swift.Codable {
-    public let primaryProof: DIDWalletSDK.ZKPProof.SubProof.PrimaryProof
+    public let primaryProof: DIDWalletSDK.ZKProof.SubProof.PrimaryProof
     public struct PrimaryProof : Swift.Codable {
-      public let eqProof: DIDWalletSDK.ZKPProof.SubProof.PrimaryProof.PrimaryEqualProof
-      public let neProofs: [DIDWalletSDK.ZKPProof.SubProof.PrimaryProof.PrimaryPredicateInequalityProof]
+      public let eqProof: DIDWalletSDK.ZKProof.SubProof.PrimaryProof.PrimaryEqualProof
+      public let neProofs: [DIDWalletSDK.ZKProof.SubProof.PrimaryProof.PrimaryPredicateInequalityProof]
       public struct PrimaryEqualProof : Swift.Codable {
         public let revealedAttrs: DIDWalletSDK.BigIntStringDictionary
         public let aPrime: DIDWalletSDK.BigIntString
@@ -1093,7 +1154,7 @@ public struct ZKPProof : DIDWalletSDK.Jsonable {
         public let t: DIDWalletSDK.BigIntStringDictionary
         public let mj: DIDWalletSDK.BigIntString
         public let alpha: DIDWalletSDK.BigIntString
-        public let predicate: DIDWalletSDK.ZKPProof.Predicate
+        public let predicate: DIDWalletSDK.ZKProof.Predicate
         public func encode(to encoder: any Swift.Encoder) throws
         public init(from decoder: any Swift.Decoder) throws
       }
@@ -1140,7 +1201,7 @@ public struct ZKPProof : DIDWalletSDK.Jsonable {
   public func encode(to encoder: any Swift.Encoder) throws
   public init(from decoder: any Swift.Decoder) throws
 }
-public struct ZKPProofParam {
+public struct ZKProofParam {
   public let schemas: [Swift.String : DIDWalletSDK.ZKPCredentialSchema]
   public let creDefs: [Swift.String : DIDWalletSDK.ZKPCredentialDefinition]
   public init(schemas: [Swift.String : DIDWalletSDK.ZKPCredentialSchema], creDefs: [Swift.String : DIDWalletSDK.ZKPCredentialDefinition])
@@ -1359,9 +1420,12 @@ extension DIDWalletSDK.VCSchema : Swift.Codable {
   public func encode(to encoder: any Swift.Encoder) throws
   public init(from decoder: any Swift.Decoder) throws
 }
-public enum OfferTypeEnum : Swift.String, DIDWalletSDK.Jsonable {
+public enum OfferTypeEnum : Swift.String, Swift.Codable {
   case IssueOffer
   case VerifyOffer
+  case RestoreDidOffer
+  case ZkpIssueOffer
+  case VerifyProofOffer
   public init?(rawValue: Swift.String)
   public typealias RawValue = Swift.String
   public var rawValue: Swift.String {
@@ -1371,6 +1435,7 @@ public enum OfferTypeEnum : Swift.String, DIDWalletSDK.Jsonable {
 public enum ProfileType : Swift.String, Swift.Codable {
   case IssueProfile
   case VerifyProfile
+  case ProofRequestProfile
   public init?(rawValue: Swift.String)
   public typealias RawValue = Swift.String
   public var rawValue: Swift.String {
@@ -1431,6 +1496,7 @@ public struct IssueProfile : DIDWalletSDK.Jsonable, DIDWalletSDK.ProofContainer 
     }
     public var issuer: DIDWalletSDK.ProviderDetail
     public var credentialSchema: DIDWalletSDK.IssueProfile.Profile.CredentialSchema
+    public var credentialOffer: DIDWalletSDK.ZKPCredentialOffer?
     public var process: DIDWalletSDK.IssueProfile.Profile.Process
     public func encode(to encoder: any Swift.Encoder) throws
     public init(from decoder: any Swift.Decoder) throws
@@ -1487,6 +1553,26 @@ public struct VerifyProfile : DIDWalletSDK.Jsonable, DIDWalletSDK.ProofContainer
   public var encoding: Swift.String
   public var language: Swift.String
   public var profile: DIDWalletSDK.VerifyProfile.Profile
+  public var proof: DIDWalletSDK.Proof?
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+public struct ProofRequestProfile : DIDWalletSDK.Jsonable, DIDWalletSDK.ProofContainer {
+  public struct Profile : DIDWalletSDK.Jsonable {
+    public var verifier: DIDWalletSDK.ProviderDetail
+    public var proofRequest: DIDWalletSDK.ProofRequest
+    public var reqE2e: DIDWalletSDK.ReqE2e
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+  public var id: Swift.String
+  public var type: DIDWalletSDK.ProfileType
+  public var title: Swift.String
+  public var description: Swift.String?
+  public var logo: DIDWalletSDK.LogoImage?
+  public var encoding: Swift.String
+  public var language: Swift.String
+  public var profile: DIDWalletSDK.ProofRequestProfile.Profile
   public var proof: DIDWalletSDK.Proof?
   public func encode(to encoder: any Swift.Encoder) throws
   public init(from decoder: any Swift.Decoder) throws
@@ -1658,6 +1744,13 @@ public struct _RequestProfile : DIDWalletSDK.Jsonable {
   public func encode(to encoder: any Swift.Encoder) throws
   public init(from decoder: any Swift.Decoder) throws
 }
+public struct _RequestProofRequestProfile : DIDWalletSDK.Jsonable {
+  public var txId: Swift.String
+  public var proofRequestProfile: DIDWalletSDK.ProofRequestProfile
+  public init(txId: Swift.String, proofRequestProfile: DIDWalletSDK.ProofRequestProfile)
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
 public struct VCMeta : DIDWalletSDK.Jsonable {
   public var vcId: Swift.String
   public var issuer: DIDWalletSDK.Provider
@@ -1778,6 +1871,16 @@ public struct _RequestVerify : DIDWalletSDK.Jsonable {
   public func encode(to encoder: any Swift.Encoder) throws
   public init(from decoder: any Swift.Decoder) throws
 }
+public struct RequestZKPVerify : DIDWalletSDK.Jsonable {
+  public var id: Swift.String
+  public var txId: Swift.String
+  public var accE2e: DIDWalletSDK.AccE2e
+  public var encProof: Swift.String
+  public var nonce: DIDWalletSDK.BigIntString
+  public init(id: Swift.String, txId: Swift.String, accE2e: DIDWalletSDK.AccE2e, encProof: Swift.String, nonce: DIDWalletSDK.BigIntString)
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
 public enum ServerTokenPurposeEnum : Swift.Int, DIDWalletSDK.Jsonable {
   case CREATE_DID
   case UPDATE_DID
@@ -1877,6 +1980,12 @@ public struct Option : DIDWalletSDK.Jsonable {
   public init(from decoder: any Swift.Decoder) throws
 }
 public struct VCPlan : DIDWalletSDK.Jsonable {
+  public struct CredentialDefinition : DIDWalletSDK.Jsonable {
+    public var id: Swift.String
+    public var schemaId: Swift.String
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
   public var vcPlanId: Swift.String
   public var name: Swift.String
   public var description: Swift.String
@@ -1890,7 +1999,8 @@ public struct VCPlan : DIDWalletSDK.Jsonable {
   public var delegate: Swift.String?
   public var allowedIssuers: [Swift.String]?
   public var manager: Swift.String
-  public init(vcPlanId: Swift.String, name: Swift.String, description: Swift.String, url: Swift.String? = nil, logo: DIDWalletSDK.LogoImage? = nil, validFrom: Swift.String? = nil, validUntil: Swift.String? = nil, tags: [Swift.String]? = nil, credentialSchema: DIDWalletSDK.IssueProfile.Profile.CredentialSchema, option: DIDWalletSDK.Option, delegate: Swift.String? = nil, allowedIssuers: [Swift.String]? = nil, manager: Swift.String)
+  public var credentialDefinition: DIDWalletSDK.VCPlan.CredentialDefinition?
+  public init(vcPlanId: Swift.String, name: Swift.String, description: Swift.String, url: Swift.String? = nil, logo: DIDWalletSDK.LogoImage? = nil, validFrom: Swift.String? = nil, validUntil: Swift.String? = nil, tags: [Swift.String]? = nil, credentialSchema: DIDWalletSDK.IssueProfile.Profile.CredentialSchema, option: DIDWalletSDK.Option, delegate: Swift.String? = nil, allowedIssuers: [Swift.String]? = nil, manager: Swift.String, credentialDefinition: DIDWalletSDK.VCPlan.CredentialDefinition?)
   public func encode(to encoder: any Swift.Encoder) throws
   public init(from decoder: any Swift.Decoder) throws
 }
@@ -2140,7 +2250,8 @@ public struct ReqVcProfile : DIDWalletSDK.Jsonable {
 public struct ReqVC : DIDWalletSDK.Jsonable {
   public var refId: Swift.String
   public var profile: DIDWalletSDK.ReqVcProfile
-  public init(refId: Swift.String, profile: DIDWalletSDK.ReqVcProfile)
+  public var credentialRequest: DIDWalletSDK.ZKPCredentialRequest?
+  public init(refId: Swift.String, profile: DIDWalletSDK.ReqVcProfile, credentialRequest: DIDWalletSDK.ZKPCredentialRequest? = nil)
   public func encode(to encoder: any Swift.Encoder) throws
   public init(from decoder: any Swift.Decoder) throws
 }
@@ -2634,6 +2745,12 @@ public enum DigestEnum : Swift.String {
     get
   }
 }
+public struct CredDefVO : DIDWalletSDK.Jsonable {
+  public var credDef: Swift.String
+  public init(credDef: Swift.String)
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
 public struct WalletSDKError : Swift.Error {
   public var code: Swift.String
   public var message: Swift.String
@@ -2674,11 +2791,18 @@ extension DIDWalletSDK.WalletAPI {
   public func generateKeyPair(hWalletToken: Swift.String, passcode: Swift.String? = nil, keyId: Swift.String, algType: DIDWalletSDK.AlgorithmType, promptMsg: Swift.String? = nil) throws -> Swift.Bool
   @discardableResult
   public func sign(keyId: Swift.String, pin: Foundation.Data? = nil, data: Foundation.Data, type: DIDWalletSDK.DidDocumentType) throws -> Foundation.Data
-  public func createVp(hWalletToken: Swift.String, claimInfos: [DIDWalletSDK.ClaimInfo], presentationInfo: DIDWalletSDK.PresentationInfo) throws -> DIDWalletSDK.VerifiablePresentation
   public func verify(publicKey: Foundation.Data, data: Foundation.Data, signature: Foundation.Data) throws -> Swift.Bool
   public func deleteCredentials(hWalletToken: Swift.String, ids: [Swift.String]) throws -> Swift.Bool
   public func getCredentials(hWalletToken: Swift.String, ids: [Swift.String]) throws -> [DIDWalletSDK.VerifiableCredential]
   public func getAllCrentials(hWalletToken: Swift.String) throws -> [DIDWalletSDK.VerifiableCredential]?
+  public func createVp(hWalletToken: Swift.String, claimInfos: [DIDWalletSDK.ClaimInfo], presentationInfo: DIDWalletSDK.PresentationInfo) throws -> DIDWalletSDK.VerifiablePresentation
+  public func isZKPCredentialSaved(id: Swift.String) -> Swift.Bool
+  public func deleteZKPCredentials(hWalletToken: Swift.String, ids: [Swift.String]) throws -> Swift.Bool
+  public func getZKPCredentials(hWalletToken: Swift.String, ids: [Swift.String]) throws -> [DIDWalletSDK.ZKPCredential]
+  public func getAllZKPCrentials(hWalletToken: Swift.String) throws -> [DIDWalletSDK.ZKPCredential]?
+  public func searchCredentials(hWalletToken: Swift.String, proofRequest: DIDWalletSDK.ProofRequest) throws -> DIDWalletSDK.AvailableReferent
+  public func createZKProof(hWalletToken: Swift.String, proofRequest: DIDWalletSDK.ProofRequest, selectedReferents: [DIDWalletSDK.UserReferent], proofParam: DIDWalletSDK.ZKProofParam) throws -> DIDWalletSDK.ZKProof
+  public func createEncZKProof(hWalletToken: Swift.String, selectedReferents: [DIDWalletSDK.UserReferent], proofParam: DIDWalletSDK.ZKProofParam, proofRequestProfile: DIDWalletSDK._RequestProofRequestProfile, APIGatewayURL: Swift.String) async throws -> (DIDWalletSDK.AccE2e, Foundation.Data)
   public func getKeyInfos(keyType: DIDWalletSDK.VerifyAuthType) throws -> [DIDWalletSDK.KeyInfo]
   public func getKeyInfos(ids: [Swift.String]) throws -> [DIDWalletSDK.KeyInfo]
   public func isAnyKeysSaved() throws -> Swift.Bool
@@ -2687,7 +2811,8 @@ extension DIDWalletSDK.WalletAPI {
 public typealias BigIntString = Swift.String
 public typealias StringDictionary = [Swift.String : Swift.String]
 public typealias BigIntStringDictionary = [Swift.String : DIDWalletSDK.BigIntString]
-public typealias RequestedAttrDictionary = [Swift.String : DIDWalletSDK.ZKPProof.RequestedAttribute]
+public typealias RequestedAttrDictionary = [Swift.String : DIDWalletSDK.ZKProof.RequestedAttribute]
+public typealias CaptionString = Swift.String
 public class WalletUtil {
   public init()
   public static func generateMessageID() -> Swift.String
@@ -2815,6 +2940,9 @@ extension DIDWalletSDK.KeyAccessMethod : Swift.RawRepresentable {}
 extension DIDWalletSDK.CredentialType : Swift.Equatable {}
 extension DIDWalletSDK.CredentialType : Swift.Hashable {}
 extension DIDWalletSDK.CredentialType : Swift.RawRepresentable {}
+extension DIDWalletSDK.ZKPCredentialSchema.AttributeType.AttributeValueType : Swift.Equatable {}
+extension DIDWalletSDK.ZKPCredentialSchema.AttributeType.AttributeValueType : Swift.Hashable {}
+extension DIDWalletSDK.ZKPCredentialSchema.AttributeType.AttributeValueType : Swift.RawRepresentable {}
 extension DIDWalletSDK.PredicateType : Swift.Equatable {}
 extension DIDWalletSDK.PredicateType : Swift.Hashable {}
 extension DIDWalletSDK.PredicateType : Swift.RawRepresentable {}

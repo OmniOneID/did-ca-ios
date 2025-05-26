@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ class IssueVcProtocol : CommonProtocol {
     private func proposeIssueVc(vcPlanId: String, issuer: String, offerId: String? = nil) async throws -> _ProposeIssueVc? {
         
         let parameter = try ProposeIssueVc(id: SDKUtils.generateMessageID(), vcPlanId: vcPlanId, issuer: issuer, offerId: offerId).toJsonData()
-        if let responseData = try? await CommnunicationClient().doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-issue-vc")!, requestJsonData: parameter) {
+        if let responseData = try? await CommnunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-issue-vc")!, requestJsonData: parameter) {
             
             let decodedResponse = try _ProposeIssueVc.init(from: responseData)
 
@@ -45,11 +45,11 @@ class IssueVcProtocol : CommonProtocol {
         throw NSError(domain: "proposeIssueVc error", code: 1)
     }
     
-    @discardableResult
+    
     private func requestIssueProfile() async throws {
         
         let parameter = try RequestIssueProfile(id: SDKUtils.generateMessageID(), txId: txId, serverToken: hServerToken).toJsonData()
-        let responseData = try await CommnunicationClient().doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-issue-profile")!, requestJsonData: parameter)
+        let responseData = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-issue-profile")!, requestJsonData: parameter)
         
         self.issueProfile = try _RequestIssueProfile.init(from: responseData)
         print("issue profile: \(try issueProfile!.toJson())")
@@ -83,7 +83,7 @@ class IssueVcProtocol : CommonProtocol {
         
         let parameter = try ConfirmIssueVc(id: SDKUtils.generateMessageID(), txId: super.txId, serverToken: hServerToken, vcId: vcId).toJsonData()
                 
-        let responseData = try await CommnunicationClient().doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-issue-vc")!, requestJsonData: parameter)
+        let responseData = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-issue-vc")!, requestJsonData: parameter)
         
         let decodedResponse = try _ConfirmIssueVc.init(from: responseData)
             

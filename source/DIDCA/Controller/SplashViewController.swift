@@ -16,9 +16,6 @@
 
 import Foundation
 import UIKit
-
-
-
 import DIDWalletSDK
 
 

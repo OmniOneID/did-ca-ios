@@ -32,7 +32,6 @@
 		7CA982362C85CBEE00EDF367 /* SelectAuthViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA982042C85CBEE00EDF367 /* SelectAuthViewController.swift */; };
 		7CA982372C85CBEE00EDF367 /* SplashViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA982052C85CBEE00EDF367 /* SplashViewController.swift */; };
 		7CA982382C85CBEE00EDF367 /* StepViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA982062C85CBEE00EDF367 /* StepViewController.swift */; };
-		7CA982392C85CBEE00EDF367 /* SubmitViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA982072C85CBEE00EDF367 /* SubmitViewController.swift */; };
 		7CA9823A2C85CBEE00EDF367 /* UserRegWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA982082C85CBEE00EDF367 /* UserRegWebViewController.swift */; };
 		7CA9823B2C85CBEE00EDF367 /* VCDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA982092C85CBEE00EDF367 /* VCDetailViewController.swift */; };
 		7CA9823C2C85CBEE00EDF367 /* VerifyCompletedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA9820A2C85CBEE00EDF367 /* VerifyCompletedViewController.swift */; };
@@ -69,9 +68,20 @@
 		C91179372DD1BEE100F3B573 /* DIDWalletSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C91179342DD1B8B800F3B573 /* DIDWalletSDK.xcframework */; };
 		C91179382DD1BEE100F3B573 /* DIDWalletSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C91179342DD1B8B800F3B573 /* DIDWalletSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		C911793C2DD1C07400F3B573 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = C911793B2DD1C07400F3B573 /* OrderedCollections */; };
+		C911793E2DD1C89F00F3B573 /* ZKP.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C911793D2DD1C89F00F3B573 /* ZKP.storyboard */; };
+		C91179412DD1D64C00F3B573 /* AttrSelectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91179402DD1D64C00F3B573 /* AttrSelectionViewController.swift */; };
+		C91179442DD1D84100F3B573 /* AttrSelectionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91179432DD1D84100F3B573 /* AttrSelectionTableViewCell.swift */; };
 		C936B5742DCDDA3700ADA345 /* RoundedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */; };
 		C936B5782DCDDBA100ADA345 /* ColorAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C936B5772DCDDBA100ADA345 /* ColorAssets.xcassets */; };
 		C936B57A2DCDDDFB00ADA345 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = C936B5792DCDDDF600ADA345 /* ColorPalette.swift */; };
+		C945551E2DD5A90A000AA0D5 /* ZKPSubmissionTextTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C945551D2DD5A90A000AA0D5 /* ZKPSubmissionTextTableViewCell.swift */; };
+		C94555202DD5AA3B000AA0D5 /* UnderlinedTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = C945551F2DD5AA2D000AA0D5 /* UnderlinedTextField.swift */; };
+		C9579E572DDC47D20027ED3D /* InputPopUpViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9579E562DDC47D20027ED3D /* InputPopUpViewController.swift */; };
+		C9579E592DDC6A230027ED3D /* VerifyZKProofProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9579E582DDC6A170027ED3D /* VerifyZKProofProtocol.swift */; };
+		C96F389F2DD31F3600A198D5 /* ZKPSubmissionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F389E2DD31F3600A198D5 /* ZKPSubmissionViewController.swift */; };
+		C96F38A12DD31FA300A198D5 /* ZKPSubmissionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F38A02DD31FA300A198D5 /* ZKPSubmissionTableViewCell.swift */; };
+		C9878CF52DD4AA87002A192D /* VCDetailStringTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9878CF42DD4AA87002A192D /* VCDetailStringTableViewCell.swift */; };
+		C9878CF92DD4AAA9002A192D /* VCDetailImageTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9878CF82DD4AAA9002A192D /* VCDetailImageTableViewCell.swift */; };
 		C9C7C9DF2D2F93350023D8E5 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = C9C7C9DE2D2F93350023D8E5 /* FirebaseAnalytics */; };
 		C9C7C9E12D2F93350023D8E5 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = C9C7C9E02D2F93350023D8E5 /* FirebaseMessaging */; };
 /* End PBXBuildFile section */
@@ -134,7 +144,6 @@
 		7CA982042C85CBEE00EDF367 /* SelectAuthViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelectAuthViewController.swift; sourceTree = "<group>"; };
 		7CA982052C85CBEE00EDF367 /* SplashViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SplashViewController.swift; sourceTree = "<group>"; };
 		7CA982062C85CBEE00EDF367 /* StepViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StepViewController.swift; sourceTree = "<group>"; };
-		7CA982072C85CBEE00EDF367 /* SubmitViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SubmitViewController.swift; sourceTree = "<group>"; };
 		7CA982082C85CBEE00EDF367 /* UserRegWebViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserRegWebViewController.swift; sourceTree = "<group>"; };
 		7CA982092C85CBEE00EDF367 /* VCDetailViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VCDetailViewController.swift; sourceTree = "<group>"; };
 		7CA9820A2C85CBEE00EDF367 /* VerifyCompletedViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VerifyCompletedViewController.swift; sourceTree = "<group>"; };
@@ -172,9 +181,20 @@
 		7CFA77EF2CBE06DB00893B70 /* UpdateUserProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateUserProtocol.swift; sourceTree = "<group>"; };
 		C91179322DD1B6EC00F3B573 /* RoundedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedView.swift; sourceTree = "<group>"; };
 		C91179342DD1B8B800F3B573 /* DIDWalletSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDWalletSDK.xcframework; path = "Framework/did-wallet-sdk-ios-2.0.0/DIDWalletSDK.xcframework"; sourceTree = "<group>"; };
+		C911793D2DD1C89F00F3B573 /* ZKP.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = ZKP.storyboard; sourceTree = "<group>"; };
+		C91179402DD1D64C00F3B573 /* AttrSelectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttrSelectionViewController.swift; sourceTree = "<group>"; };
+		C91179432DD1D84100F3B573 /* AttrSelectionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttrSelectionTableViewCell.swift; sourceTree = "<group>"; };
 		C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedButton.swift; sourceTree = "<group>"; };
 		C936B5772DCDDBA100ADA345 /* ColorAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ColorAssets.xcassets; sourceTree = "<group>"; };
 		C936B5792DCDDDF600ADA345 /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
+		C945551D2DD5A90A000AA0D5 /* ZKPSubmissionTextTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZKPSubmissionTextTableViewCell.swift; sourceTree = "<group>"; };
+		C945551F2DD5AA2D000AA0D5 /* UnderlinedTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnderlinedTextField.swift; sourceTree = "<group>"; };
+		C9579E562DDC47D20027ED3D /* InputPopUpViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputPopUpViewController.swift; sourceTree = "<group>"; };
+		C9579E582DDC6A170027ED3D /* VerifyZKProofProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerifyZKProofProtocol.swift; sourceTree = "<group>"; };
+		C96F389E2DD31F3600A198D5 /* ZKPSubmissionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZKPSubmissionViewController.swift; sourceTree = "<group>"; };
+		C96F38A02DD31FA300A198D5 /* ZKPSubmissionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZKPSubmissionTableViewCell.swift; sourceTree = "<group>"; };
+		C9878CF42DD4AA87002A192D /* VCDetailStringTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VCDetailStringTableViewCell.swift; sourceTree = "<group>"; };
+		C9878CF82DD4AAA9002A192D /* VCDetailImageTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VCDetailImageTableViewCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -269,6 +289,8 @@
 				7CA981FA2C85CBEE00EDF367 /* AddVCCell.swift */,
 				7CA981FB2C85CBEE00EDF367 /* VCCell.swift */,
 				7C5835DB2C87EE7700365849 /* SettingCell.swift */,
+				C9878CF82DD4AAA9002A192D /* VCDetailImageTableViewCell.swift */,
+				C9878CF42DD4AA87002A192D /* VCDetailStringTableViewCell.swift */,
 			);
 			path = Cell;
 			sourceTree = "<group>";
@@ -276,6 +298,7 @@
 		7CA9820C2C85CBEE00EDF367 /* Controller */ = {
 			isa = PBXGroup;
 			children = (
+				C911793F2DD1D62000F3B573 /* ZKP */,
 				7CA981FD2C85CBEE00EDF367 /* AddVcViewController.swift */,
 				7CA981FE2C85CBEE00EDF367 /* IssueCompletedViewController.swift */,
 				7CA981FF2C85CBEE00EDF367 /* IssueProfileViewController.swift */,
@@ -285,7 +308,6 @@
 				7CA982042C85CBEE00EDF367 /* SelectAuthViewController.swift */,
 				7CA982052C85CBEE00EDF367 /* SplashViewController.swift */,
 				7CA982062C85CBEE00EDF367 /* StepViewController.swift */,
-				7CA982072C85CBEE00EDF367 /* SubmitViewController.swift */,
 				7CA982082C85CBEE00EDF367 /* UserRegWebViewController.swift */,
 				7CA982092C85CBEE00EDF367 /* VCDetailViewController.swift */,
 				7CA9820A2C85CBEE00EDF367 /* VerifyCompletedViewController.swift */,
@@ -310,6 +332,7 @@
 				7C5835DD2C87F5EE00365849 /* ErrorDialogViewController.swift */,
 				7CA982102C85CBEE00EDF367 /* OneButtonDialogViewController.swift */,
 				7CA982122C85CBEE00EDF367 /* TwoButtonDialogViewController.swift */,
+				C9579E562DDC47D20027ED3D /* InputPopUpViewController.swift */,
 			);
 			path = Popup;
 			sourceTree = "<group>";
@@ -323,6 +346,7 @@
 				7CA982172C85CBEE00EDF367 /* RestoreUserProtocol.swift */,
 				7CA982182C85CBEE00EDF367 /* RevokeVcProtocol.swift */,
 				7CA982192C85CBEE00EDF367 /* VerifyVcProtocol.swift */,
+				C9579E582DDC6A170027ED3D /* VerifyZKProofProtocol.swift */,
 				7CFA77EF2CBE06DB00893B70 /* UpdateUserProtocol.swift */,
 			);
 			path = Protocol;
@@ -389,12 +413,34 @@
 			path = VO;
 			sourceTree = "<group>";
 		};
+		C911793F2DD1D62000F3B573 /* ZKP */ = {
+			isa = PBXGroup;
+			children = (
+				C911793D2DD1C89F00F3B573 /* ZKP.storyboard */,
+				C91179422DD1D82200F3B573 /* Cell */,
+				C91179402DD1D64C00F3B573 /* AttrSelectionViewController.swift */,
+				C96F389E2DD31F3600A198D5 /* ZKPSubmissionViewController.swift */,
+			);
+			path = ZKP;
+			sourceTree = "<group>";
+		};
+		C91179422DD1D82200F3B573 /* Cell */ = {
+			isa = PBXGroup;
+			children = (
+				C91179432DD1D84100F3B573 /* AttrSelectionTableViewCell.swift */,
+				C96F38A02DD31FA300A198D5 /* ZKPSubmissionTableViewCell.swift */,
+				C945551D2DD5A90A000AA0D5 /* ZKPSubmissionTextTableViewCell.swift */,
+			);
+			path = Cell;
+			sourceTree = "<group>";
+		};
 		C936B5722DCDD9FB00ADA345 /* Custom */ = {
 			isa = PBXGroup;
 			children = (
 				C936B5792DCDDDF600ADA345 /* ColorPalette.swift */,
 				C91179322DD1B6EC00F3B573 /* RoundedView.swift */,
 				C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */,
+				C945551F2DD5AA2D000AA0D5 /* UnderlinedTextField.swift */,
 			);
 			path = Custom;
 			sourceTree = "<group>";
@@ -517,6 +563,7 @@
 				7C285E542C53393400136B91 /* SUIT-ExtraBold.otf in Resources */,
 				7C285E552C53393400136B91 /* SUIT-ExtraLight.otf in Resources */,
 				7C285E562C53393400136B91 /* SUIT-Thin.otf in Resources */,
+				C911793E2DD1C89F00F3B573 /* ZKP.storyboard in Resources */,
 				7C285E592C53393400136B91 /* SUIT-Bold.otf in Resources */,
 				7CA9823E2C85CBEE00EDF367 /* PIN.storyboard in Resources */,
 				7CA982412C85CBEE00EDF367 /* Popup.storyboard in Resources */,
@@ -551,12 +598,13 @@
 			files = (
 				7CA982492C85CBEE00EDF367 /* SettingViewController.swift in Sources */,
 				7CA982482C85CBEE00EDF367 /* VerifyVcProtocol.swift in Sources */,
-				7CA982392C85CBEE00EDF367 /* SubmitViewController.swift in Sources */,
 				7CA982322C85CBEE00EDF367 /* IssueVCWebViewController.swift in Sources */,
+				C94555202DD5AA3B000AA0D5 /* UnderlinedTextField.swift in Sources */,
 				7CA982422C85CBEE00EDF367 /* TwoButtonDialogViewController.swift in Sources */,
 				7CA9823F2C85CBEE00EDF367 /* PincodeViewController.swift in Sources */,
 				7CFA77EC2CBDFDCB00893B70 /* UpdatePushTokenVO.swift in Sources */,
 				7CFA77F02CBE06DB00893B70 /* UpdateUserProtocol.swift in Sources */,
+				C96F389F2DD31F3600A198D5 /* ZKPSubmissionViewController.swift in Sources */,
 				7CB772C22C871FA200E05B5D /* UserVO.swift in Sources */,
 				7C5835DC2C87EE7700365849 /* SettingCell.swift in Sources */,
 				7CA982462C85CBEE00EDF367 /* RestoreUserProtocol.swift in Sources */,
@@ -564,12 +612,14 @@
 				7CA9822F2C85CBEE00EDF367 /* AddVcViewController.swift in Sources */,
 				7CA982352C85CBEE00EDF367 /* QRScanViewController.swift in Sources */,
 				7CA982452C85CBEE00EDF367 /* RegUserProtocol.swift in Sources */,
+				C91179442DD1D84100F3B573 /* AttrSelectionTableViewCell.swift in Sources */,
 				7CA982312C85CBEE00EDF367 /* IssueProfileViewController.swift in Sources */,
 				7CB772972C86D1B600E05B5D /* PopupUtils.swift in Sources */,
 				7CA9823C2C85CBEE00EDF367 /* VerifyCompletedViewController.swift in Sources */,
 				7CA9823D2C85CBEE00EDF367 /* VerifyProfileViewController.swift in Sources */,
 				7CA9823B2C85CBEE00EDF367 /* VCDetailViewController.swift in Sources */,
 				7CA982562C85CC1700EDF367 /* DIDCA.xcdatamodeld in Sources */,
+				C9878CF92DD4AAA9002A192D /* VCDetailImageTableViewCell.swift in Sources */,
 				7CA982512C85CBEE00EDF367 /* URLs.swift in Sources */,
 				7C5835DE2C87F5EE00365849 /* ErrorDialogViewController.swift in Sources */,
 				C936B57A2DCDDDFB00ADA345 /* ColorPalette.swift in Sources */,
@@ -578,6 +628,7 @@
 				C936B5742DCDDA3700ADA345 /* RoundedButton.swift in Sources */,
 				7CA9824A2C85CBEE00EDF367 /* AppDelegate.swift in Sources */,
 				7CA982402C85CBEE00EDF367 /* OneButtonDialogViewController.swift in Sources */,
+				C945551E2DD5A90A000AA0D5 /* ZKPSubmissionTextTableViewCell.swift in Sources */,
 				7CA982372C85CBEE00EDF367 /* SplashViewController.swift in Sources */,
 				7CA9822D2C85CBEE00EDF367 /* AddVCCell.swift in Sources */,
 				7CA9822B2C85CBEE00EDF367 /* SDKUtils.swift in Sources */,
@@ -585,9 +636,14 @@
 				7CA982302C85CBEE00EDF367 /* IssueCompletedViewController.swift in Sources */,
 				7CA982382C85CBEE00EDF367 /* StepViewController.swift in Sources */,
 				7CA982432C85CBEE00EDF367 /* CommonProtocol.swift in Sources */,
+				C9878CF52DD4AA87002A192D /* VCDetailStringTableViewCell.swift in Sources */,
+				C9579E572DDC47D20027ED3D /* InputPopUpViewController.swift in Sources */,
+				C91179412DD1D64C00F3B573 /* AttrSelectionViewController.swift in Sources */,
 				7C537DA82CE31D7100C7E2F3 /* AuthSettingViewController.swift in Sources */,
+				C96F38A12DD31FA300A198D5 /* ZKPSubmissionTableViewCell.swift in Sources */,
 				7CB772892C86ABBC00E05B5D /* Properties.swift in Sources */,
 				7CA9822C2C85CBEE00EDF367 /* UIImage.swift in Sources */,
+				C9579E592DDC6A230027ED3D /* VerifyZKProofProtocol.swift in Sources */,
 				7CA982522C85CBEE00EDF367 /* SceneDelegate.swift in Sources */,
 				7CA982472C85CBEE00EDF367 /* RevokeVcProtocol.swift in Sources */,
 				7CA982362C85CBEE00EDF367 /* SelectAuthViewController.swift in Sources */,

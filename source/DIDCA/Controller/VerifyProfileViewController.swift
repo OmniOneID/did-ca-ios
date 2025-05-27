@@ -281,6 +281,7 @@ extension VerifyProfileViewController
                 
                 let defs = extractDefsBy(proofRequest: proofRequest!)
                 try await retrieveDefsAndSchema(credDefIds: defs)
+                makeReferentNameMap()
                 
                 let attributeNames = proofRequest?.requestedAttributes.map { $0.values.map { $0.name } } ?? []
                 let predicatesNames = proofRequest?.requestedPredicates.map { $0.values.map { $0.name } } ?? []

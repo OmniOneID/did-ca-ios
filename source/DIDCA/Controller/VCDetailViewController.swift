@@ -51,7 +51,8 @@ class VCDetailViewController: UIViewController {
     {
         didSet
         {
-            zkpCaptionDict = zkpSchema!.attrTypes
+            guard let zkpSchema = zkpSchema else { return }
+            zkpCaptionDict = zkpSchema.attrTypes
                 .flatMap { attr in
                     attr.items.map { item in
                         (attr.namespace.id + "." + item.label, item.caption)

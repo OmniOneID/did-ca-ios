@@ -17,10 +17,6 @@
 import Foundation
 import UIKit
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
-import DIDCoreSDK
-import DIDUtilitySDK
 
 protocol DismissDelegate: AnyObject {
     func didDidmissWithData()
@@ -48,6 +44,8 @@ class IssueProfileViewController: UIViewController, DismissDelegate {
     
     private var vcOfferPayload: IssueOfferPayload? = nil
     
+    public var vcSchemaId : String!
+    
     @IBAction func cancelBtnAction(_ sender: Any) {
         DispatchQueue.main.async {
             self.dismiss(animated: false, completion: nil)
@@ -73,6 +71,7 @@ class IssueProfileViewController: UIViewController, DismissDelegate {
         if self.isWebView == true {
             let issueVcWeb = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "IssueVCWebViewController") as! IssueVCWebViewController
             issueVcWeb.delegate = self
+            issueVcWeb.vcSchemaId = self.vcSchemaId
             issueVcWeb.modalPresentationStyle = .fullScreen
             DispatchQueue.main.async {
                 self.present(issueVcWeb, animated: false, completion: nil)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,7 @@
  */
 
 import Foundation
-import DIDUtilitySDK
-import DIDDataModelSDK
-import DIDCoreSDK
 import DIDWalletSDK
-import DIDCommunicationSDK
 
 class VerifyVcProtocol: CommonProtocol {
     
@@ -29,24 +25,11 @@ class VerifyVcProtocol: CommonProtocol {
         return instance
     }()
     
-    @discardableResult
-    private func requestOffer() async throws -> VpOfferWrapper {
-        
-        let parameter = try RequestOfferPayload(mode: "Direct", device: "pc", service: "coupang", validSeconds: 1).toJsonData()
-        let responseData = try await CommnunicationClient().doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-offer-qr")!, requestJsonData: parameter)
-            
-        let decodedResponse = try VpOfferWrapper.init(from: responseData)
-        print("\(decodedResponse)")
-        super.txId = decodedResponse.txId!
-        
-        return decodedResponse
-    }
-    
     private func requestProfile(txId: String? = nil, offerId: String) async throws {
         
         let parameter = try RequestProfile(id: SDKUtils.generateMessageID(), offerId: offerId).toJsonData()
         
-        let data = try await CommnunicationClient().doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-profile")!, requestJsonData: parameter)
+        let data = try await CommnunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-profile")!, requestJsonData: parameter)
             
         self.verifyProfile = try _RequestProfile.init(from: data)
         
@@ -55,6 +38,7 @@ class VerifyVcProtocol: CommonProtocol {
         super.txId = verifyProfile!.txId
     }
     
+    @discardableResult
     private func requestVerify(claimInfos: [ClaimInfo]? = nil, verifierProfile: _RequestProfile, passcode: String? = nil) async throws -> _RequestVerify {
         
         let (accE2e, encVp) = try await WalletAPI.shared.createEncVp(hWalletToken: hWalletToken, claimInfos: claimInfos, verifierProfile: verifierProfile, APIGatewayURL: URLs.API_URL, passcode: passcode)
@@ -64,7 +48,7 @@ class VerifyVcProtocol: CommonProtocol {
                                                accE2e: accE2e,
                                                encVp: MultibaseUtils.encode(type: MultibaseType.base58BTC, data: encVp)).toJsonData()
         
-        let data = try await CommnunicationClient().doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-verify")!, requestJsonData: parameter)
+        let data = try await CommnunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-verify")!, requestJsonData: parameter)
         
         let decodedResponse = try _RequestVerify.init(from: data)
         
@@ -78,7 +62,7 @@ class VerifyVcProtocol: CommonProtocol {
         
         super.hWalletToken = hWalletToken
         super.txId = txId
-        let _ = try await requestVerify(claimInfos: claimInfos, verifierProfile: verifierProfile, passcode:passcode)
+        try await requestVerify(claimInfos: claimInfos, verifierProfile: verifierProfile, passcode:passcode)
     }
     
     public func preProcess(id: String? = nil, txId: String? = nil, offerId: String? = nil) async throws {

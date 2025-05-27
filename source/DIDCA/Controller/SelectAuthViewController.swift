@@ -16,10 +16,10 @@
 
 import Foundation
 import UIKit
-import DIDCoreSDK
+
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
+
+
 
 class SelectAuthViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     

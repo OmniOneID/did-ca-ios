@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 import Foundation
 import UIKit
-import DIDUtilitySDK
-import DIDCoreSDK
+
+
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
+
+
 
 public enum StepTypeEnum: String {
     case STEP_TYPE_1 = "Step1"
@@ -156,7 +156,7 @@ class StepViewController: UIViewController {
                     
                     // out of scope
                     let requestJsonData = try UpdatePushToken(id: SDKUtils.generateMessageID(), did: didDoc.id, appId: Properties.getCaAppId()!, pushToken: Properties.getPushToken() ?? "").toJsonData()
-                    _ = try await CommnunicationClient().doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/update-push-token")!, requestJsonData: requestJsonData)
+                    _ = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/update-push-token")!, requestJsonData: requestJsonData)
                     
                     
                     Properties.setRegDidDocCompleted(status: true)

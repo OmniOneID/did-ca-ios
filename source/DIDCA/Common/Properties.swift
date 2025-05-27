@@ -63,75 +63,62 @@ public class Properties {
     }
     
     
-    /// <#Description#>
-    /// - Returns: didDoc
+
     public static func getRegDidDocCompleted() -> Bool? {
         let result: Bool? = UserDefaults.standard.bool(forKey: "reg_diddoc_completed")
         return result
     }
     
-    /// <#Description#>
-    /// - Parameter status: status
+
     public static func setRegDidDocCompleted(status: Bool?) {
         UserDefaults.standard.setValue(status, forKey: "reg_diddoc_completed")
         UserDefaults.standard.synchronize()
     }
     
-    /// <#Description#>
-    /// - Returns: <#description#>
+
     public static func getSubmitCompleted() -> Bool? {
         let result: Bool? = UserDefaults.standard.bool(forKey: "submit_completed")
         return result
     }
     
-    /// <#Description#>
-    /// - Parameter status: <#status description#>
-    /// - Returns: <#description#>
+
     public static func setSubmitCompleted(status: Bool?) -> Void {
         UserDefaults.standard.setValue(status, forKey: "submit_completed")
         UserDefaults.standard.synchronize()
     }
     
-    /// <#Description#>
-    /// - Returns: <#description#>
+
     public static func getTasUrl() -> String? {
         let result: String? = UserDefaults.standard.string(forKey: "tas_url")
         return result
     }
     
-    /// <#Description#>
-    /// - Parameter status: <#status description#>
-    /// - Returns: <#description#>
+
     public static func setTasUrl(status: String?) -> Void {
         UserDefaults.standard.setValue(status, forKey: "tas_url")
         UserDefaults.standard.synchronize()
     }
     
-    /// <#Description#>
-    /// - Returns: <#description#>
+
     public static func getVerifierUrl() -> String? {
         let result: String? = UserDefaults.standard.string(forKey: "verifier_url")
         return result
     }
     
-    /// <#Description#>
-    /// - Parameter status: <#status description#>
-    /// - Returns: <#description#>
+
     public static func setVerifierUrl(status: String?) -> Void {
         UserDefaults.standard.setValue(status, forKey: "verifier_url")
         UserDefaults.standard.synchronize()
     }
     
-    /// <#Description#>
-    /// - Returns: <#description#>
+
     public static func getCaAppId() -> String? {
         
         let result: String? = UserDefaults.standard.string(forKey: "caAppId")
         return result
     }
     
-    /// <#Description#>
-    /// - Returns: <#description#>
+
     public static func generateCaAppId() -> Void {
         
         if getCaAppId() != nil { return }

@@ -16,9 +16,9 @@
 
 import UIKit
 import DIDWalletSDK
-import DIDCoreSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
+
+
+
 
 class AuthSettingViewController: UITableViewController {
     

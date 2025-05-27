@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 import Foundation
 import UIKit
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
 
 class VCCell: UICollectionViewCell {
     
@@ -26,6 +24,7 @@ class VCCell: UICollectionViewCell {
     @IBOutlet weak var content1: UILabel!
     @IBOutlet weak var content2: UILabel!
     @IBOutlet weak var content3: UILabel!
+    @IBOutlet weak var zkpStateLabel: UILabel!
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -33,11 +32,11 @@ class VCCell: UICollectionViewCell {
     
     /// Draw a list of saved vc
     /// - Parameter data: data
-    public func drowVcInfo(data: Data, type: Int) async throws {
+    public func drowVcInfo(data: Data, type: Int, isZkpIncluded : Bool) async throws {
         let vc = try! VerifiableCredential.init(from: data)
 //        print("vc.credentialSchema.id: \(vc.credentialSchema.id)")
         
-        let schemaData = try await CommnunicationClient().doGet(url: URL(string: vc.credentialSchema.id)!)
+        let schemaData = try await CommnunicationClient.doGet(url: URL(string: vc.credentialSchema.id)!)
         let schema = try VCSchema.init(from: schemaData)
         
 //        print("title: \(schema.title)")
@@ -56,6 +55,7 @@ class VCCell: UICollectionViewCell {
         self.content1.text = schema.title
         self.content2.text = "ValidUntil: "+SDKUtils.convertDateFormat(dateString: vc.validUntil)!
         self.content3.text = "IssuanceDate: "+SDKUtils.convertDateFormat(dateString: vc.issuanceDate)!
+        self.zkpStateLabel.isHidden = !isZkpIncluded
     }
     
     /// Remove prefix from base64 string

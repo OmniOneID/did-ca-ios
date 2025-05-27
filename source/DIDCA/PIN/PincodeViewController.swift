@@ -16,10 +16,10 @@
 
 import Foundation
 import UIKit
-import DIDCoreSDK
+
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
+
+
 
 public enum PinCodeTypeEnum: Int {
     case PIN_CODE_UNKNOWN = -1

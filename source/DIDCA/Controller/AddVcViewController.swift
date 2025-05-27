@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,7 @@
 
 import Foundation
 import UIKit
-import DIDUtilitySDK
-import DIDDataModelSDK
-import DIDCoreSDK
 import DIDWalletSDK
-import DIDCommunicationSDK
 
 class AddVcViewController: UIViewController {
     
@@ -41,7 +37,7 @@ class AddVcViewController: UIViewController {
         
         Task { @MainActor in
             do {
-                let responseData = try await CommnunicationClient().doGet(url: URL(string: URLs.TAS_URL + "/list/api/v1/vcplan/list")!)
+                let responseData = try await CommnunicationClient.doGet(url: URL(string: URLs.TAS_URL + "/list/api/v1/vcplan/list")!)
                 let decodedResponse = try VCPlanList.init(from: responseData)
                 vcPlans = decodedResponse.items
                 setUpCollectionView()
@@ -131,11 +127,14 @@ extension AddVcViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let vcPlan = vcPlans[indexPath.row]
-        print("vcPlan: \(try! vcPlan.toJson(isPretty: true))")        
+        let vcSchemaId = vcPlan.credentialSchema.id.components(separatedBy: "=").last!
+         
+        print("vcPlan: \(try! vcPlan.toJson(isPretty: true))")
         let vcOffer = IssueOfferPayload(type: OfferTypeEnum.IssueOffer, vcPlanId: vcPlan.vcPlanId, issuer: vcPlan.allowedIssuers![0])
         print("vcOffer JSON: \(try! vcOffer.toJson())")
         
         let issueProfileVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "IssueProfileViewController") as! IssueProfileViewController
+        issueProfileVC.vcSchemaId = vcSchemaId
         issueProfileVC.setVcOffer(vcOfferPayload: vcOffer, isWebView: true)
         issueProfileVC.modalPresentationStyle = .fullScreen
         DispatchQueue.main.async {

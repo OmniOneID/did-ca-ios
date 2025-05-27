@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,7 @@
  */
 
 import Foundation
-import DIDUtilitySDK
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
 
 class UpdateUserProtocol: CommonProtocol {
     public static let shared: UpdateUserProtocol = {
@@ -31,7 +28,7 @@ class UpdateUserProtocol: CommonProtocol {
     private func proposeUpdateUser(did: String) async throws -> _ProposeUpdateDidDoc {
         
         let parameter = try ProposeUpdateDidDoc(id: SDKUtils.generateMessageID(), did: did).toJsonData()
-        if let data = try? await CommnunicationClient().doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-update-diddoc")!, requestJsonData: parameter) {
+        if let data = try? await CommnunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-update-diddoc")!, requestJsonData: parameter) {
             let proposeUpdateDidDoc = try _ProposeUpdateDidDoc.init(from: data)
             super.txId = proposeUpdateDidDoc.txId
             super.authNonce = proposeUpdateDidDoc.authNonce
@@ -55,7 +52,7 @@ class UpdateUserProtocol: CommonProtocol {
     private func confirmUpdateUser(responseData: _RequestUpdateDidDoc) async throws -> _ConfirmUpdateDidDoc {
         
         let parameter = try ConfirmUpdateDidDoc(id: SDKUtils.generateMessageID(), txId: responseData.txId, serverToken: super.hServerToken).toJsonData()
-        let data = try await CommnunicationClient().doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-update-diddoc")!, requestJsonData: parameter)
+        let data = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-update-diddoc")!, requestJsonData: parameter)
         let confirmUpdateUser = try _ConfirmUpdateDidDoc(from: data)
         return confirmUpdateUser
     }

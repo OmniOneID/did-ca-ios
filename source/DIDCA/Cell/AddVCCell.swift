@@ -17,8 +17,8 @@
 import Foundation
 import UIKit
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
+
+
 
 class AddVCCell: UICollectionViewCell {
     

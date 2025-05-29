@@ -242,34 +242,49 @@ extension MainViewController: UICollectionViewDataSource {
         detialVC.modalPresentationStyle = .fullScreen
         
         Task { @MainActor in
-            let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.DETAIL_VC, userId: Properties.getUserId()!)
-            let vcId = vcs[indexPath.row].id
-            let vc = try WalletAPI.shared.getCredentials(hWalletToken: hWalletToken, ids: [vcId])
             
-            var zkpVC: ZKPCredential?
-            var zkpSchema : ZKPCredentialSchema?
-            if WalletAPI.shared.isZKPCredentialSaved(id : vcId)
-            {
-                zkpVC = try WalletAPI.shared.getZKPCredentials(hWalletToken: hWalletToken, ids: [vcId]).first!
-                if let schema = zkpSchemas[zkpVC!.schemaId]
+            do {
+                let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.DETAIL_VC, userId: Properties.getUserId()!)
+                let vcId = vcs[indexPath.row].id
+                let vc = try WalletAPI.shared.getCredentials(hWalletToken: hWalletToken, ids: [vcId])
+                
+                var zkpVC: ZKPCredential?
+                var zkpSchema : ZKPCredentialSchema?
+                if WalletAPI.shared.isZKPCredentialSaved(id : vcId)
                 {
-                    zkpSchema = schema
-                }
-                else
-                {
-                    zkpSchema = try await CommnunicationClient.getZKPCredentialSchama(hostUrlString: URLs.API_URL,
-                                                                                      id: zkpVC!.schemaId)
-                    zkpSchemas[zkpVC!.schemaId] = zkpSchema!
+                    zkpVC = try WalletAPI.shared.getZKPCredentials(hWalletToken: hWalletToken, ids: [vcId]).first!
+                    if let schema = zkpSchemas[zkpVC!.schemaId]
+                    {
+                        zkpSchema = schema
+                    }
+                    else
+                    {
+                        zkpSchema = try await CommnunicationClient.getZKPCredentialSchama(hostUrlString: URLs.API_URL,
+                                                                                          id: zkpVC!.schemaId)
+                        zkpSchemas[zkpVC!.schemaId] = zkpSchema!
+                    }
+                    
                 }
                 
-            }
-            
-            detialVC.setVcInfo(vc: vc.first!,
-                               zkpVC: zkpVC,
-                               zkpSchema: zkpSchema)
-            
-            DispatchQueue.main.async {
-                self.present(detialVC, animated: false, completion: nil)
+                detialVC.setVcInfo(vc: vc.first!,
+                                   zkpVC: zkpVC,
+                                   zkpSchema: zkpSchema)
+                
+                DispatchQueue.main.async {
+                    self.present(detialVC, animated: false, completion: nil)
+                }
+            } catch let error as WalletSDKError {
+                print("error code: \(error.code), message: \(error.message)")
+                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
+            } catch let error as WalletCoreError {
+                print("error code: \(error.code), message: \(error.message)")
+                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
+            } catch let error as CommunicationSDKError {
+                print("error code: \(error.code), message: \(error.message)")
+                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
+            } catch {
+                print("error :\(error)")
+                PopupUtils.showAlertPopup(title: "error", content: "error :\(error)", VC: self)
             }
         }
     }

@@ -8,13 +8,15 @@
 
 
 ## S/W 사양
-| 구분           | 내용                         |
-|---------------|----------------------------|
-| OS            | iOS 15.6+                  |
-| Language      | swift 5.0+                 |
-| IDE           | Xcode 14.x                 |
-| Build System  | Xcode 기본 빌드 시스템         |
-| Compatibility | iOS 15.6 or higher         |
+| 구분              | 내용                            |
+|-------------------|-------------------------------|
+| OS                | iOS 15                        |
+| Language          | Swift 5.8                     |
+| IDE               | Xcode 16.2                    |
+| Build System      | Xcode 기본 빌드 시스템            |
+| Compatibility     | iOS 15 or higher              |
+| Test Environment  | iPhone 15 (17.5) 시뮬레이터      |
+
 
 ## DIDCA 프로젝트 클론 및 체크아웃
 ```git
@@ -38,44 +40,42 @@ Xcode의 기본 빌드 시스템을 사용하여 앱을 컴파일하고 테스�
 
 
 ## SDK 적용 방법
-아래 `iOS frameworks를 DIDClientSDK`로 지칭합니다.
-DIDClientSDK 프로젝트 클론 및 체크아웃 후 release 폴더에 최신버전을 다운받아 사용하길 권장합니다.
+아래 `iOS framework를 DIDWalletSDK`로 지칭합니다.
+DIDWalletSDK 프로젝트 클론 및 체크아웃 후 release 폴더에 최신버전을 다운받아 사용하길 권장합니다.
 ```
 git https://https://github.com/OmniOneID/did-client-sdk-ios
 ```
 - `DIDWalletSDK.framework`
-- `DIDDataModelSDK.framework`
-- `DIDUtilitySDK.framework`
-- `DIDCommunicationSDK.framework`
-- `DIDCoreSDK.framework`
 
-각 SDK가 사용하는 타사 라이브러리에 대한 자체 라이선스는 해당 링크를 참고해주세요. <br>
+<br>
+
+SDK가 사용하는 타사 라이브러리에 대한 자체 라이선스는 해당 링크를 참고해주세요. <br>
 [Client SDK License-dependencies](https://github.com/OmniOneID/did-client-sdk-ios/blob/main/dependencies-license.md))
 
 <br>
 
-Xcode에서 DIDClientSDK frameworks를 DIDCA 프로젝트에 적용하는 방법
-1. DIDClientSDK frameworks 파일 준비
+Xcode에서 DIDWalletSDK framework를 DIDCA 프로젝트에 적용하는 방법
+1. DIDWalletSDK framework 파일 준비
 
-    - 만약 DIDClientSDK frameworks가 없는 경우, 각 framework 레포지토리에서 빌드하여 .framework 파일들을 생성해야 합니다. simulator, device 각각 빌드하여 각 레포지토리 별 build_xcframework 스크립트를 활용하여 xcframework를 사용 할 수 있습니다.
+    - 만약 DIDWalletSDK framework가 없는 경우, framework 레포지토리에서 빌드하여 .framework 파일을 생성해야 합니다. simulator, device 각각 빌드하여 각 레포지토리 별 build_xcframework 스크립트를 활용하여 xcframework를 사용 할 수 있습니다.
     - xcframework는 simulator와 device 모두를 지원하는 framework입니다.
 
-2. DIDClientSDK frameworks 프로젝트에 추가
+2. DIDWalletSDK framework 프로젝트에 추가
 
     - Xcode에서 DIDCA 프로젝트를 엽니다.
     - 왼쪽 Project Navigator에서 DIDCA 프로젝트를 선택한 후, 상단의 Target을 선택합니다.
     - General 탭에서 아래로 스크롤하면 Frameworks, Libraries, and Embedded Content 섹션이 나옵니다.
     - 이 섹션 하단에 있는 + 버튼을 클릭합니다.
-    - 나타나는 팝업에서 **Add Other... > Add Files...** 를 선택하고, DIDClientSDK frameworks 파일들을 선택한 후, Add 버튼을 클릭합니다.
-    - DIDClientSDK frameworks가 추가되면, Embed & Sign 옵션을 활성화 해야 합니다.
-    - 만약 위의 라이브러리 파일이 없는 경우, 각 SDK의 레포지토리에서 빌드하여 framework 파일들을 생성해야 합니다.
+    - 나타나는 팝업에서 **Add Other... > Add Files...** 를 선택하고, DIDWalletSDK framework 파일을 선택한 후, Add 버튼을 클릭합니다.
+    - DIDWalletSDK frameworks가 추가되면, Embed & Sign 옵션을 활성화 해야 합니다.
+    - 만약 위의 라이브러리 파일이 없는 경우, 각 SDK의 레포지토리에서 빌드하여 framework 파일을 생성해야 합니다.
 [Move to Client SDK](https://github.com/OmniOneID/did-client-sdk-ios/tree/main)
 
 3. Build Settings 수정
 
     - Framework Search Path 설정
         - 프로젝트에서 Build Settings 탭을 클릭한 후, 검색 창에서 Framework Search Paths를 찾습니다.
-        - 만약 DIDClientSDK frameworks가 외부 디렉토리에 있을 경우, 해당 경로를 Framework Search Paths에 추가해줍니다. 예를 들어, $(PROJECT_DIR)/Frameworks와 같이 설정할 수 있습니다.
+        - 만약 DIDWalletSDK framework가 외부 디렉토리에 있을 경우, 해당 경로를 Framework Search Paths에 추가해줍니다. 예를 들어, $(PROJECT_DIR)/Frameworks와 같이 설정할 수 있습니다.
     - Runpath Search Paths 설정
         - 검색 창에서 Runpath Search Paths를 찾습니다. 만약 추가된 프레임워크가 정상적으로 실행되지 않는 경우, @executable_path/Frameworks 값을 추가합니다. 이는 앱 실행 시 프레임워크를 찾기 위한 경로를 설정하는 것입니다.
 
@@ -83,25 +83,22 @@ Xcode에서 DIDClientSDK frameworks를 DIDCA 프로젝트에 적용하는 방법
 
 먼저 URLs.swift 파일에서 각 사업자의 URL정보를 수정합니다.
 ```swift
-class URLs {
-    public static let TAS_URL: String = "http://192.168.3.130:8090"
-    public static let VERIFIER_URL: String = "http://192.168.3.130:8092"
-    public static let CAS_URL: String = "http://192.168.3.130:8094"
-    public static let WALLET_URL: String = "http://192.168.3.130:8095"
-    public static let API_URL: String = "http://192.168.3.130:8093"
-    public static let DEMO_URL: String = "http://192.168.3.130:8099"
+struct URLs
+{
+    public static let TAS_URL       : String = "http://192.168.3.130:18090"
+    public static let VERIFIER_URL  : String = "http://192.168.3.130:18092"
+    public static let CAS_URL       : String = "http://192.168.3.130:18094"
+    public static let WALLET_URL    : String = "http://192.168.3.130:18095"
+    public static let API_URL       : String = "http://192.168.3.130:18093"
+    public static let DEMO_URL      : String = "http://192.168.3.130:18099"
 }
 ```
 
-그리고 프로젝트의 소스 파일에서 DIDClientSDK의 모듈을 사용해야 합니다. 사용할 클래스나 메서드가 있는 소스 파일의 최상단에 다음과 같이 임포트합니다.
+그리고 프로젝트의 소스 파일에서 DIDWalletSDK의 모듈을 사용해야 합니다. 사용할 클래스나 메서드가 있는 소스 파일의 최상단에 다음과 같이 임포트합니다.
 ```swift
 import DIDWalletSDK
-import DIDDataModelSDK
-import DIDUtilitySDK
-import DIDCommunicationSDK
-import DIDCoreSDK
 ```
-이제 DIDClientSDK에서 제공하는 기능을 소스 코드에서 사용할 수 있습니다. 
+이제 DIDWalletSDK에서 제공하는 기능을 소스 코드에서 사용할 수 있습니다. 
 ```swift
 Task { @MainActor in
     do {
@@ -134,11 +131,11 @@ Task { @MainActor in
         - 빌드가 성공적으로 완료되면, 앱을 실행하여 framework의 기능이 제대로 동작하는지 확인합니다. Xcode의 디버거와 로그를 활용해 문제가 발생했는지 여부를 파악할 수 있습니다.
 
 6. 문제 해결
-    - 만약 DIDClientSDK frameworks가 제대로 로드되지 않거나 작동하지 않는 경우, 다음 사항들을 확인해보세요:
+    - 만약 DIDWalletSDK framework가 제대로 로드되지 않거나 작동하지 않는 경우, 다음 사항들을 확인해보세요:
 
         - Correct Search Paths: 프레임워크 경로가 정확하게 설정되었는지 확인합니다.
         - Signing & Capabilities: 코드 서명 및 인증서 설정이 올바르게 되어 있는지 확인합니다.
-        - Dependencies: DIDClientSDK frameworks가 추가적으로 의존하는 다른 라이브러리가 있는지 확인합니다.
+        - Dependencies: DIDWalletSDK framework가 추가적으로 의존하는 다른 라이브러리가 있는지 확인합니다.
 
 ## 수정내역
 

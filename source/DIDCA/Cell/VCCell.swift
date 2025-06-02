@@ -34,18 +34,10 @@ class VCCell: UICollectionViewCell {
     /// - Parameter data: data
     public func drowVcInfo(data: Data, type: Int, isZkpIncluded : Bool) async throws {
         let vc = try! VerifiableCredential.init(from: data)
-//        print("vc.credentialSchema.id: \(vc.credentialSchema.id)")
         
         let schemaData = try await CommnunicationClient.doGet(url: URL(string: vc.credentialSchema.id)!)
         let schema = try VCSchema.init(from: schemaData)
         
-//        print("title: \(schema.title)")
-//        print("schema: \(schema)")
-//        print("schema.id: \(schema.id)")
-//        print("vc.validUntil: \(vc.validUntil)")
-//        print("vc.issuanceDate: \(vc.issuanceDate)")
-                
-        // hard coding (Need to change later)
         if schema.title.contains("Driver") {
             self.img.image = UIImage(named: "mid-card")
         } else {
@@ -56,19 +48,5 @@ class VCCell: UICollectionViewCell {
         self.content2.text = "ValidUntil: "+SDKUtils.convertDateFormat(dateString: vc.validUntil)!
         self.content3.text = "IssuanceDate: "+SDKUtils.convertDateFormat(dateString: vc.issuanceDate)!
         self.zkpStateLabel.isHidden = !isZkpIncluded
-    }
-    
-    /// Remove prefix from base64 string
-    /// - Parameter base64String: base64String for img
-    /// - Returns: image
-    private func generateImg(base64String: String) throws -> UIImage {
-        let base64StringWithoutPrefix = base64String.replacingOccurrences(of: "data:image/png;base64,", with: "")
-        if let imageData = Data(base64Encoded: base64StringWithoutPrefix, options: .ignoreUnknownCharacters) {
-            // Convert the Data object to a UIImage object
-            if let image = UIImage(data: imageData) {
-                return image
-            }
-        }
-        throw NSError(domain: "generateImg error", code: 1)
     }
 }

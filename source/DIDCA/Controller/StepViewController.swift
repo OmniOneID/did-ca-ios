@@ -16,11 +16,7 @@
 
 import Foundation
 import UIKit
-
-
 import DIDWalletSDK
-
-
 
 public enum StepTypeEnum: String {
     case STEP_TYPE_1 = "Step1"
@@ -37,8 +33,6 @@ class StepViewController: UIViewController {
     @IBOutlet weak var step1Lbl: UILabel!
     @IBOutlet weak var step2Lbl: UILabel!
     @IBOutlet weak var step3Lbl: UILabel!
-    
-    @IBOutlet weak var indicator: UIActivityIndicatorView!
     
     @IBOutlet weak var lineImg1: UIButton!
     @IBOutlet weak var lineImg2: UIButton!
@@ -63,7 +57,7 @@ class StepViewController: UIViewController {
     
     private func showUI() {
         
-        self.stopLoading()
+//        self.stopLoading()
         
         let numOneTitle = "01"
         let numOneTitleAttributedString = NSMutableAttributedString(string: numOneTitle)
@@ -125,18 +119,23 @@ class StepViewController: UIViewController {
         }
     }
     
-    private func startLoading() {
-        self.indicator.isHidden = true
-        self.indicator.startAnimating()
-    }
-    private func stopLoading() {
-        self.indicator.isHidden = false
-        self.indicator.stopAnimating()
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         showUI()
+    }
+    
+    private func nextForStep2()
+    {
+        
+        ActivityUtil.show(vc: self){
+            try await RegUserProtocol.shared.preProcess()
+        } completeClosure: {
+            self.registerPin()
+        } failureCloseClosure: { title, message in
+            PopupUtils.showAlertPopup(title: title,
+                                      content: message,
+                                      VC: self)
+        }
     }
     
     private func nextForStep3() {
@@ -145,115 +144,66 @@ class StepViewController: UIViewController {
         pinVC.modalPresentationStyle = .fullScreen
         pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_AUTHENTICATION_SIGNATURE_TYPE)
         pinVC.confirmButtonCompleteClosure = { passcode in
-            Task {
-                do {
-                    let signedDIDDoc = try WalletAPI.shared.createSignedDIDDoc(passcode: passcode)
-                    // 사용자 등록 요청
-                    try await RegUserProtocol.shared.process(signedDidDoc: signedDIDDoc)
-                    
-                    let didDoc = try WalletAPI.shared.getDidDocument(type: DidDocumentType.HolderDidDocumnet)
-                    print("holderDidDoc : \(try didDoc.toJson(isPretty: true))")
-                    
-                    // out of scope
-                    let requestJsonData = try UpdatePushToken(id: SDKUtils.generateMessageID(), did: didDoc.id, appId: Properties.getCaAppId()!, pushToken: Properties.getPushToken() ?? "").toJsonData()
-                    _ = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/update-push-token")!, requestJsonData: requestJsonData)
-                    
-                    
-                    Properties.setRegDidDocCompleted(status: true)
-                    
-                    let submitVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "MainViewController") as! MainViewController
-                    submitVC.modalPresentationStyle = .fullScreen
-                    DispatchQueue.main.async {self.present(submitVC, animated: false, completion: nil)}
-                } catch let error as WalletSDKError {
-                    self.stopLoading()
-                    print("error code: \(error.code), message: \(error.message)")
-                    PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                } catch let error as WalletCoreError {
-                    self.stopLoading()
-                    print("error code: \(error.code), message: \(error.message)")
-                    PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                } catch let error as CommunicationSDKError {
-                    self.stopLoading()
-                    print("error code: \(error.code), message: \(error.message)")
-                    PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                } catch {
-                    self.stopLoading()
-                    print("error :\(error)")
-                }
+            
+            ActivityUtil.show(vc: self){
+                let signedDIDDoc = try WalletAPI.shared.createSignedDIDDoc(passcode: passcode)
+                // 사용자 등록 요청
+                try await RegUserProtocol.shared.process(signedDidDoc: signedDIDDoc)
+                
+                let didDoc = try WalletAPI.shared.getDidDocument(type: DidDocumentType.HolderDidDocumnet)
+                print("holderDidDoc : \(try didDoc.toJson(isPretty: true))")
+                
+                // out of scope
+                let requestJsonData = try UpdatePushToken(id: SDKUtils.generateMessageID(), did: didDoc.id, appId: Properties.getCaAppId()!, pushToken: Properties.getPushToken() ?? "").toJsonData()
+                _ = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/update-push-token")!, requestJsonData: requestJsonData)
+                
+                Properties.setRegDidDocCompleted(status: true)
+                
+            } completeClosure: {
+                self.goMainView()
+            } failureCloseClosure: { title, message in
+                PopupUtils.showAlertPopup(title: title,
+                                          content: message,
+                                          VC: self)
             }
         }
         pinVC.cancelButtonCompleteClosure = {
             PopupUtils.showAlertPopup(title: "Notification", content: "canceled by user", VC: self)
         }
         DispatchQueue.main.async {
-                self.present(pinVC, animated: false, completion: nil)
+            self.present(pinVC, animated: false, completion: nil)
         }
     }
     
-    private func nextForStep2() {
-        Task { @MainActor in
-//            self.activityIndicator.isHidden = false
-//            self.activityIndicator.startAnimating()
-
-            do {
-                try await RegUserProtocol.shared.preProcess()
-                
-                let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
-                pinVC.modalPresentationStyle = .fullScreen
-                pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_REGISTRATION_SIGNATURE_TYPE)
-                pinVC.confirmButtonCompleteClosure = { passcode in
-                    Task { @MainActor in
-                        do {
-                            self.startLoading()
-                            try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), keyId: "keyagree", algType: AlgorithmType.secp256r1)
-                            // register PIN
-                            try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), passcode: passcode, keyId: "pin", algType: AlgorithmType.secp256r1)
-                            self.stopLoading()
-                            self.doNext()
-                            
-                        } catch let error as WalletSDKError {
-                            print("error code: \(error.code), message: \(error.message)")
-                            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                        } catch let error as WalletCoreError {
-                            print("error code: \(error.code), message: \(error.message)")
-                            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                        } catch let error as CommunicationSDKError {
-                            print("error code: \(error.code), message: \(error.message)")
-                            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                        } catch {
-                            print("error :\(error)")
-                        }
-                    }
-                }
-                pinVC.cancelButtonCompleteClosure = {
-                    self.stopLoading()
-                    PopupUtils.showAlertPopup(title: "Notification", content: "canceled by user", VC: self)
-                }
-                DispatchQueue.main.async {
-                    self.stopLoading()
-                    self.present(pinVC, animated: false, completion: nil)
-                }
-
-//                self.activityIndicator.stopAnimating()
-
-            } catch let error as WalletSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as WalletCoreError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as CommunicationSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch {
-                print("error :\(error)")
+    func registerPin()
+    {
+        let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
+        pinVC.modalPresentationStyle = .fullScreen
+        pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_REGISTRATION_SIGNATURE_TYPE)
+        pinVC.confirmButtonCompleteClosure = { passcode in
+            
+            ActivityUtil.show(vc: self){
+                try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), keyId: "keyagree", algType: AlgorithmType.secp256r1)
+                // register PIN
+                try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), passcode: passcode, keyId: "pin", algType: AlgorithmType.secp256r1)
+            } completeClosure: {
+                self.doNext()
+            } failureCloseClosure: { title, message in
+                PopupUtils.showAlertPopup(title: title,
+                                          content: message,
+                                          VC: self)
             }
+        }
+        pinVC.cancelButtonCompleteClosure = {
+            PopupUtils.showAlertPopup(title: "Notification", content: "canceled by user", VC: self)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.present(pinVC, animated: false, completion: nil)
         }
     }
     
     @IBAction func nextBtnAction() {
         
-        self.startLoading()
         
         switch self.stepType {
         /**
@@ -261,12 +211,7 @@ class StepViewController: UIViewController {
             2. Set the wallet lock type
          */
         case .STEP_TYPE_1:
-            let stepVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "UserRegWebViewController") as! UserRegWebViewController
-            stepVC.modalPresentationStyle = .fullScreen
-            DispatchQueue.main.async {
-                self.stopLoading()
-                self.present(stepVC, animated: false, completion: nil)
-            }
+            showUserRegWebView()
             break
         /**
             1. Register a pin to create a signature key
@@ -287,50 +232,61 @@ class StepViewController: UIViewController {
         popupVC.modalPresentationStyle = .overCurrentContext
         popupVC.setContentsMessage(message: "Would you like to additionally register biometric authentication?")
         popupVC.confirmButtonCompleteClosure = { [self] in
-            do {
+            ActivityUtil.show(vc: self){
                 // register BIO
                 _ = try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), keyId: "bio", algType: AlgorithmType.secp256r1, promptMsg: "please touch your fingerprint")
                 try WalletAPI.shared.createHolderDIDDocument(hWalletToken: RegUserProtocol.shared.getWalletToken())
+            } completeClosure: {
                 self.presentSubmitViewController()
-                
-            } catch let error as WalletSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as WalletCoreError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as CommunicationSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch {
-                print("error :\(error)")
+            } failureCloseClosure: { title, message in
+                PopupUtils.showAlertPopup(title: title,
+                                          content: message,
+                                          VC: self)
             }
         }
         popupVC.cancelButtonCompleteClosure = { [self] in
-            do {
+            ActivityUtil.show(vc: self){
                 try WalletAPI.shared.createHolderDIDDocument(hWalletToken: RegUserProtocol.shared.getWalletToken())
+            } completeClosure: {
                 self.presentSubmitViewController()
-                
-            } catch let error as WalletSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as WalletCoreError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as CommunicationSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch {
-                print("error :\(error)")
-            }   
+            } failureCloseClosure: { title, message in
+                PopupUtils.showAlertPopup(title: title,
+                                          content: message,
+                                          VC: self)
+            }
+            
         }
         DispatchQueue.main.async {
-            self.stopLoading()
+//            self.stopLoading()
             self.present(popupVC, animated: false, completion: nil) }
     }
     
     private func presentSubmitViewController() {
         self.setStepType(stepType: StepTypeEnum.STEP_TYPE_3)
         showUI()
+    }
+}
+
+//Move to other viewController
+extension StepViewController
+{
+    func showUserRegWebView()
+    {
+        let stepVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "UserRegWebViewController") as! UserRegWebViewController
+        stepVC.modalPresentationStyle = .fullScreen
+        DispatchQueue.main.async {
+
+            self.present(stepVC, animated: false, completion: nil)
+        }
+    }
+    
+    func goMainView()
+    {
+        let submitVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "MainViewController") as! MainViewController
+        submitVC.modalPresentationStyle = .fullScreen
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.present(submitVC, animated: false)
+        }
     }
 }

@@ -514,6 +514,35 @@
             </objects>
             <point key="canvasLocation" x="1060" y="5.9113300492610836"/>
         </scene>
+        <!--Activity Indicator View Controller-->
+        <scene sceneID="8ce-HQ-QXq">
+            <objects>
+                <viewController storyboardIdentifier="ActivityIndicatorViewController" id="KHr-ma-hHa" customClass="ActivityIndicatorViewController" customModule="DIDCA" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="WOt-mL-4Co">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="812"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" animating="YES" style="large" translatesAutoresizingMaskIntoConstraints="NO" id="l1c-IZ-onR">
+                                <rect key="frame" x="167.66666666666666" y="394" width="40" height="40"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="40" id="EzN-PE-ond"/>
+                                    <constraint firstAttribute="width" constant="40" id="uUj-3L-hfS"/>
+                                </constraints>
+                                <color key="color" name="PrimaryColor"/>
+                            </activityIndicatorView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="yCj-cp-Sgl"/>
+                        <color key="backgroundColor" white="0.67000000000000004" alpha="0.94999999999999996" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="l1c-IZ-onR" firstAttribute="centerX" secondItem="yCj-cp-Sgl" secondAttribute="centerX" id="t4X-Zz-hU9"/>
+                            <constraint firstItem="l1c-IZ-onR" firstAttribute="centerY" secondItem="yCj-cp-Sgl" secondAttribute="centerY" id="yn8-4U-jLo"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="hYm-MX-3U6" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1969" y="4"/>
+        </scene>
     </scenes>
     <resources>
         <image name="fail_icon" width="60" height="60"/>
@@ -527,7 +556,7 @@
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemGray6Color">
-            <color red="0.94901960780000005" green="0.94901960780000005" blue="0.96862745100000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.94901960784313721" green="0.94901960784313721" blue="0.96862745098039216" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

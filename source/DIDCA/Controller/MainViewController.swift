@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,18 @@ import DIDWalletSDK
 
 class MainViewController: UIViewController, DismissDelegate {
     @IBOutlet weak var vcCollectionView: UICollectionView!
+    {
+        didSet
+        {
+            let layout = UICollectionViewFlowLayout()
+            layout.scrollDirection = .vertical
+            layout.minimumLineSpacing = 20
+            layout.minimumInteritemSpacing = 4
+            
+            vcCollectionView.setCollectionViewLayout(layout, animated: true)
+        }
+    }
+    
     @IBOutlet weak var userInfoLbl: UILabel!{
         didSet
         {
@@ -27,122 +39,76 @@ class MainViewController: UIViewController, DismissDelegate {
         }
     }
     
-    @IBOutlet weak var addDocBtn: UIButton!
-    @IBOutlet weak var showQrBtn: UIButton!
-    @IBOutlet weak var vcDescLbl: UILabel!
+    @IBOutlet var emptyView: UIView!
+    
     private var vcs = [VerifiableCredential]()
     private var zkpIncludedStates : [String : Bool] = [:]
     
+    private var vcSchemas : [String : VCSchema] = [:]
     private var zkpSchemas : [String : ZKPCredentialSchema] = [:]
     
     func didDidmissWithData() {
-        showUI()
+        updateUI()
     }
     
-    func updateZKPIncludedStates() async throws
-    {
-        let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.LIST_VC, userId: Properties.getUserId()!)
-        
-        if let zkpCredentials = try WalletAPI.shared.getAllZKPCrentials(hWalletToken: hWalletToken)
-        {
-            zkpIncludedStates = zkpCredentials.reduce(into: [String:Bool](), { $0[$1.credentialId] = true })
-        }
-    }
-    
-    func showUI() {
-        Task { @MainActor in
-            do {
-                
-//                try await updateZKPIncludedStates()
-                
-                let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.LIST_VC, userId: Properties.getUserId()!)
-                
-                if let zkpCredentials = try WalletAPI.shared.getAllZKPCrentials(hWalletToken: hWalletToken)
-                {
-                    zkpIncludedStates = zkpCredentials.reduce(into: [String:Bool](), { $0[$1.credentialId] = true })
-                }
-                
-                if let credentials = try WalletAPI.shared.getAllCrentials(hWalletToken: hWalletToken) {
-                    vcs = credentials
-                    
-                    let didDoc = try WalletAPI.shared.getDidDocument(type: DidDocumentType.HolderDidDocumnet)
-                    print("holderDidDoc : \(try didDoc.toJson(isPretty: true))")
-                    
-                    print("vcs: \(vcs.count)")
-                    for vc in vcs {
-                        print("vc: \(try! vc.toJson())")
-                    }
-                    setUpCollectionView()
-                    return
-                }
-                
-                self.vcCollectionView.isHidden = true
-        
-                vcDescLbl.layer.cornerRadius = 5
-                vcDescLbl.layer.borderColor = UIColor.black.cgColor
-                setUpCollectionView()
-            } catch let error as WalletSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as WalletCoreError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as CommunicationSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch {
-                print("error :\(error)")
+    func updateUI() {
+        ActivityUtil.show(vc: self){
+            let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.LIST_VC, userId: Properties.getUserId()!)
+            
+            if let zkpCredentials = try WalletAPI.shared.getAllZKPCrentials(hWalletToken: hWalletToken)
+            {
+                self.zkpIncludedStates = zkpCredentials.reduce(into: [String:Bool](), { $0[$1.credentialId] = true })
             }
+            else{
+                self.zkpIncludedStates = [:]
+                self.zkpSchemas = [:]
+            }
+            
+            if let credentials = try WalletAPI.shared.getAllCrentials(hWalletToken: hWalletToken) {
+                self.vcs = credentials
+                
+                let didDoc = try WalletAPI.shared.getDidDocument(type: DidDocumentType.HolderDidDocumnet)
+                print("holderDidDoc : \(try didDoc.toJson(isPretty: true))")
+                
+                print("vcs: \(self.vcs.count)")
+                for vc in self.vcs {
+                    print("vc: \(try! vc.toJson())")
+                    
+                    let vcSchemaId = vc.credentialSchema.id
+                    if self.vcSchemas[vcSchemaId] == nil
+                    {
+                        let schemaData = try await CommnunicationClient.doGet(url: URL(string: vcSchemaId)!)
+                        let schema     = try VCSchema.init(from: schemaData)
+                        
+                        self.vcSchemas[vcSchemaId] = schema
+                    }
+                }
+            }
+            else{
+                self.vcSchemas = [:]
+            }
+        } completeClosure: {
+            self.vcCollectionView.reloadData()
+        } failureCloseClosure: { title, message in
+            
+            print("error title: \(title), message: \(message)")
+            PopupUtils.showAlertPopup(title: title, content: message, VC: self)
         }
     }
   
     override func viewDidLoad() {
         super.viewDidLoad()
-        addDocBtn.layer.borderWidth = 1
-        addDocBtn.layer.borderColor = UIColor(hexCode: "FF8400").cgColor
+
         Properties.setSubmitCompleted(status: true)
-        showUI()
+        updateUI()
     }
     
-    private func setUpCollectionView() {
-        
-//        vcCollectionView.register(VCCell.self, forCellWithReuseIdentifier: "VCCell")
-        vcCollectionView.delegate = self
-        vcCollectionView.dataSource = self
-        
-        let layout = UICollectionViewFlowLayout()
-        layout.scrollDirection = .vertical
-        layout.minimumLineSpacing = 20
-        layout.minimumInteritemSpacing = 4
-        
-        vcCollectionView.setCollectionViewLayout(layout, animated: true)
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        updateUI()
     }
     
-    private func requestVP(qrData: Data) async throws {
-        let vpOffer = try VerifyOfferPayload(from: qrData)
-        print("vpOffer JSON: \(try vpOffer.toJson())")
-        
-        let verifyProfileVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "VerifyProfileViewController") as! VerifyProfileViewController
-        verifyProfileVC.modalPresentationStyle = .fullScreen
-        verifyProfileVC.setVpOffer(vpOffer: vpOffer)
-        DispatchQueue.main.async {
-            self.present(verifyProfileVC, animated: false, completion: nil)
-        }
-    }
-    
-    private func requestVC(qrData: Data) async throws {
-        let vcOffer = try IssueOfferPayload(from: qrData)
-        print("vcOffer JSON: \(try vcOffer.toJson())")
-        
-        let issueProfileVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "IssueProfileViewController") as! IssueProfileViewController
-        issueProfileVC.setVcOffer(vcOfferPayload: vcOffer)
-        issueProfileVC.modalPresentationStyle = .fullScreen
-        DispatchQueue.main.async {
-            self.present(issueProfileVC, animated: false, completion: nil)
-        }
-    }
-    
-    @IBAction func showQrBtnAction(_ sender: Any)
+    @IBAction func showQrBtnAction()
     {
         
 #if targetEnvironment(simulator)
@@ -160,10 +126,6 @@ class MainViewController: UIViewController, DismissDelegate {
             self.present(qrVC, animated: false, completion: nil)
         }
 #endif
-        
-        
-        
-        
     }
 }
 
@@ -183,17 +145,10 @@ extension MainViewController: ScanQRViewControllerDelegate {
                     try await requestVP(qrData: payload)
                 }
                 
-            } catch let error as WalletSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as WalletCoreError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as CommunicationSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
             } catch {
-                print("error :\(error)")
+                let (title, message) = ErrorHandler.handle(error)
+                print("error title: \(title), message: \(message)")
+                PopupUtils.showAlertPopup(title: title, content: message, VC: self)
             }
         }
     }
@@ -201,92 +156,112 @@ extension MainViewController: ScanQRViewControllerDelegate {
 extension MainViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        
+        collectionView.backgroundView = (vcs.count == 0)
+        ? emptyView
+        : nil
+        
         return vcs.count
     }
 
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "VCCell", for: indexPath) as! VCCell
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell
+    {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "mainVCCell", for: indexPath) as! MainVCCollectionViewCell
 
-        cell.layer.cornerRadius = 10
-        cell.layer.masksToBounds = true
         let vc = vcs[indexPath.row]
         let isZkpIncluded = zkpIncludedStates[vc.id] ?? false
         
-        DispatchQueue.main.async { [self] in
-            Task {
-                do {
-                    // http://192.168.3.130:8093/api-gateway/api/v1/vc-meta
-                    try await cell.drowVcInfo(data: try vc.toJsonData(),
-                                              type: indexPath.row,
-                                              isZkpIncluded: isZkpIncluded)
-                } catch let error as WalletSDKError {
-                    print("error code: \(error.code), message: \(error.message)")
-                    PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                } catch let error as WalletCoreError {
-                    print("error code: \(error.code), message: \(error.message)")
-                    PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                } catch let error as CommunicationSDKError {
-                    print("error code: \(error.code), message: \(error.message)")
-                    PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                } catch {
-                    print("error :\(error)")
-                }
-            }
-        }
+        let vcSchemaId = vc.credentialSchema.id
+        
+        let vcSchema = vcSchemas[vcSchemaId]!
+        
+        let imgName = (vcSchema.title.contains("Driver")) ? "mid-card" : "id-card"
+        cell.logoImgView.image    = UIImage(named: imgName)
+        cell.titleLabel.text      = vcSchema.title
+        cell.validUntilLabel.text = "ValidUntil: "+SDKUtils.convertDateFormat(dateString: vc.validUntil)!
+        cell.issuanceLabel.text   = "IssuanceDate: "+SDKUtils.convertDateFormat(dateString: vc.issuanceDate)!
+        cell.badgeZKPLabel.isHidden = !isZkpIncluded
+        
         return cell
     }
     
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
+    {
         
-        let detialVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "VCDetailViewController") as! VCDetailViewController
-        detialVC.modalPresentationStyle = .fullScreen
+        var vc : VerifiableCredential?
+        var zkpVC : ZKPCredential?
+        var zkpSchema : ZKPCredentialSchema?
         
-        Task { @MainActor in
+        ActivityUtil.show(vc: self){
+            let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.DETAIL_VC, userId: Properties.getUserId()!)
+            let vcId = self.vcs[indexPath.row].id
+            vc = try WalletAPI.shared.getCredentials(hWalletToken: hWalletToken, ids: [vcId]).first!
             
-            do {
-                let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.DETAIL_VC, userId: Properties.getUserId()!)
-                let vcId = vcs[indexPath.row].id
-                let vc = try WalletAPI.shared.getCredentials(hWalletToken: hWalletToken, ids: [vcId])
-                
-                var zkpVC: ZKPCredential?
-                var zkpSchema : ZKPCredentialSchema?
-                if WalletAPI.shared.isZKPCredentialSaved(id : vcId)
+            if WalletAPI.shared.isZKPCredentialSaved(id : vcId)
+            {
+                zkpVC = try WalletAPI.shared.getZKPCredentials(hWalletToken: hWalletToken, ids: [vcId]).first!
+                if let schema = self.zkpSchemas[zkpVC!.schemaId]
                 {
-                    zkpVC = try WalletAPI.shared.getZKPCredentials(hWalletToken: hWalletToken, ids: [vcId]).first!
-                    if let schema = zkpSchemas[zkpVC!.schemaId]
-                    {
-                        zkpSchema = schema
-                    }
-                    else
-                    {
-                        zkpSchema = try await CommnunicationClient.getZKPCredentialSchama(hostUrlString: URLs.API_URL,
-                                                                                          id: zkpVC!.schemaId)
-                        zkpSchemas[zkpVC!.schemaId] = zkpSchema!
-                    }
-                    
+                    zkpSchema = schema
                 }
-                
-                detialVC.setVcInfo(vc: vc.first!,
-                                   zkpVC: zkpVC,
-                                   zkpSchema: zkpSchema)
-                
-                DispatchQueue.main.async {
-                    self.present(detialVC, animated: false, completion: nil)
+                else
+                {
+                    zkpSchema = try await CommnunicationClient.getZKPCredentialSchama(hostUrlString: URLs.API_URL,
+                                                                                      id: zkpVC!.schemaId)
+                    self.zkpSchemas[zkpVC!.schemaId] = zkpSchema!
                 }
-            } catch let error as WalletSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as WalletCoreError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as CommunicationSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch {
-                print("error :\(error)")
-                PopupUtils.showAlertPopup(title: "error", content: "error :\(error)", VC: self)
             }
+        } completeClosure: {
+            self.moveToDetailView(vc: vc!,
+                                  zkpVC: zkpVC,
+                                  zkpSchema: zkpSchema)
+        } failureCloseClosure: { title, message in
+            print("error title: \(title), message: \(message)")
+            PopupUtils.showAlertPopup(title: title, content: message, VC: self)
         }
+        
+        
+//        let detialVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "VCDetailViewController") as! VCDetailViewController
+//        detialVC.modalPresentationStyle = .fullScreen
+//        
+//        Task { @MainActor in
+//            
+//            do {
+//                let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.DETAIL_VC, userId: Properties.getUserId()!)
+//                let vcId = vcs[indexPath.row].id
+//                let vc = try WalletAPI.shared.getCredentials(hWalletToken: hWalletToken, ids: [vcId])
+//                
+//                var zkpVC: ZKPCredential?
+//                var zkpSchema : ZKPCredentialSchema?
+//                if WalletAPI.shared.isZKPCredentialSaved(id : vcId)
+//                {
+//                    zkpVC = try WalletAPI.shared.getZKPCredentials(hWalletToken: hWalletToken, ids: [vcId]).first!
+//                    if let schema = zkpSchemas[zkpVC!.schemaId]
+//                    {
+//                        zkpSchema = schema
+//                    }
+//                    else
+//                    {
+//                        zkpSchema = try await CommnunicationClient.getZKPCredentialSchama(hostUrlString: URLs.API_URL,
+//                                                                                          id: zkpVC!.schemaId)
+//                        zkpSchemas[zkpVC!.schemaId] = zkpSchema!
+//                    }
+//                    
+//                }
+//                
+//                detialVC.setVcInfo(vc: vc.first!,
+//                                   zkpVC: zkpVC,
+//                                   zkpSchema: zkpSchema)
+//                
+//                DispatchQueue.main.async {
+//                    self.present(detialVC, animated: false, completion: nil)
+//                }
+//            } catch {
+//                let (title, message) = ErrorHandler.handle(error)
+//                print("error title: \(title), message: \(message)")
+//                PopupUtils.showAlertPopup(title: title, content: message, VC: self)
+//            }
+//        }
     }
 }
 
@@ -306,4 +281,51 @@ extension MainViewController: UICollectionViewDelegateFlowLayout {
         
         return CGSize(width: widthPerItem - 20, height: 120)
     }
+    
+}
+
+extension MainViewController
+{
+    private func requestVP(qrData: Data) async throws {
+        let vpOffer = try VerifyOfferPayload(from: qrData)
+        print("vpOffer JSON: \(try vpOffer.toJson())")
+        
+        let verifyProfileVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "VerifyProfileViewController") as! VerifyProfileViewController
+        verifyProfileVC.modalPresentationStyle = .fullScreen
+        verifyProfileVC.setVpOffer(vpOffer: vpOffer)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.present(verifyProfileVC, animated: false, completion: nil)
+        }
+    }
+    
+    private func requestVC(qrData: Data) async throws {
+        let vcOffer = try IssueOfferPayload(from: qrData)
+        print("vcOffer JSON: \(try vcOffer.toJson())")
+        
+        let issueProfileVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "IssueProfileViewController") as! IssueProfileViewController
+        issueProfileVC.setVcOffer(vcOfferPayload: vcOffer)
+        issueProfileVC.modalPresentationStyle = .fullScreen
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.present(issueProfileVC, animated: false, completion: nil)
+        }
+    }
+    
+    private func moveToDetailView(vc: VerifiableCredential,
+                                  zkpVC : ZKPCredential?,
+                                  zkpSchema : ZKPCredentialSchema?)
+    {
+        let detialVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "VCDetailViewController") as! VCDetailViewController
+        detialVC.modalPresentationStyle = .fullScreen
+        detialVC.setVcInfo(vc: vc,
+                           zkpVC: zkpVC,
+                           zkpSchema: zkpSchema)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.present(detialVC, animated: false, completion: nil)
+        }
+    }
+   
+    
 }

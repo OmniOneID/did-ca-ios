@@ -54,6 +54,7 @@ class RegUserProtocol: CommonProtocol {
         return confirmRegisterUser
     }
     
+    @discardableResult
     private func retrieveKyc() async throws -> _RetrieveKyc {
         
         let parameter = try RetrieveKyc(id: SDKUtils.generateMessageID(), txId: txId, serverToken: hServerToken, kycTxId: Properties.getUserId()!).toJsonData()
@@ -62,6 +63,7 @@ class RegUserProtocol: CommonProtocol {
         return try _RetrieveKyc(from: data)
     }
     
+    @discardableResult
     public func process(signedDidDoc: SignedDIDDoc) async throws -> _ConfirmRegisterUser {
         
         let regUserResponse = try await requestRegisterUser(signedDidDoc: signedDidDoc)

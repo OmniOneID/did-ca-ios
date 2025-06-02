@@ -147,19 +147,6 @@ public class SDKUtils {
         return messageID
     }
     
-    public static func generateImg(base64String: String) throws -> UIImage {
-        
-        // Remove the prefix from the Base64 string
-        let base64StringWithoutPrefix = base64String.replacingOccurrences(of: "data:image/png;base64,", with: "")
-        if let imageData = Data(base64Encoded: base64StringWithoutPrefix, options: .ignoreUnknownCharacters) {
-            // Convert a Data object to a UIImage object
-            if let image = UIImage(data: imageData) {
-                return image
-            }
-        } 
-        throw NSError(domain: "generateImg error", code: 1)
-    }
-    
     public static func mergeNonce(clientNonce: Data?, serverNonce: Data?) throws -> Data {
         guard let clientNonce = clientNonce, let serverNonce = serverNonce else {
             throw NSError(domain: "mergeNonce error", code: 1)

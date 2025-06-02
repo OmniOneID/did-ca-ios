@@ -82,8 +82,14 @@
 		C96F38A12DD31FA300A198D5 /* ZKPSubmissionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F38A02DD31FA300A198D5 /* ZKPSubmissionTableViewCell.swift */; };
 		C9878CF52DD4AA87002A192D /* VCDetailStringTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9878CF42DD4AA87002A192D /* VCDetailStringTableViewCell.swift */; };
 		C9878CF92DD4AAA9002A192D /* VCDetailImageTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9878CF82DD4AAA9002A192D /* VCDetailImageTableViewCell.swift */; };
+		C9BDA66E2DE980A6002A6C42 /* RoundedLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9BDA66D2DE980A6002A6C42 /* RoundedLabel.swift */; };
+		C9BDA6702DE98BE4002A6C42 /* ImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9BDA66F2DE98BD6002A6C42 /* ImageUtils.swift */; };
+		C9BDA6722DE98CB9002A6C42 /* MainVCCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9BDA6712DE98CB9002A6C42 /* MainVCCollectionViewCell.swift */; };
 		C9C7C9DF2D2F93350023D8E5 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = C9C7C9DE2D2F93350023D8E5 /* FirebaseAnalytics */; };
 		C9C7C9E12D2F93350023D8E5 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = C9C7C9E02D2F93350023D8E5 /* FirebaseMessaging */; };
+		C9D519432DED3B9E00FD2E62 /* ActivityIndicatorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D519422DED3B9E00FD2E62 /* ActivityIndicatorViewController.swift */; };
+		C9D519452DED3CE200FD2E62 /* ActivityUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D519442DED3CE000FD2E62 /* ActivityUtil.swift */; };
+		C9D519492DED8BA600FD2E62 /* ErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D519482DED8BA100FD2E62 /* ErrorHandler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -195,6 +201,12 @@
 		C96F38A02DD31FA300A198D5 /* ZKPSubmissionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZKPSubmissionTableViewCell.swift; sourceTree = "<group>"; };
 		C9878CF42DD4AA87002A192D /* VCDetailStringTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VCDetailStringTableViewCell.swift; sourceTree = "<group>"; };
 		C9878CF82DD4AAA9002A192D /* VCDetailImageTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VCDetailImageTableViewCell.swift; sourceTree = "<group>"; };
+		C9BDA66D2DE980A6002A6C42 /* RoundedLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedLabel.swift; sourceTree = "<group>"; };
+		C9BDA66F2DE98BD6002A6C42 /* ImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUtils.swift; sourceTree = "<group>"; };
+		C9BDA6712DE98CB9002A6C42 /* MainVCCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainVCCollectionViewCell.swift; sourceTree = "<group>"; };
+		C9D519422DED3B9E00FD2E62 /* ActivityIndicatorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIndicatorViewController.swift; sourceTree = "<group>"; };
+		C9D519442DED3CE000FD2E62 /* ActivityUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityUtil.swift; sourceTree = "<group>"; };
+		C9D519482DED8BA100FD2E62 /* ErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -275,10 +287,13 @@
 		7CA981F92C85CBEE00EDF367 /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				C9D519482DED8BA100FD2E62 /* ErrorHandler.swift */,
+				C9BDA66F2DE98BD6002A6C42 /* ImageUtils.swift */,
 				7CA981F72C85CBEE00EDF367 /* SDKUtils.swift */,
 				7CA981F82C85CBEE00EDF367 /* UIImage.swift */,
 				7CB772882C86ABBC00E05B5D /* Properties.swift */,
 				7CB772962C86D1B600E05B5D /* PopupUtils.swift */,
+				C9D519442DED3CE000FD2E62 /* ActivityUtil.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -291,6 +306,7 @@
 				7C5835DB2C87EE7700365849 /* SettingCell.swift */,
 				C9878CF82DD4AAA9002A192D /* VCDetailImageTableViewCell.swift */,
 				C9878CF42DD4AA87002A192D /* VCDetailStringTableViewCell.swift */,
+				C9BDA6712DE98CB9002A6C42 /* MainVCCollectionViewCell.swift */,
 			);
 			path = Cell;
 			sourceTree = "<group>";
@@ -333,6 +349,7 @@
 				7CA982102C85CBEE00EDF367 /* OneButtonDialogViewController.swift */,
 				7CA982122C85CBEE00EDF367 /* TwoButtonDialogViewController.swift */,
 				C9579E562DDC47D20027ED3D /* InputPopUpViewController.swift */,
+				C9D519422DED3B9E00FD2E62 /* ActivityIndicatorViewController.swift */,
 			);
 			path = Popup;
 			sourceTree = "<group>";
@@ -439,6 +456,7 @@
 			children = (
 				C936B5792DCDDDF600ADA345 /* ColorPalette.swift */,
 				C91179322DD1B6EC00F3B573 /* RoundedView.swift */,
+				C9BDA66D2DE980A6002A6C42 /* RoundedLabel.swift */,
 				C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */,
 				C945551F2DD5AA2D000AA0D5 /* UnderlinedTextField.swift */,
 			);
@@ -606,19 +624,23 @@
 				7CFA77F02CBE06DB00893B70 /* UpdateUserProtocol.swift in Sources */,
 				C96F389F2DD31F3600A198D5 /* ZKPSubmissionViewController.swift in Sources */,
 				7CB772C22C871FA200E05B5D /* UserVO.swift in Sources */,
+				C9BDA6722DE98CB9002A6C42 /* MainVCCollectionViewCell.swift in Sources */,
 				7C5835DC2C87EE7700365849 /* SettingCell.swift in Sources */,
+				C9BDA6702DE98BE4002A6C42 /* ImageUtils.swift in Sources */,
 				7CA982462C85CBEE00EDF367 /* RestoreUserProtocol.swift in Sources */,
 				7CA9823A2C85CBEE00EDF367 /* UserRegWebViewController.swift in Sources */,
 				7CA9822F2C85CBEE00EDF367 /* AddVcViewController.swift in Sources */,
 				7CA982352C85CBEE00EDF367 /* QRScanViewController.swift in Sources */,
 				7CA982452C85CBEE00EDF367 /* RegUserProtocol.swift in Sources */,
 				C91179442DD1D84100F3B573 /* AttrSelectionTableViewCell.swift in Sources */,
+				C9D519492DED8BA600FD2E62 /* ErrorHandler.swift in Sources */,
 				7CA982312C85CBEE00EDF367 /* IssueProfileViewController.swift in Sources */,
 				7CB772972C86D1B600E05B5D /* PopupUtils.swift in Sources */,
 				7CA9823C2C85CBEE00EDF367 /* VerifyCompletedViewController.swift in Sources */,
 				7CA9823D2C85CBEE00EDF367 /* VerifyProfileViewController.swift in Sources */,
 				7CA9823B2C85CBEE00EDF367 /* VCDetailViewController.swift in Sources */,
 				7CA982562C85CC1700EDF367 /* DIDCA.xcdatamodeld in Sources */,
+				C9D519432DED3B9E00FD2E62 /* ActivityIndicatorViewController.swift in Sources */,
 				C9878CF92DD4AAA9002A192D /* VCDetailImageTableViewCell.swift in Sources */,
 				7CA982512C85CBEE00EDF367 /* URLs.swift in Sources */,
 				7C5835DE2C87F5EE00365849 /* ErrorDialogViewController.swift in Sources */,
@@ -638,8 +660,10 @@
 				7CA982432C85CBEE00EDF367 /* CommonProtocol.swift in Sources */,
 				C9878CF52DD4AA87002A192D /* VCDetailStringTableViewCell.swift in Sources */,
 				C9579E572DDC47D20027ED3D /* InputPopUpViewController.swift in Sources */,
+				C9D519452DED3CE200FD2E62 /* ActivityUtil.swift in Sources */,
 				C91179412DD1D64C00F3B573 /* AttrSelectionViewController.swift in Sources */,
 				7C537DA82CE31D7100C7E2F3 /* AuthSettingViewController.swift in Sources */,
+				C9BDA66E2DE980A6002A6C42 /* RoundedLabel.swift in Sources */,
 				C96F38A12DD31FA300A198D5 /* ZKPSubmissionTableViewCell.swift in Sources */,
 				7CB772892C86ABBC00E05B5D /* Properties.swift in Sources */,
 				7CA9822C2C85CBEE00EDF367 /* UIImage.swift in Sources */,

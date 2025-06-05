@@ -52,6 +52,10 @@ class MainViewController: UIViewController, DismissDelegate {
     }
     
     func updateUI() {
+        
+        self.vcs = []
+        self.vcCollectionView.reloadData()
+        
         ActivityUtil.show(vc: self){
             let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.LIST_VC, userId: Properties.getUserId()!)
             
@@ -100,7 +104,6 @@ class MainViewController: UIViewController, DismissDelegate {
         super.viewDidLoad()
 
         Properties.setSubmitCompleted(status: true)
-        updateUI()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -219,49 +222,6 @@ extension MainViewController: UICollectionViewDataSource {
             print("error title: \(title), message: \(message)")
             PopupUtils.showAlertPopup(title: title, content: message, VC: self)
         }
-        
-        
-//        let detialVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "VCDetailViewController") as! VCDetailViewController
-//        detialVC.modalPresentationStyle = .fullScreen
-//        
-//        Task { @MainActor in
-//            
-//            do {
-//                let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.DETAIL_VC, userId: Properties.getUserId()!)
-//                let vcId = vcs[indexPath.row].id
-//                let vc = try WalletAPI.shared.getCredentials(hWalletToken: hWalletToken, ids: [vcId])
-//                
-//                var zkpVC: ZKPCredential?
-//                var zkpSchema : ZKPCredentialSchema?
-//                if WalletAPI.shared.isZKPCredentialSaved(id : vcId)
-//                {
-//                    zkpVC = try WalletAPI.shared.getZKPCredentials(hWalletToken: hWalletToken, ids: [vcId]).first!
-//                    if let schema = zkpSchemas[zkpVC!.schemaId]
-//                    {
-//                        zkpSchema = schema
-//                    }
-//                    else
-//                    {
-//                        zkpSchema = try await CommnunicationClient.getZKPCredentialSchama(hostUrlString: URLs.API_URL,
-//                                                                                          id: zkpVC!.schemaId)
-//                        zkpSchemas[zkpVC!.schemaId] = zkpSchema!
-//                    }
-//                    
-//                }
-//                
-//                detialVC.setVcInfo(vc: vc.first!,
-//                                   zkpVC: zkpVC,
-//                                   zkpSchema: zkpSchema)
-//                
-//                DispatchQueue.main.async {
-//                    self.present(detialVC, animated: false, completion: nil)
-//                }
-//            } catch {
-//                let (title, message) = ErrorHandler.handle(error)
-//                print("error title: \(title), message: \(message)")
-//                PopupUtils.showAlertPopup(title: title, content: message, VC: self)
-//            }
-//        }
     }
 }
 
@@ -291,11 +251,15 @@ extension MainViewController
         print("vpOffer JSON: \(try vpOffer.toJson())")
         
         let verifyProfileVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "VerifyProfileViewController") as! VerifyProfileViewController
-        verifyProfileVC.modalPresentationStyle = .fullScreen
+//        verifyProfileVC.modalPresentationStyle = .fullScreen
         verifyProfileVC.setVpOffer(vpOffer: vpOffer)
         
+        let navi = UINavigationController(rootViewController: verifyProfileVC)
+        navi.isNavigationBarHidden = true
+        navi.modalPresentationStyle = .fullScreen
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.present(verifyProfileVC, animated: false, completion: nil)
+            self.present(navi, animated: false)
         }
     }
     

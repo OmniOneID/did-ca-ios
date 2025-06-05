@@ -22,7 +22,6 @@
 		7CA9822B2C85CBEE00EDF367 /* SDKUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA981F72C85CBEE00EDF367 /* SDKUtils.swift */; };
 		7CA9822C2C85CBEE00EDF367 /* UIImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA981F82C85CBEE00EDF367 /* UIImage.swift */; };
 		7CA9822D2C85CBEE00EDF367 /* AddVCCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA981FA2C85CBEE00EDF367 /* AddVCCell.swift */; };
-		7CA9822E2C85CBEE00EDF367 /* VCCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA981FB2C85CBEE00EDF367 /* VCCell.swift */; };
 		7CA9822F2C85CBEE00EDF367 /* AddVcViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA981FD2C85CBEE00EDF367 /* AddVcViewController.swift */; };
 		7CA982302C85CBEE00EDF367 /* IssueCompletedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA981FE2C85CBEE00EDF367 /* IssueCompletedViewController.swift */; };
 		7CA982312C85CBEE00EDF367 /* IssueProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA981FF2C85CBEE00EDF367 /* IssueProfileViewController.swift */; };
@@ -140,7 +139,6 @@
 		7CA981F72C85CBEE00EDF367 /* SDKUtils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SDKUtils.swift; sourceTree = "<group>"; };
 		7CA981F82C85CBEE00EDF367 /* UIImage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIImage.swift; sourceTree = "<group>"; };
 		7CA981FA2C85CBEE00EDF367 /* AddVCCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddVCCell.swift; sourceTree = "<group>"; };
-		7CA981FB2C85CBEE00EDF367 /* VCCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VCCell.swift; sourceTree = "<group>"; };
 		7CA981FD2C85CBEE00EDF367 /* AddVcViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddVcViewController.swift; sourceTree = "<group>"; };
 		7CA981FE2C85CBEE00EDF367 /* IssueCompletedViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IssueCompletedViewController.swift; sourceTree = "<group>"; };
 		7CA981FF2C85CBEE00EDF367 /* IssueProfileViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IssueProfileViewController.swift; sourceTree = "<group>"; };
@@ -302,7 +300,6 @@
 			isa = PBXGroup;
 			children = (
 				7CA981FA2C85CBEE00EDF367 /* AddVCCell.swift */,
-				7CA981FB2C85CBEE00EDF367 /* VCCell.swift */,
 				7C5835DB2C87EE7700365849 /* SettingCell.swift */,
 				C9878CF82DD4AAA9002A192D /* VCDetailImageTableViewCell.swift */,
 				C9878CF42DD4AA87002A192D /* VCDetailStringTableViewCell.swift */,
@@ -646,7 +643,6 @@
 				7C5835DE2C87F5EE00365849 /* ErrorDialogViewController.swift in Sources */,
 				C936B57A2DCDDDFB00ADA345 /* ColorPalette.swift in Sources */,
 				7CA982442C85CBEE00EDF367 /* IssueVcProtocol.swift in Sources */,
-				7CA9822E2C85CBEE00EDF367 /* VCCell.swift in Sources */,
 				C936B5742DCDDA3700ADA345 /* RoundedButton.swift in Sources */,
 				7CA9824A2C85CBEE00EDF367 /* AppDelegate.swift in Sources */,
 				7CA982402C85CBEE00EDF367 /* OneButtonDialogViewController.swift in Sources */,

@@ -92,29 +92,17 @@ class ZKPSubmissionViewController: UIViewController {
     
     @IBAction func submitAction()
     {
-        Task { @MainActor in
-            do {
-                let (userReferent, proofParam) = try await makeUserReferent()
-                try await submitToVerifier(userReferent: userReferent, proofParam: proofParam)
-                
-            } catch let error as WalletSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as WalletCoreError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as CommunicationSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let e as NSError
-            {
-                
-                PopupUtils.showDialogPopup(title: "Error",
-                                           content: e.domain,
-                                           VC: self)
-                
-            }
+        ActivityUtil.show(vc: self){
+            let (userReferent, proofParam) = try await self.makeUserReferent()
+            try await self.submitToVerifier(userReferent: userReferent, proofParam: proofParam)
+        } completeClosure: {
+            self.moveToCompltedView()
+        } failureCloseClosure: { title, message in
+            PopupUtils.showAlertPopup(title: title,
+                                      content: message,
+                                      VC: self)
         }
+        
     }
     
     func submitToVerifier(userReferent : [UserReferent], proofParam : ZKProofParam) async throws
@@ -125,18 +113,16 @@ class ZKPSubmissionViewController: UIViewController {
                                                   selectedReferents: userReferent,
                                                   proofParam: proofParam,
                                                   proofRequestProfile: VerifyZKProofProtocol.shared.getProofRequestProfile()!)
-        
-        moveToCompltedView()
-        
-        
     }
     
     func moveToCompltedView()
     {
         let verifyCompletedVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "VerifyCompletedViewController") as! VerifyCompletedViewController
-        verifyCompletedVC.modalPresentationStyle = .fullScreen
-        DispatchQueue.main.async {
-            self.present(verifyCompletedVC, animated: false, completion: nil)
+//        verifyCompletedVC.modalPresentationStyle = .fullScreen
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1)
+        {
+            self.navigationController?.pushViewController(verifyCompletedVC, animated: false)
+//            self.present(verifyCompletedVC, animated: false, completion: nil)
         }
     }
     

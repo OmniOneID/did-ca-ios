@@ -63,7 +63,7 @@ class AuthSettingViewController: UITableViewController {
             pinVC.confirmButtonCompleteClosure = { [self] passcode in
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     Task { @MainActor in
-                        regPIN(oldPIN: passcode)
+                        self.regPIN(oldPIN: passcode)
                     }
                 }
             }

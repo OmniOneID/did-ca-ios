@@ -106,7 +106,7 @@ class CommonProtocol {
                 .setClient(clientType)   // Wallet DID
                 .setClientNonce(clientNonce)
                 .setPublicKey(MultibaseUtils.encode(type: MultibaseType.base58BTC, data: keyPair.publicKey) )
-                .setCurve(EllipticCurveType.secp256r1)
+                .setCurve(.secp256r1)
                 .setProof(Proof(created: Date.getUTC0Date(seconds: 0),
                                 proofPurpose: ProofPurpose.keyAgreement,
                                 verificationMethod: proofType,
@@ -137,7 +137,7 @@ class CommonProtocol {
                 .setClient(clientType)   // Wallet DID
                 .setClientNonce(clientNonce)
                 .setPublicKey(MultibaseUtils.encode(type: MultibaseType.base58BTC, data: keyPair.publicKey) )
-                .setCurve(EllipticCurveType.secp256r1)
+                .setCurve(.secp256r1)
                 .setProof(Proof(created: Date.getUTC0Date(seconds: 0),
                                 proofPurpose: ProofPurpose.keyAgreement,
                                 verificationMethod: proofType,

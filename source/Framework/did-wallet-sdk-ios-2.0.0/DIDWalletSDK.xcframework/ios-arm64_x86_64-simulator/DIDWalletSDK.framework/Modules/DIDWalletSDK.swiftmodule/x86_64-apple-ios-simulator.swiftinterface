@@ -1078,8 +1078,8 @@ public struct ZKPCredentialSchema : DIDWalletSDK.Jsonable {
       public init(from decoder: any Swift.Decoder) throws
     }
     public enum AttributeValueType : Swift.String, Swift.Codable {
-      case STRING
-      case NUMBER
+      case String
+      case Number
       public init?(rawValue: Swift.String)
       public typealias RawValue = Swift.String
       public var rawValue: Swift.String {
@@ -1470,7 +1470,7 @@ public struct ProviderDetail : DIDWalletSDK.Jsonable {
 }
 public struct ReqE2e : DIDWalletSDK.Jsonable, DIDWalletSDK.ProofContainer {
   public var nonce: Swift.String
-  public var curve: DIDWalletSDK.EllipticCurveType
+  public var curve: DIDWalletSDK.ECType
   public var publicKey: Swift.String
   public var cipher: DIDWalletSDK.SymmetricCipherType
   public var padding: DIDWalletSDK.SymmetricPaddingType
@@ -1717,7 +1717,7 @@ public class ReqEcdhBuilder {
   public func setClient(_ client: Swift.String) -> DIDWalletSDK.ReqEcdhBuilder
   public func setClientNonce(_ clientNonce: Swift.String) -> DIDWalletSDK.ReqEcdhBuilder
   public func setPublicKey(_ publicKey: Swift.String) -> DIDWalletSDK.ReqEcdhBuilder
-  public func setCurve(_ curve: DIDWalletSDK.EllipticCurveType) -> DIDWalletSDK.ReqEcdhBuilder
+  public func setCurve(_ curve: DIDWalletSDK.ECType) -> DIDWalletSDK.ReqEcdhBuilder
   public func setCandidate(_ candidate: [DIDWalletSDK.SymmetricCipherType]) -> DIDWalletSDK.ReqEcdhBuilder
   public func setProof(_ proof: DIDWalletSDK.Proof?) -> DIDWalletSDK.ReqEcdhBuilder
   public func build() -> DIDWalletSDK.ReqEcdh
@@ -1725,7 +1725,7 @@ public class ReqEcdhBuilder {
 }
 public struct ReqEcdh : DIDWalletSDK.Jsonable, DIDWalletSDK.ProofContainer {
   public var proof: DIDWalletSDK.Proof?
-  public init(client: Swift.String, clientNonce: Swift.String, publicKey: Swift.String, curve: DIDWalletSDK.EllipticCurveType, candidate: [DIDWalletSDK.SymmetricCipherType]? = nil, proof: DIDWalletSDK.Proof? = nil)
+  public init(client: Swift.String, clientNonce: Swift.String, publicKey: Swift.String, curve: DIDWalletSDK.ECType, candidate: [DIDWalletSDK.SymmetricCipherType]? = nil, proof: DIDWalletSDK.Proof? = nil)
   public func encode(to encoder: any Swift.Encoder) throws
   public init(from decoder: any Swift.Decoder) throws
 }
@@ -2620,7 +2620,7 @@ public enum CredentialSchemaType : Swift.String, Swift.Codable {
     get
   }
 }
-public enum EllipticCurveType : Swift.String, Swift.Codable, DIDWalletSDK.ConvertibleToAlgorithmType {
+public enum ECType : Swift.String, Swift.Codable, DIDWalletSDK.ConvertibleToAlgorithmType {
   public static var commonString: Swift.String {
     get
   }
@@ -2682,15 +2682,6 @@ public enum VCStatusEnum : Swift.String, DIDWalletSDK.Jsonable {
   case Active
   case Inactive
   case Revoked
-  public init?(rawValue: Swift.String)
-  public typealias RawValue = Swift.String
-  public var rawValue: Swift.String {
-    get
-  }
-}
-public enum ECType : Swift.String {
-  case secp256r1
-  case secp256k1
   public init?(rawValue: Swift.String)
   public typealias RawValue = Swift.String
   public var rawValue: Swift.String {
@@ -2795,13 +2786,10 @@ extension DIDWalletSDK.WalletAPI {
   public func deleteCredentials(hWalletToken: Swift.String, ids: [Swift.String]) throws -> Swift.Bool
   public func getCredentials(hWalletToken: Swift.String, ids: [Swift.String]) throws -> [DIDWalletSDK.VerifiableCredential]
   public func getAllCrentials(hWalletToken: Swift.String) throws -> [DIDWalletSDK.VerifiableCredential]?
-  public func createVp(hWalletToken: Swift.String, claimInfos: [DIDWalletSDK.ClaimInfo], presentationInfo: DIDWalletSDK.PresentationInfo) throws -> DIDWalletSDK.VerifiablePresentation
   public func isZKPCredentialSaved(id: Swift.String) -> Swift.Bool
-  public func deleteZKPCredentials(hWalletToken: Swift.String, ids: [Swift.String]) throws -> Swift.Bool
   public func getZKPCredentials(hWalletToken: Swift.String, ids: [Swift.String]) throws -> [DIDWalletSDK.ZKPCredential]
   public func getAllZKPCrentials(hWalletToken: Swift.String) throws -> [DIDWalletSDK.ZKPCredential]?
   public func searchCredentials(hWalletToken: Swift.String, proofRequest: DIDWalletSDK.ProofRequest) throws -> DIDWalletSDK.AvailableReferent
-  public func createZKProof(hWalletToken: Swift.String, proofRequest: DIDWalletSDK.ProofRequest, selectedReferents: [DIDWalletSDK.UserReferent], proofParam: DIDWalletSDK.ZKProofParam) throws -> DIDWalletSDK.ZKProof
   public func createEncZKProof(hWalletToken: Swift.String, selectedReferents: [DIDWalletSDK.UserReferent], proofParam: DIDWalletSDK.ZKProofParam, proofRequestProfile: DIDWalletSDK._RequestProofRequestProfile, APIGatewayURL: Swift.String) async throws -> (DIDWalletSDK.AccE2e, Foundation.Data)
   public func getKeyInfos(keyType: DIDWalletSDK.VerifyAuthType) throws -> [DIDWalletSDK.KeyInfo]
   public func getKeyInfos(ids: [Swift.String]) throws -> [DIDWalletSDK.KeyInfo]
@@ -3003,8 +2991,8 @@ extension DIDWalletSDK.AlgorithmType : Swift.RawRepresentable {}
 extension DIDWalletSDK.CredentialSchemaType : Swift.Equatable {}
 extension DIDWalletSDK.CredentialSchemaType : Swift.Hashable {}
 extension DIDWalletSDK.CredentialSchemaType : Swift.RawRepresentable {}
-extension DIDWalletSDK.EllipticCurveType : Swift.Equatable {}
-extension DIDWalletSDK.EllipticCurveType : Swift.Hashable {}
+extension DIDWalletSDK.ECType : Swift.Equatable {}
+extension DIDWalletSDK.ECType : Swift.Hashable {}
 extension DIDWalletSDK.SymmetricCipherType : Swift.Equatable {}
 extension DIDWalletSDK.SymmetricCipherType : Swift.Hashable {}
 extension DIDWalletSDK.SymmetricCipherType : Swift.RawRepresentable {}
@@ -3017,9 +3005,6 @@ extension DIDWalletSDK.AuthType : Swift.RawRepresentable {}
 extension DIDWalletSDK.VCStatusEnum : Swift.Equatable {}
 extension DIDWalletSDK.VCStatusEnum : Swift.Hashable {}
 extension DIDWalletSDK.VCStatusEnum : Swift.RawRepresentable {}
-extension DIDWalletSDK.ECType : Swift.Equatable {}
-extension DIDWalletSDK.ECType : Swift.Hashable {}
-extension DIDWalletSDK.ECType : Swift.RawRepresentable {}
 extension DIDWalletSDK.EncryptionType : Swift.Equatable {}
 extension DIDWalletSDK.EncryptionType : Swift.Hashable {}
 extension DIDWalletSDK.EncryptionType : Swift.RawRepresentable {}

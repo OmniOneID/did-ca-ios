@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22684"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -85,7 +85,7 @@
                                                 <state key="selected" backgroundImage="Pin_bt_bg_delete_down"/>
                                                 <state key="highlighted" backgroundImage="Pin_bt_bg_delete_down"/>
                                                 <connections>
-                                                    <action selector="onClickButton:" destination="5ER-9f-oAc" eventType="touchUpInside" id="iMW-MN-RNy"/>
+                                                    <action selector="deleteAction" destination="5ER-9f-oAc" eventType="touchUpInside" id="Kq9-vK-ELG"/>
                                                 </connections>
                                             </button>
                                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="J3R-kf-6dO">
@@ -151,7 +151,7 @@
                                                 <state key="selected" backgroundImage="Pin_bt_bg_02_down"/>
                                                 <state key="highlighted" backgroundImage="Pin_bt_bg_02_down"/>
                                                 <connections>
-                                                    <action selector="onClickButton:" destination="5ER-9f-oAc" eventType="touchUpInside" id="Txt-T4-dOE"/>
+                                                    <action selector="cancelAction" destination="5ER-9f-oAc" eventType="touchUpInside" id="XO0-0t-qUe"/>
                                                 </connections>
                                             </button>
                                         </subviews>
@@ -244,29 +244,29 @@
                                     <stackView opaque="NO" contentMode="scaleToFill" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="xbA-MC-yiK">
                                         <rect key="frame" x="96.666666666666686" y="30" width="200" height="17.666666666666671"/>
                                         <subviews>
-                                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Pin_num_in" translatesAutoresizingMaskIntoConstraints="NO" id="9D4-0S-nZp">
+                                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Pin_num_in" translatesAutoresizingMaskIntoConstraints="NO" id="9D4-0S-nZp" userLabel="Pin_num_0">
                                                 <rect key="frame" x="0.0" y="0.0" width="25" height="17.666666666666668"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" relation="lessThanOrEqual" constant="20" id="bwZ-kt-0VW"/>
                                                     <constraint firstAttribute="width" relation="lessThanOrEqual" constant="25" id="d8F-rk-oOP"/>
                                                 </constraints>
                                             </imageView>
-                                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Pin_num_in" translatesAutoresizingMaskIntoConstraints="NO" id="c0s-db-zPa">
+                                            <imageView userInteractionEnabled="NO" tag="1" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Pin_num_in" translatesAutoresizingMaskIntoConstraints="NO" id="c0s-db-zPa" userLabel="Pin_num_1">
                                                 <rect key="frame" x="34.999999999999986" y="0.0" width="25" height="17.666666666666668"/>
                                             </imageView>
-                                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Pin_num_in" translatesAutoresizingMaskIntoConstraints="NO" id="JpQ-FD-p4G">
+                                            <imageView userInteractionEnabled="NO" tag="2" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Pin_num_in" translatesAutoresizingMaskIntoConstraints="NO" id="JpQ-FD-p4G" userLabel="Pin_num_2">
                                                 <rect key="frame" x="69.999999999999986" y="0.0" width="25" height="17.666666666666668"/>
                                             </imageView>
-                                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Pin_num_in" translatesAutoresizingMaskIntoConstraints="NO" id="pd8-cZ-Den">
+                                            <imageView userInteractionEnabled="NO" tag="3" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Pin_num_in" translatesAutoresizingMaskIntoConstraints="NO" id="pd8-cZ-Den" userLabel="Pin_num_3">
                                                 <rect key="frame" x="104.99999999999999" y="0.0" width="25.000000000000014" height="17.666666666666668"/>
                                                 <constraints>
                                                     <constraint firstAttribute="width" secondItem="pd8-cZ-Den" secondAttribute="height" multiplier="1:0.7" id="x4D-4Q-iwc"/>
                                                 </constraints>
                                             </imageView>
-                                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Pin_num_in" translatesAutoresizingMaskIntoConstraints="NO" id="8i4-PH-dDO">
+                                            <imageView userInteractionEnabled="NO" tag="4" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Pin_num_in" translatesAutoresizingMaskIntoConstraints="NO" id="8i4-PH-dDO" userLabel="Pin_num_4">
                                                 <rect key="frame" x="140" y="0.0" width="25" height="17.666666666666668"/>
                                             </imageView>
-                                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Pin_num_in" translatesAutoresizingMaskIntoConstraints="NO" id="ySN-JJ-vtQ">
+                                            <imageView userInteractionEnabled="NO" tag="5" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Pin_num_in" translatesAutoresizingMaskIntoConstraints="NO" id="ySN-JJ-vtQ" userLabel="Pin_num_5">
                                                 <rect key="frame" x="175" y="0.0" width="25" height="17.666666666666668"/>
                                             </imageView>
                                         </subviews>
@@ -311,15 +311,13 @@
                     </view>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
                     <connections>
-                        <outlet property="cancelBtn" destination="A7O-03-Pq2" id="2vR-oH-Fq0"/>
-                        <outlet property="deleteBtn" destination="5JT-7D-wbp" id="xmZ-rM-axh"/>
-                        <outlet property="img1" destination="9D4-0S-nZp" id="ky0-j0-R2k"/>
-                        <outlet property="img2" destination="c0s-db-zPa" id="bJ3-KF-vUV"/>
-                        <outlet property="img3" destination="JpQ-FD-p4G" id="XIg-dF-NuH"/>
-                        <outlet property="img4" destination="pd8-cZ-Den" id="zn8-Fp-ADV"/>
-                        <outlet property="img5" destination="8i4-PH-dDO" id="txj-FA-xu0"/>
-                        <outlet property="img6" destination="ySN-JJ-vtQ" id="Hoy-9S-hQd"/>
                         <outlet property="messageLbl" destination="aK3-gP-oED" id="EcD-wu-Veh"/>
+                        <outletCollection property="inputImgViews" destination="9D4-0S-nZp" collectionClass="NSMutableArray" id="9Xi-cf-1nV"/>
+                        <outletCollection property="inputImgViews" destination="c0s-db-zPa" collectionClass="NSMutableArray" id="yAV-wK-Q4z"/>
+                        <outletCollection property="inputImgViews" destination="JpQ-FD-p4G" collectionClass="NSMutableArray" id="kRw-21-Rbg"/>
+                        <outletCollection property="inputImgViews" destination="pd8-cZ-Den" collectionClass="NSMutableArray" id="CCe-6w-QaJ"/>
+                        <outletCollection property="inputImgViews" destination="8i4-PH-dDO" collectionClass="NSMutableArray" id="50t-fg-zoG"/>
+                        <outletCollection property="inputImgViews" destination="ySN-JJ-vtQ" collectionClass="NSMutableArray" id="HCU-r5-CcC"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="ldQ-sG-fNj" userLabel="First Responder" sceneMemberID="firstResponder"/>

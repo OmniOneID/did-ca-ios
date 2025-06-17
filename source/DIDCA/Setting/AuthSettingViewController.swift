@@ -59,7 +59,7 @@ class AuthSettingViewController: UITableViewController {
         if indexPath.row == 0 {
             let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
             pinVC.modalPresentationStyle = .fullScreen
-            pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_AUTHENTICATION_SIGNATURE_TYPE)
+            pinVC.setRequestType(type: .authenticate(isLock: false))
             pinVC.confirmButtonCompleteClosure = { [self] passcode in
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     Task { @MainActor in
@@ -78,7 +78,7 @@ class AuthSettingViewController: UITableViewController {
         
         let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
         pinVC.modalPresentationStyle = .fullScreen
-        pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_CHANGE_SIGNATURE_TYPE)
+        pinVC.setRequestType(type: .change)
         pinVC.confirmButtonCompleteClosure = { [self] passcode in
             
             do {

@@ -21,13 +21,8 @@ protocol DismissDelegate: AnyObject {
     func didDidmissWithData()
 }
 
-class IssueProfileViewController: UIViewController, DismissDelegate {
-    
-    func didDidmissWithData() {
-        issueVcProcess()
-    }
-    
-    
+class IssueProfileViewController: UIViewController
+{
     // MARK
     @IBOutlet weak var issuanceBtn: UIButton!
     @IBOutlet weak var cancelBtn: UIButton!
@@ -44,62 +39,14 @@ class IssueProfileViewController: UIViewController, DismissDelegate {
     
     public var vcSchemaId : String!
     
-    @IBAction func cancelBtnAction(_ sender: Any) {
-        DispatchQueue.main.async {
-            self.dismiss(animated: false, completion: nil)
-        }
-    }
-    
     public func setVcOffer(vcOfferPayload: IssueOfferPayload, isWebView: Bool? = false) {
         self.vcOfferPayload = vcOfferPayload
         self.isWebView = isWebView
         print("setVcOffer isWebView: \(String(describing: self.isWebView))")
     }
     
-    @IBAction func issuanceBtnAction(_ sender: Any) {
-        if self.isWebView == true {
-            let issueVcWeb = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "IssueVCWebViewController") as! IssueVCWebViewController
-            issueVcWeb.delegate = self
-            issueVcWeb.vcSchemaId = self.vcSchemaId
-            issueVcWeb.modalPresentationStyle = .fullScreen
-            DispatchQueue.main.async {
-                self.present(issueVcWeb, animated: false, completion: nil)
-            }
-        }
-        else {
-            issueVcProcess()
-        }
-    }
-    private func issueVcProcess() {
-        
-        do {
-            let keyInfos: [KeyInfo] = try WalletAPI.shared.getKeyInfos(ids: ["pin", "bio"])
-            print("keyInfos: \(keyInfos)")
-            
-            ActivityUtil.show(vc: self){
-                _ = try await IssueVcProtocol.shared.process()
-                print("issueProfile: \(try IssueVcProtocol.shared.getIssueProfile()!.toJson())")
-                Properties.setSubmitCompleted(status: true)
-            } completeClosure: {
-                self.showIssueCompletedView()
-            } failureCloseClosure: { title, message in
-                PopupUtils.showAlertPopup(title: title,
-                                          content: message,
-                                          VC: self)
-            }
-        } catch {
-            
-            print("issueVcProcess error: \(error.localizedDescription)")
-            self.showPin()
-        }
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
         
         ActivityUtil.show(vc: self){
             try await IssueVcProtocol.shared.preProcess(vcPlanId: self.vcOfferPayload!.vcPlanId,
@@ -114,13 +61,79 @@ class IssueProfileViewController: UIViewController, DismissDelegate {
                 
                 self.issuerInfoLbl.text = "The certificate will be issued by "+(profile.profile.issuer.name)
                 self.issuanceDateLbl.text = "Issuance Application Date:\n "+SDKUtils.convertDateFormat2(dateString: (profile.proof?.created)!)!
-                self.IssueInfoDescLbl.text = "The identity certificate issued by "+(profile.profile.issuer.name) + " is stored in this certificate."    
+                self.IssueInfoDescLbl.text = "The identity certificate issued by "+(profile.profile.issuer.name) + " is stored in this certificate."
             }
             
         } failureCloseClosure: { title, message in
             PopupUtils.showAlertPopup(title: title,
                                       content: message,
                                       VC: self)
+        }
+        
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        
+    }
+    
+    @IBAction func cancelBtnAction(_ sender: Any) {
+        DispatchQueue.main.async {
+            guard let navi = self.navigationController, navi.viewControllers.count > 1
+            else
+            {
+                self.dismiss(animated: true)
+                return
+            }
+            
+            navi.popViewController(animated: true)
+        }
+    }
+    
+    
+    @IBAction func issuanceBtnAction(_ sender: Any) {
+        if self.isWebView == true {
+            let issueVcWeb = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "IssueVCWebViewController") as! IssueVCWebViewController
+            issueVcWeb.delegate = self
+            issueVcWeb.vcSchemaId = self.vcSchemaId
+            issueVcWeb.modalPresentationStyle = .fullScreen
+            DispatchQueue.main.async {
+                self.present(issueVcWeb, animated: false, completion: nil)
+            }
+        }
+        else {
+            switchAuthentications()
+        }
+    }
+    private func switchAuthentications() {
+        
+        do {
+            let keyInfos: [KeyInfo] = try WalletAPI.shared.getKeyInfos(ids: ["pin", "bio"])
+            print("keyInfos: \(keyInfos)")
+            
+            issueVcProcess()
+        } catch {
+            
+            print("issueVcProcess error: \(error.localizedDescription)")
+            self.showPin()
+        }
+    }
+    
+    func issueVcProcess(passcode : String? = nil)
+    {
+        ActivityUtil.show(vc: self){
+            _ = try await IssueVcProtocol.shared.process(passcode: passcode)
+            print("issueProfile: \(try IssueVcProtocol.shared.getIssueProfile()!.toJson())")
+            Properties.setSubmitCompleted(status: true)
+        } completeClosure: {
+            self.showIssueCompletedView()
+        } failureCloseClosure: { title, message in
+            PopupUtils.showAlertPopup(title: title,
+                                      content: message,
+                                      VC: self) {
+                self.navigationController?.popToRootViewController(animated: true)
+            }
         }
     }
 }
@@ -130,10 +143,11 @@ extension IssueProfileViewController
     func showIssueCompletedView()
     {
         let issueCompletedVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "IssueCompletedViewController") as! IssueCompletedViewController
-        issueCompletedVC.modalPresentationStyle = .fullScreen
+        issueCompletedVC.titleString = self.vcNmLbl.text ?? "VC"
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.present(issueCompletedVC, animated: false, completion: nil)
+        DispatchQueue.main.async
+        {
+            self.navigationController?.pushViewController(issueCompletedVC, animated: true)
         }
     }
     
@@ -141,24 +155,21 @@ extension IssueProfileViewController
     {
         let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
         pinVC.modalPresentationStyle = .fullScreen
-        pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_AUTHENTICATION_SIGNATURE_TYPE)
+        pinVC.setRequestType(type: .authenticate(isLock: false))
         pinVC.confirmButtonCompleteClosure = { passcode in
             
-            ActivityUtil.show(vc: self){
-                _ = try await IssueVcProtocol.shared.process(passcode: passcode)
-
-                Properties.setSubmitCompleted(status: true)
-            } completeClosure: {
-                self.showIssueCompletedView()
-            } failureCloseClosure: { title, message in
-                PopupUtils.showAlertPopup(title: title,
-                                          content: message,
-                                          VC: self)
-            }
+            self.issueVcProcess(passcode: passcode)
         }
         pinVC.cancelButtonCompleteClosure = {
             PopupUtils.showAlertPopup(title: "Notification", content: "canceled by user", VC: self)
         }
         DispatchQueue.main.async { self.present(pinVC, animated: false, completion: nil) }
+    }
+}
+
+extension IssueProfileViewController : DismissDelegate
+{
+    func didDidmissWithData() {
+        switchAuthentications()
     }
 }

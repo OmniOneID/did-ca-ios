@@ -191,7 +191,7 @@ class ZKPSubmissionViewController: UIViewController {
         
         for schemaId in schemaIds
         {
-            let schema = try await CommnunicationClient.getZKPCredentialSchama(hostUrlString: URLs.API_URL,
+            let schema = try await CommunicationClient.getZKPCredentialSchama(hostUrlString: URLs.API_URL,
                                                                                id: schemaId)
             
             schemas[schemaId] = schema
@@ -199,7 +199,7 @@ class ZKPSubmissionViewController: UIViewController {
         
         for credDefId in credDefIds
         {
-            let def = try await CommnunicationClient.getZKPCredentialDefinition(hostUrlString: URLs.API_URL,
+            let def = try await CommunicationClient.getZKPCredentialDefinition(hostUrlString: URLs.API_URL,
                                                                                 id: credDefId)
             defs[credDefId] = def
         }

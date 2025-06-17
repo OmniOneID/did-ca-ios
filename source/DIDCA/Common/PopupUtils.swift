@@ -17,12 +17,16 @@
 import UIKit
 
 public class PopupUtils {
-    static public func showAlertPopup(title:String, content: String, VC: UIViewController) {
+    static public func showAlertPopup(title:String,
+                                      content: String,
+                                      VC: UIViewController,
+                                      completeClosure : (()->Void)? = nil)
+    {
         let popupVC = UIStoryboard.init(name: "Popup", bundle: nil).instantiateViewController(withIdentifier: "ErrorDialogViewController") as! ErrorDialogViewController
         popupVC.modalPresentationStyle = .overCurrentContext
         popupVC.setTitleMessage(message: title)
         popupVC.setContentsMessage(message: content)
-        popupVC.confirmButtonCompleteClosure = {}
+        popupVC.confirmButtonCompleteClosure = completeClosure
         DispatchQueue.main.async {
             VC.present(popupVC, animated: false, completion: nil) }
     }

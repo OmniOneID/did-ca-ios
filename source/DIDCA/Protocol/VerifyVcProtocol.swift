@@ -29,7 +29,7 @@ class VerifyVcProtocol: CommonProtocol {
         
         let parameter = try RequestProfile(id: SDKUtils.generateMessageID(), offerId: offerId).toJsonData()
         
-        let data = try await CommnunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-profile")!, requestJsonData: parameter)
+        let data = try await CommunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-profile")!, requestJsonData: parameter)
             
         self.verifyProfile = try _RequestProfile.init(from: data)
         
@@ -48,7 +48,7 @@ class VerifyVcProtocol: CommonProtocol {
                                                accE2e: accE2e,
                                                encVp: MultibaseUtils.encode(type: MultibaseType.base58BTC, data: encVp)).toJsonData()
         
-        let data = try await CommnunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-verify")!, requestJsonData: parameter)
+        let data = try await CommunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-verify")!, requestJsonData: parameter)
         
         let decodedResponse = try _RequestVerify.init(from: data)
         
@@ -66,6 +66,8 @@ class VerifyVcProtocol: CommonProtocol {
     }
     
     public func preProcess(id: String? = nil, txId: String? = nil, offerId: String? = nil) async throws {
+        
+        self.reset()
         
         try await requestProfile(txId: txId, offerId: offerId!)
         

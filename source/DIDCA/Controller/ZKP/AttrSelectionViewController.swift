@@ -75,7 +75,7 @@ extension AttrSelectionViewController: UITableViewDelegate, UITableViewDataSourc
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "attrSelectionCell") as! AttrSelectionTableViewCell
-        cell.changeBorderColor(isSelected: selectedIndex == indexPath.row)
+//        cell.changeBorderColor(isSelected: selectedIndex == indexPath.row)
         
         let subReferent = attrReferent.referent[indexPath.row]
         
@@ -90,6 +90,13 @@ extension AttrSelectionViewController: UITableViewDelegate, UITableViewDataSourc
         tableView.deselectRow(at: indexPath, animated: false)
         selectedIndex = indexPath.row
         
-        tableView.reloadData()
+//        tableView.reloadData()
+        self.dismiss(animated: true)
+        {
+            DispatchQueue.main.async {
+                self.delegate?.selectedAttribute(selectedIndex: self.selectedIndex,
+                                                 indexPath: self.indexPath)
+            }
+        }
     }
 }

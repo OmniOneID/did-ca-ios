@@ -31,7 +31,7 @@ class RegUserProtocol: CommonProtocol {
     private func proposeRegisterUser() async throws -> _ProposeRegisterUser? {
         
         let parameter = try ProposeRegisterUser(id: SDKUtils.generateMessageID()).toJsonData()
-        if let data = try? await CommnunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-register-user")!, requestJsonData: parameter) {
+        if let data = try? await CommunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-register-user")!, requestJsonData: parameter) {
             let proposeRegisterUser = try _ProposeRegisterUser.init(from: data)
             super.txId = proposeRegisterUser.txId
             
@@ -49,7 +49,7 @@ class RegUserProtocol: CommonProtocol {
     private func confirmRegisterUser(responseData: _RequestRegisterUser) async throws -> _ConfirmRegisterUser {
         
         let parameter = try ConfirmRegisterUser(id: SDKUtils.generateMessageID(), txId: responseData.txId, serverToken: super.hServerToken).toJsonData()
-        let data = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-register-user")!, requestJsonData: parameter)
+        let data = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-register-user")!, requestJsonData: parameter)
         let confirmRegisterUser = try _ConfirmRegisterUser(from: data)
         return confirmRegisterUser
     }
@@ -58,7 +58,7 @@ class RegUserProtocol: CommonProtocol {
     private func retrieveKyc() async throws -> _RetrieveKyc {
         
         let parameter = try RetrieveKyc(id: SDKUtils.generateMessageID(), txId: txId, serverToken: hServerToken, kycTxId: Properties.getUserId()!).toJsonData()
-        let data = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/retrieve-kyc")!, requestJsonData: parameter)
+        let data = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/retrieve-kyc")!, requestJsonData: parameter)
         
         return try _RetrieveKyc(from: data)
     }

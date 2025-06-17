@@ -105,7 +105,7 @@ class IssueVCWebViewController: UIViewController {
     
     private func issueVC() {
         self.delegate?.didDidmissWithData()
-        dismiss(animated: true, completion: nil)
+        self.dismiss(animated: false)
     }
 }
 

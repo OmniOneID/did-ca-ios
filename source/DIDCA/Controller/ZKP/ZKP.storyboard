@@ -2,6 +2,7 @@
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
+        <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
@@ -359,77 +360,8 @@
                                     <constraint firstAttribute="trailing" secondItem="Ygr-nn-FOc" secondAttribute="trailing" constant="16" id="roB-f1-gOr"/>
                                 </constraints>
                             </view>
-                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Rat-jE-Pa5" userLabel="BottomView">
-                                <rect key="frame" x="0.0" y="740" width="393" height="54"/>
-                                <subviews>
-                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="xvk-Qy-p71" userLabel="CancelView">
-                                        <rect key="frame" x="0.0" y="0.0" width="196.66666666666666" height="54"/>
-                                        <subviews>
-                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="XxC-ZL-hhH" userLabel="취소하기" customClass="RoundedButton" customModule="DIDCA" customModuleProvider="target">
-                                                <rect key="frame" x="8" y="0.0" width="184.66666666666666" height="54"/>
-                                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                                <fontDescription key="fontDescription" name="SUIT-Bold" family="SUIT" pointSize="20"/>
-                                                <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
-                                                <state key="normal" title="CANCEL">
-                                                    <color key="titleColor" name="PrimaryColor"/>
-                                                </state>
-                                                <userDefinedRuntimeAttributes>
-                                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                                        <real key="value" value="10"/>
-                                                    </userDefinedRuntimeAttribute>
-                                                    <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
-                                                        <real key="value" value="1"/>
-                                                    </userDefinedRuntimeAttribute>
-                                                    <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
-                                                        <color key="value" name="PrimaryColor"/>
-                                                    </userDefinedRuntimeAttribute>
-                                                </userDefinedRuntimeAttributes>
-                                                <connections>
-                                                    <action selector="cancelAction" destination="Y6W-OH-hqX" eventType="touchUpInside" id="o1P-dW-EhC"/>
-                                                </connections>
-                                            </button>
-                                        </subviews>
-                                        <constraints>
-                                            <constraint firstItem="XxC-ZL-hhH" firstAttribute="leading" secondItem="xvk-Qy-p71" secondAttribute="leading" constant="8" id="QVC-Ld-zc9"/>
-                                            <constraint firstItem="XxC-ZL-hhH" firstAttribute="top" secondItem="xvk-Qy-p71" secondAttribute="top" id="dXQ-zx-K85"/>
-                                            <constraint firstAttribute="trailing" secondItem="XxC-ZL-hhH" secondAttribute="trailing" constant="4" id="nXg-CB-gqz"/>
-                                            <constraint firstAttribute="bottom" secondItem="XxC-ZL-hhH" secondAttribute="bottom" id="taO-oo-75R"/>
-                                        </constraints>
-                                    </view>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Pou-uJ-7Wx" userLabel="발급하기" customClass="RoundedButton" customModule="DIDCA" customModuleProvider="target">
-                                        <rect key="frame" x="200.66666666666663" y="0.0" width="184.33333333333337" height="54"/>
-                                        <color key="backgroundColor" name="PrimaryColor"/>
-                                        <fontDescription key="fontDescription" name="SUIT-Bold" family="SUIT" pointSize="20"/>
-                                        <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
-                                        <state key="normal" title="OK">
-                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        </state>
-                                        <userDefinedRuntimeAttributes>
-                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                                <real key="value" value="10"/>
-                                            </userDefinedRuntimeAttribute>
-                                        </userDefinedRuntimeAttributes>
-                                        <connections>
-                                            <action selector="okAction" destination="Y6W-OH-hqX" eventType="touchUpInside" id="D3n-2U-mZD"/>
-                                        </connections>
-                                    </button>
-                                </subviews>
-                                <constraints>
-                                    <constraint firstItem="Pou-uJ-7Wx" firstAttribute="top" secondItem="Rat-jE-Pa5" secondAttribute="top" id="LYq-eA-bYu"/>
-                                    <constraint firstItem="xvk-Qy-p71" firstAttribute="top" secondItem="Rat-jE-Pa5" secondAttribute="top" id="dcb-Ln-iTc"/>
-                                    <constraint firstItem="xvk-Qy-p71" firstAttribute="height" secondItem="Rat-jE-Pa5" secondAttribute="height" id="ewb-BU-Vo6"/>
-                                    <constraint firstItem="Pou-uJ-7Wx" firstAttribute="leading" secondItem="xvk-Qy-p71" secondAttribute="trailing" constant="4" id="g8W-rl-AZG"/>
-                                    <constraint firstItem="xvk-Qy-p71" firstAttribute="width" secondItem="Rat-jE-Pa5" secondAttribute="width" multiplier="0.5" id="iPg-Dc-lIh"/>
-                                    <constraint firstAttribute="trailing" secondItem="Pou-uJ-7Wx" secondAttribute="trailing" constant="8" id="n18-AE-Ulx"/>
-                                    <constraint firstAttribute="height" constant="54" id="phI-nI-9YN"/>
-                                    <constraint firstAttribute="bottom" secondItem="xvk-Qy-p71" secondAttribute="bottom" id="rOq-JM-8aT"/>
-                                    <constraint firstItem="xvk-Qy-p71" firstAttribute="leading" secondItem="Rat-jE-Pa5" secondAttribute="leading" id="t1p-O4-ThL"/>
-                                    <constraint firstAttribute="bottom" secondItem="Pou-uJ-7Wx" secondAttribute="bottom" id="yaD-hZ-uLd"/>
-                                </constraints>
-                            </view>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="80" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="q5B-RY-Yoc">
-                                <rect key="frame" x="8" y="119" width="377" height="613"/>
+                                <rect key="frame" x="8" y="119" width="377" height="699"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <prototypes>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" selectionStyle="none" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="attrSelectionCell" id="SmI-2l-uhv" customClass="AttrSelectionTableViewCell" customModule="DIDCA" customModuleProvider="target">
@@ -521,17 +453,14 @@
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="Rat-jE-Pa5" firstAttribute="leading" secondItem="5EZ-qb-Rvc" secondAttribute="leading" id="6aM-DH-PUj"/>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="q5B-RY-Yoc" secondAttribute="bottom" id="15P-AL-el5"/>
                             <constraint firstItem="q5B-RY-Yoc" firstAttribute="top" secondItem="Bg2-mI-tL5" secondAttribute="bottom" constant="4" id="AsG-4x-UYB"/>
                             <constraint firstItem="Bg2-mI-tL5" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="DVl-k0-Gj1"/>
                             <constraint firstItem="Bg2-mI-tL5" firstAttribute="top" secondItem="5EZ-qb-Rvc" secondAttribute="top" id="EaX-qH-2Sj"/>
-                            <constraint firstItem="Rat-jE-Pa5" firstAttribute="bottom" secondItem="vDu-zF-Fre" secondAttribute="bottom" constant="-24" id="OMA-Pk-iZB"/>
                             <constraint firstItem="Bg2-mI-tL5" firstAttribute="trailing" secondItem="vDu-zF-Fre" secondAttribute="trailing" id="OdD-Hu-wun"/>
                             <constraint firstItem="Ygr-nn-FOc" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="8" id="clf-W2-U00"/>
                             <constraint firstItem="q5B-RY-Yoc" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="8" id="hDP-s9-v43"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="q5B-RY-Yoc" secondAttribute="trailing" constant="8" id="iEB-c7-N9B"/>
-                            <constraint firstItem="Rat-jE-Pa5" firstAttribute="top" secondItem="q5B-RY-Yoc" secondAttribute="bottom" constant="8" id="k9F-iX-a6f"/>
-                            <constraint firstItem="Rat-jE-Pa5" firstAttribute="trailing" secondItem="vDu-zF-Fre" secondAttribute="trailing" id="tHU-pW-EqH"/>
                         </constraints>
                     </view>
                     <connections>

@@ -173,7 +173,7 @@ class UserRegWebViewController: UIViewController {
         // PIN view
         let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
         pinVC.modalPresentationStyle = .fullScreen
-        pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_REGISTRATION_LOCK_TYPE)
+        pinVC.setRequestType(type: .register(isLock: true))
         pinVC.confirmButtonCompleteClosure = { [self] passcode in
             do {
                 print("hWalletToken: \(hWalletToken)")

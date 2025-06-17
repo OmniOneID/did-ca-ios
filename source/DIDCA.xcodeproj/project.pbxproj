@@ -70,6 +70,8 @@
 		C911793E2DD1C89F00F3B573 /* ZKP.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C911793D2DD1C89F00F3B573 /* ZKP.storyboard */; };
 		C91179412DD1D64C00F3B573 /* AttrSelectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91179402DD1D64C00F3B573 /* AttrSelectionViewController.swift */; };
 		C91179442DD1D84100F3B573 /* AttrSelectionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91179432DD1D84100F3B573 /* AttrSelectionTableViewCell.swift */; };
+		C92702082DFFD3D500B4B9D9 /* SelectAuthHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C92702072DFFD3C700B4B9D9 /* SelectAuthHelper.swift */; };
+		C927020A2E00248900B4B9D9 /* BiometricAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C92702092E00247800B4B9D9 /* BiometricAuthenticator.swift */; };
 		C936B5742DCDDA3700ADA345 /* RoundedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */; };
 		C936B5782DCDDBA100ADA345 /* ColorAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C936B5772DCDDBA100ADA345 /* ColorAssets.xcassets */; };
 		C936B57A2DCDDDFB00ADA345 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = C936B5792DCDDDF600ADA345 /* ColorPalette.swift */; };
@@ -188,6 +190,8 @@
 		C911793D2DD1C89F00F3B573 /* ZKP.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = ZKP.storyboard; sourceTree = "<group>"; };
 		C91179402DD1D64C00F3B573 /* AttrSelectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttrSelectionViewController.swift; sourceTree = "<group>"; };
 		C91179432DD1D84100F3B573 /* AttrSelectionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttrSelectionTableViewCell.swift; sourceTree = "<group>"; };
+		C92702072DFFD3C700B4B9D9 /* SelectAuthHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectAuthHelper.swift; sourceTree = "<group>"; };
+		C92702092E00247800B4B9D9 /* BiometricAuthenticator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricAuthenticator.swift; sourceTree = "<group>"; };
 		C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedButton.swift; sourceTree = "<group>"; };
 		C936B5772DCDDBA100ADA345 /* ColorAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ColorAssets.xcassets; sourceTree = "<group>"; };
 		C936B5792DCDDDF600ADA345 /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
@@ -285,6 +289,8 @@
 		7CA981F92C85CBEE00EDF367 /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				C92702092E00247800B4B9D9 /* BiometricAuthenticator.swift */,
+				C92702072DFFD3C700B4B9D9 /* SelectAuthHelper.swift */,
 				C9D519482DED8BA100FD2E62 /* ErrorHandler.swift */,
 				C9BDA66F2DE98BD6002A6C42 /* ImageUtils.swift */,
 				7CA981F72C85CBEE00EDF367 /* SDKUtils.swift */,
@@ -620,6 +626,7 @@
 				7CFA77EC2CBDFDCB00893B70 /* UpdatePushTokenVO.swift in Sources */,
 				7CFA77F02CBE06DB00893B70 /* UpdateUserProtocol.swift in Sources */,
 				C96F389F2DD31F3600A198D5 /* ZKPSubmissionViewController.swift in Sources */,
+				C92702082DFFD3D500B4B9D9 /* SelectAuthHelper.swift in Sources */,
 				7CB772C22C871FA200E05B5D /* UserVO.swift in Sources */,
 				C9BDA6722DE98CB9002A6C42 /* MainVCCollectionViewCell.swift in Sources */,
 				7C5835DC2C87EE7700365849 /* SettingCell.swift in Sources */,
@@ -647,6 +654,7 @@
 				7CA9824A2C85CBEE00EDF367 /* AppDelegate.swift in Sources */,
 				7CA982402C85CBEE00EDF367 /* OneButtonDialogViewController.swift in Sources */,
 				C945551E2DD5A90A000AA0D5 /* ZKPSubmissionTextTableViewCell.swift in Sources */,
+				C927020A2E00248900B4B9D9 /* BiometricAuthenticator.swift in Sources */,
 				7CA982372C85CBEE00EDF367 /* SplashViewController.swift in Sources */,
 				7CA9822D2C85CBEE00EDF367 /* AddVCCell.swift in Sources */,
 				7CA9822B2C85CBEE00EDF367 /* SDKUtils.swift in Sources */,
@@ -846,7 +854,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = GZZD25P96B;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/framework",
@@ -855,7 +863,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DIDCA/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "DIDCA use the camera to issue and verification for VC";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = test;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to access your private key";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -884,7 +892,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = GZZD25P96B;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/framework",
@@ -893,7 +901,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DIDCA/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "DIDCA use the camera to issue and verification for VC";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = test;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to access your private key";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;

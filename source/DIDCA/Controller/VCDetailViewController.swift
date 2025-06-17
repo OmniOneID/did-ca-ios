@@ -89,12 +89,21 @@ class VCDetailViewController: UIViewController {
         ActivityUtil.show(vc: self){
             try await RevokeVcProtocol.shared.preProcess(vcId: self.vc!.id)
         } completeClosure: {
-            do {
-                _ = try WalletAPI.shared.getKeyInfos(ids: ["pin","bio"])
-                
-                self.showSelectAuth()
-            } catch {
-                self.showPin()
+            SelectAuthHelper.show(on: self) { passcode in
+                //
+                ActivityUtil.show(vc: self){
+                    _ = try await RevokeVcProtocol.shared.process(passcode: passcode)
+                } completeClosure: {
+                    self.dismiss(animated: false)
+                } failureCloseClosure: { title, message in
+                    PopupUtils.showAlertPopup(title: title,
+                                              content: message,
+                                              VC: self)
+                }
+            } cancelClosure: {
+                PopupUtils.showAlertPopup(title: "Notification",
+                                          content: "canceled by user",
+                                          VC: self)
             }
         } failureCloseClosure: { title, message in
             PopupUtils.showAlertPopup(title: title,
@@ -191,45 +200,5 @@ extension VCDetailViewController: UITableViewDelegate, UITableViewDataSource
             return cell
         }
         
-    }
-}
-                                        
-extension VCDetailViewController
-{
-    func showSelectAuth(){
-        let selectAuthVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "SelectAuthViewController") as! SelectAuthViewController
-        selectAuthVC.setCommandType(command: 0)
-        selectAuthVC.modalPresentationStyle = .fullScreen
-        
-        DispatchQueue.main.async {
-            self.present(selectAuthVC, animated: false)
-        }
-    }
-    
-    func showPin(){
-        let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
-        pinVC.modalPresentationStyle = .fullScreen
-        pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_AUTHENTICATION_SIGNATURE_TYPE)
-        
-        pinVC.confirmButtonCompleteClosure = { [self] passcode in
-            
-            ActivityUtil.show(vc: self){
-                _ = try await RevokeVcProtocol.shared.process(passcode: passcode)
-            } completeClosure: {
-                self.dismiss(animated: false)
-            } failureCloseClosure: { title, message in
-                PopupUtils.showAlertPopup(title: title,
-                                          content: message,
-                                          VC: self)
-            }
-        }
-        pinVC.cancelButtonCompleteClosure = {
-            PopupUtils.showAlertPopup(title: "Notification",
-                                      content: "canceled by user",
-                                      VC: self)
-        }
-        
-        DispatchQueue.main.async { self.present(pinVC,
-                                                animated: false) }
     }
 }

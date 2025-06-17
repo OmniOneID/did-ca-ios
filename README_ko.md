@@ -43,14 +43,14 @@ Xcode의 기본 빌드 시스템을 사용하여 앱을 컴파일하고 테스�
 아래 `iOS framework를 DIDWalletSDK`로 지칭합니다.
 DIDWalletSDK 프로젝트 클론 및 체크아웃 후 release 폴더에 최신버전을 다운받아 사용하길 권장합니다.
 ```
-git https://https://github.com/OmniOneID/did-client-sdk-ios
+git https://github.com/OmniOneID/did-client-sdk-ios
 ```
 - `DIDWalletSDK.framework`
 
 <br>
 
 SDK가 사용하는 타사 라이브러리에 대한 자체 라이선스는 해당 링크를 참고해주세요. <br>
-[Client SDK License-dependencies](https://github.com/OmniOneID/did-client-sdk-ios/blob/main/dependencies-license.md))
+[Client SDK License-dependencies](https://github.com/OmniOneID/did-client-sdk-ios/blob/main/dependencies-license.md)
 
 <br>
 

@@ -28,8 +28,8 @@ class SettingViewController: UITableViewController {
                 URLs.TAS_URL,
                 URLs.VERIFIER_URL,
                 (try? WalletAPI.shared.getDidDocument(type: .HolderDidDocumnet).id) ?? "",
-                "Provides management of authentication methods.",
-                "",""
+//                "Provides management of authentication methods.",
+//                "",""
                 ]
     }
     

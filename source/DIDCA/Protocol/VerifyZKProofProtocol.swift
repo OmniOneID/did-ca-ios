@@ -30,7 +30,7 @@ class VerifyZKProofProtocol: CommonProtocol {
         
         let parameter = try RequestProfile(id: SDKUtils.generateMessageID(), offerId: offerId).toJsonData()
         
-        let data = try await CommnunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-proof-request-profile")!, requestJsonData: parameter)
+        let data = try await CommunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-proof-request-profile")!, requestJsonData: parameter)
             
         print("proofRequest data - \(data.base64EncodedString())")
         self.proofRequestProfile = try _RequestProofRequestProfile.init(from: data)
@@ -59,7 +59,7 @@ class VerifyZKProofProtocol: CommonProtocol {
                                                                              data: encProof),
                                              nonce: nonce).toJsonData()
         
-        let data = try await CommnunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-verify-proof")!, requestJsonData: parameter)
+        let data = try await CommunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-verify-proof")!, requestJsonData: parameter)
         
         let decodedResponse = try _RequestVerify.init(from: data)
         
@@ -83,6 +83,8 @@ class VerifyZKProofProtocol: CommonProtocol {
     }
     
     public func preProcess(id: String? = nil, txId: String? = nil, offerId: String? = nil) async throws {
+        
+        self.reset()
         
         try await requestProfile(txId: txId, offerId: offerId!)
         

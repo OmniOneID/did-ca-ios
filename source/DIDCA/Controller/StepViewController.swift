@@ -142,7 +142,7 @@ class StepViewController: UIViewController {
         // PIN view
         let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
         pinVC.modalPresentationStyle = .fullScreen
-        pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_AUTHENTICATION_SIGNATURE_TYPE)
+        pinVC.setRequestType(type: .authenticate(isLock: false))
         pinVC.confirmButtonCompleteClosure = { passcode in
             
             ActivityUtil.show(vc: self){
@@ -155,7 +155,7 @@ class StepViewController: UIViewController {
                 
                 // out of scope
                 let requestJsonData = try UpdatePushToken(id: SDKUtils.generateMessageID(), did: didDoc.id, appId: Properties.getCaAppId()!, pushToken: Properties.getPushToken() ?? "").toJsonData()
-                _ = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/update-push-token")!, requestJsonData: requestJsonData)
+                _ = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/update-push-token")!, requestJsonData: requestJsonData)
                 
                 Properties.setRegDidDocCompleted(status: true)
                 
@@ -179,7 +179,7 @@ class StepViewController: UIViewController {
     {
         let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
         pinVC.modalPresentationStyle = .fullScreen
-        pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_REGISTRATION_SIGNATURE_TYPE)
+        pinVC.setRequestType(type: .register(isLock: false))
         pinVC.confirmButtonCompleteClosure = { passcode in
             
             ActivityUtil.show(vc: self){
@@ -234,7 +234,7 @@ class StepViewController: UIViewController {
         popupVC.confirmButtonCompleteClosure = { [self] in
             ActivityUtil.show(vc: self){
                 // register BIO
-                _ = try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), keyId: "bio", algType: AlgorithmType.secp256r1, promptMsg: "please touch your fingerprint")
+                _ = try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), keyId: "bio", algType: AlgorithmType.secp256r1, promptMsg: "Authenticate to access your private key")
                 try WalletAPI.shared.createHolderDIDDocument(hWalletToken: RegUserProtocol.shared.getWalletToken())
             } completeClosure: {
                 self.presentSubmitViewController()

@@ -484,9 +484,7 @@
                     </view>
                     <navigationItem key="navigationItem" title="Submit" style="editor" id="fld-IN-nNC"/>
                     <connections>
-                        <outlet property="comfirmBtn" destination="r8t-DW-1aW" id="TGj-ep-saf"/>
                         <outlet property="completedInfoDescLbl" destination="ya2-R4-cMG" id="EEn-F4-nV6"/>
-                        <outlet property="userImage" destination="ebB-h7-fvL" id="LW0-30-GRM"/>
                         <outlet property="userNameLbl" destination="umV-Iu-dJx" id="8sl-Yu-vKa"/>
                     </connections>
                 </viewController>
@@ -754,7 +752,7 @@
                                                     </userDefinedRuntimeAttribute>
                                                 </userDefinedRuntimeAttributes>
                                                 <connections>
-                                                    <segue destination="9L7-Fz-fy5" kind="modal" id="rbN-lh-s4t"/>
+                                                    <action selector="addVCAction" destination="QQI-g4-wVT" eventType="touchUpInside" id="cEz-gh-gHP"/>
                                                 </connections>
                                             </button>
                                         </subviews>
@@ -1072,35 +1070,22 @@
                                 </attributedString>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" usesAttributedText="YES" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5k4-OD-X7g">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5k4-OD-X7g">
                                 <rect key="frame" x="37.333333333333343" y="205.33333333333334" width="339.66666666666663" height="42.666666666666657"/>
-                                <attributedString key="attributedText">
-                                    <fragment>
-                                        <string key="content">The following certificate is 
+                                <string key="text">The following certificate is 
 submitted to the verifier</string>
-                                        <attributes>
-                                            <font key="NSFont" size="17" name="SUIT-Regular"/>
-                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0"/>
-                                        </attributes>
-                                    </fragment>
-                                </attributedString>
+                                <fontDescription key="fontDescription" name="SUIT-Regular" family="SUIT" pointSize="17"/>
+                                <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" editable="NO" usesAttributedText="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bUF-2R-Tk9">
+                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" editable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bUF-2R-Tk9">
                                 <rect key="frame" x="40" y="528" width="334" height="256"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                <attributedString key="attributedText">
-                                    <fragment>
-                                        <string key="content">Required information
+                                <string key="text">Required information
 
 </string>
-                                        <attributes>
-                                            <color key="NSColor" systemColor="labelColor"/>
-                                            <font key="NSFont" size="19" name="SUIT-Regular"/>
-                                            <paragraphStyle key="NSParagraphStyle" alignment="left" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0"/>
-                                        </attributes>
-                                    </fragment>
-                                </attributedString>
+                                <color key="textColor" systemColor="labelColor"/>
+                                <fontDescription key="fontDescription" name="SUIT-Regular" family="SUIT" pointSize="19"/>
                                 <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                             </textView>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="xxv-Mi-giC">
@@ -1814,11 +1799,11 @@ Wallet</string>
             <objects>
                 <viewController storyboardIdentifier="AddVcViewController" id="9L7-Fz-fy5" userLabel="AddVc" customClass="AddVcViewController" customModule="DIDCA" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="tqi-f0-Wjv">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="886"/>
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="c14-MS-wga">
-                                <rect key="frame" x="0.0" y="0.0" width="414" height="130"/>
+                                <rect key="frame" x="0.0" y="44" width="414" height="130"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" usesAttributedText="YES" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="M3V-Am-rTx">
                                         <rect key="frame" x="30" y="30" width="354" height="26"/>
@@ -1858,10 +1843,10 @@ Wallet</string>
                                 </constraints>
                             </view>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="YwK-7H-IBV">
-                                <rect key="frame" x="0.0" y="129" width="414" height="729"/>
+                                <rect key="frame" x="0.0" y="173" width="414" height="661"/>
                                 <subviews>
                                     <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="tDz-ln-37g">
-                                        <rect key="frame" x="10" y="10" width="394" height="709"/>
+                                        <rect key="frame" x="10" y="10" width="394" height="641"/>
                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                         <collectionViewFlowLayout key="collectionViewLayout" automaticEstimatedItemSize="YES" minimumLineSpacing="0.0" minimumInteritemSpacing="0.0" id="5C3-Ng-kaP">
                                             <size key="itemSize" width="140" height="189"/>
@@ -1964,7 +1949,7 @@ Wallet</string>
                                 </constraints>
                             </view>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0eJ-lk-nlJ" customClass="RoundedButton" customModule="DIDCA" customModuleProvider="target">
-                                <rect key="frame" x="16" y="808" width="383" height="54"/>
+                                <rect key="frame" x="16" y="784" width="383" height="54"/>
                                 <color key="backgroundColor" name="PrimaryColor"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="54" id="sdh-G3-WZy"/>
@@ -1975,6 +1960,11 @@ Wallet</string>
                                 <state key="normal" title="BACK">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 </state>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                        <real key="value" value="10"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
                                 <connections>
                                     <action selector="backBtnAction:" destination="9L7-Fz-fy5" eventType="touchUpInside" id="Gee-6o-xFl"/>
                                 </connections>
@@ -1997,7 +1987,6 @@ Wallet</string>
                     </view>
                     <navigationItem key="navigationItem" title="Submit" style="editor" id="LGG-zo-rKF"/>
                     <connections>
-                        <outlet property="showQrBtn" destination="0eJ-lk-nlJ" id="yAD-vG-OOn"/>
                         <outlet property="vcCollectionView" destination="tDz-ln-37g" id="v6E-If-n3b"/>
                     </connections>
                 </viewController>
@@ -2105,11 +2094,11 @@ Verification method</string>
                                         <rect key="frame" x="0.0" y="20" width="414" height="614"/>
                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                         <prototypes>
-                                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="AuthTypeCell" insetsLayoutMarginsFromSafeArea="NO" selectionStyle="blue" accessoryType="disclosureIndicator" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="AuthTypeCell" rowHeight="62" id="3cL-f6-gDs" userLabel="AuthTypeCell">
+                                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="AuthTypeCell" insetsLayoutMarginsFromSafeArea="NO" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="AuthTypeCell" rowHeight="62" id="3cL-f6-gDs" userLabel="AuthTypeCell">
                                                 <rect key="frame" x="0.0" y="50" width="414" height="62"/>
                                                 <autoresizingMask key="autoresizingMask"/>
                                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="3cL-f6-gDs" id="r94-wD-hqS">
-                                                    <rect key="frame" x="0.0" y="0.0" width="383.66666666666669" height="62"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="414" height="62"/>
                                                     <autoresizingMask key="autoresizingMask"/>
                                                 </tableViewCellContentView>
                                             </tableViewCell>

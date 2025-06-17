@@ -30,7 +30,7 @@ class RevokeVcProtocol : CommonProtocol {
     private func proposeRevokeVc(vcId: String) async throws -> _ProposeRevokeVc? {
         
         let parameter = try ProposeRevokeVc(id: SDKUtils.generateMessageID(), vcId: vcId).toJsonData()
-        if let responseData = try? await CommnunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-revoke-vc")!, requestJsonData: parameter) {
+        if let responseData = try? await CommunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-revoke-vc")!, requestJsonData: parameter) {
             
             let decodedResponse = try _ProposeRevokeVc.init(from: responseData)
             super.vcId = vcId
@@ -63,7 +63,7 @@ class RevokeVcProtocol : CommonProtocol {
         
         let parameter = try ConfirmRevokeVc(id: SDKUtils.generateMessageID(), txId: txId, serverToken: super.hServerToken).toJsonData()
                 
-        let responseData = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-revoke-vc")!, requestJsonData: parameter)
+        let responseData = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-revoke-vc")!, requestJsonData: parameter)
         
         let decodedResponse = try _ConfirmRevokeVc.init(from: responseData)
             

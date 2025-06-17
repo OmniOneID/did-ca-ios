@@ -81,7 +81,7 @@ class MainViewController: UIViewController, DismissDelegate {
                     let vcSchemaId = vc.credentialSchema.id
                     if self.vcSchemas[vcSchemaId] == nil
                     {
-                        let schemaData = try await CommnunicationClient.doGet(url: URL(string: vcSchemaId)!)
+                        let schemaData = try await CommunicationClient.doGet(url: URL(string: vcSchemaId)!)
                         let schema     = try VCSchema.init(from: schemaData)
                         
                         self.vcSchemas[vcSchemaId] = schema
@@ -109,6 +109,20 @@ class MainViewController: UIViewController, DismissDelegate {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         updateUI()
+    }
+    
+    
+    
+    @IBAction func addVCAction()
+    {
+        let addVc = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "AddVcViewController") as! AddVcViewController
+        
+        let navi = UINavigationController(rootViewController: addVc)
+        navi.isNavigationBarHidden = true
+        navi.modalPresentationStyle = .fullScreen
+        DispatchQueue.main.async {
+            self.present(navi, animated: true)
+        }
     }
     
     @IBAction func showQrBtnAction()
@@ -209,7 +223,7 @@ extension MainViewController: UICollectionViewDataSource {
                 }
                 else
                 {
-                    zkpSchema = try await CommnunicationClient.getZKPCredentialSchama(hostUrlString: URLs.API_URL,
+                    zkpSchema = try await CommunicationClient.getZKPCredentialSchama(hostUrlString: URLs.API_URL,
                                                                                       id: zkpVC!.schemaId)
                     self.zkpSchemas[zkpVC!.schemaId] = zkpSchema!
                 }
@@ -271,9 +285,15 @@ extension MainViewController
         issueProfileVC.setVcOffer(vcOfferPayload: vcOffer)
         issueProfileVC.modalPresentationStyle = .fullScreen
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.present(issueProfileVC, animated: false, completion: nil)
+        let navi = UINavigationController(rootViewController: issueProfileVC)
+        navi.isNavigationBarHidden = true
+        navi.modalPresentationStyle = .fullScreen
+        DispatchQueue.main.async {
+            self.present(navi, animated: true)
         }
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+//            self.present(issueProfileVC, animated: false, completion: nil)
+//        }
     }
     
     private func moveToDetailView(vc: VerifiableCredential,

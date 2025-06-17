@@ -34,7 +34,7 @@ public protocol WalletCoreImpl {
   func deleteWallet() throws -> Swift.Bool
   func saveDidDocument(type: DIDWalletSDK.DidDocumentType) throws
   func isExistWallet() throws -> Swift.Bool
-  func generateKey(passcode: Swift.String?, keyId: Swift.String, algType: DIDWalletSDK.AlgorithmType) throws
+  func generateKey(passcode: Swift.String?, keyId: Swift.String, algType: DIDWalletSDK.AlgorithmType, promptMsg: Swift.String?) throws
   func sign(keyId: Swift.String, pin: Foundation.Data?, data: Foundation.Data, type: DIDWalletSDK.DidDocumentType) throws -> Foundation.Data
   func createDeviceDidDocument() throws -> DIDWalletSDK.DIDDocument
   func createHolderDidDocument() throws -> DIDWalletSDK.DIDDocument
@@ -145,11 +145,11 @@ public struct CommunicationSDKError : Swift.Error {
   }
   public init(wrappedValue: Swift.String)
 }
-public struct CommnunicationClient : DIDWalletSDK.CommnunicationProtocol {
+public struct CommunicationClient : DIDWalletSDK.CommunicationProtocol {
   public static func doGet(url: Foundation.URL) async throws -> Foundation.Data
   public static func doPost(url: Foundation.URL, requestJsonData: Foundation.Data) async throws -> Foundation.Data
 }
-extension DIDWalletSDK.CommnunicationClient : DIDWalletSDK.ZKPCommunicationProtocol {
+extension DIDWalletSDK.CommunicationClient : DIDWalletSDK.ZKPCommunicationProtocol {
   public static func getZKPCredentialSchama(hostUrlString: Swift.String, id: Swift.String) async throws -> DIDWalletSDK.ZKPCredentialSchema
   public static func getZKPCredentialDefinition(hostUrlString: Swift.String, id: Swift.String) async throws -> DIDWalletSDK.ZKPCredentialDefinition
 }
@@ -935,7 +935,7 @@ extension DIDWalletSDK.BigUInt {
   }
   public func signum() -> DIDWalletSDK.BigUInt
 }
-public protocol CommnunicationProtocol {
+public protocol CommunicationProtocol {
   static func doGet(url: Foundation.URL) async throws -> Foundation.Data
   static func doPost(url: Foundation.URL, requestJsonData: Foundation.Data) async throws -> Foundation.Data
 }
@@ -2539,6 +2539,8 @@ extension DIDWalletSDK.VCProof : Swift.Codable {
 }
 extension Foundation.Date {
   public static func getUTC0Date(seconds: Swift.UInt) -> Swift.String
+  public static func getDateFormatter() -> Foundation.DateFormatter
+  public static func checkValidation(dateString: Swift.String) throws
 }
 public enum ClaimType : Swift.String, Swift.Codable {
   case text
@@ -2807,10 +2809,6 @@ public class WalletUtil {
   public static func mergeNonce(clientNonce: Foundation.Data?, serverNonce: Foundation.Data?) throws -> Foundation.Data
   public static func mergeSharedSecretAndNonce(sharedSecret: Foundation.Data, nonce: Foundation.Data, symmetricCipherType: DIDWalletSDK.SymmetricCipherType) -> Foundation.Data
   public static func splitData(data: Foundation.Data) -> (Foundation.Data, Foundation.Data)?
-  @objc deinit
-}
-@_hasMissingDesignatedInitializers public class DateUtil {
-  public static func checkDate(targetDateStr: Swift.String) throws -> Swift.Bool
   @objc deinit
 }
 @_inheritsConvenienceInitializers @objc(CaEntity) public class CaEntity : CoreData.NSManagedObject {

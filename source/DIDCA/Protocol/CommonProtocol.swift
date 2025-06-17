@@ -39,6 +39,7 @@ class CommonProtocol {
         self.refId = ""
         self.issueProfile = nil
         self.verifyProfile = nil
+        self.proofRequestProfile = nil
         self.hServerToken = ""
         self.hWalletToken = ""
         self.clientNonce = ""
@@ -122,7 +123,7 @@ class CommonProtocol {
             reqEcdh.proof?.proofValue = MultibaseUtils.encode(type: MultibaseType.base58BTC, data: signature)
             
             let requestJsonData = try RequestEcdh(id: SDKUtils.generateMessageID(), txId: txId, reqEcdh: reqEcdh).toJsonData()
-            let accEcdh = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-ecdh")!, requestJsonData: requestJsonData)
+            let accEcdh = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-ecdh")!, requestJsonData: requestJsonData)
 
             return try _RequestEcdh.init(from: accEcdh)
             
@@ -153,7 +154,7 @@ class CommonProtocol {
             reqEcdh.proof?.proofValue = MultibaseUtils.encode(type: MultibaseType.base58BTC, data: signature)
             
             let requestJsonData = try RequestEcdh(id: SDKUtils.generateMessageID(), txId: txId, reqEcdh: reqEcdh).toJsonData()
-            let accEcdh = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-ecdh")!, requestJsonData: requestJsonData)
+            let accEcdh = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-ecdh")!, requestJsonData: requestJsonData)
 
             return try _RequestEcdh.init(from: accEcdh)
         }
@@ -167,7 +168,7 @@ class CommonProtocol {
     internal func requestAttestedAppInfo() async throws -> AttestedAppInfo {
         
         let requestAttestedAppInfo = try RequestAttestedAppInfo(appId: Properties.getCaAppId()!).toJsonData()
-        let data = try await CommnunicationClient.doPost(url: URL(string: URLs.CAS_URL + "/cas/api/v1/request-attested-appinfo")!, requestJsonData: requestAttestedAppInfo)
+        let data = try await CommunicationClient.doPost(url: URL(string: URLs.CAS_URL + "/cas/api/v1/request-attested-appinfo")!, requestJsonData: requestAttestedAppInfo)
         return try AttestedAppInfo.init(from: data)
     }
     
@@ -179,7 +180,7 @@ class CommonProtocol {
         
         let requestJsonData = try RequestCreateToken(id: SDKUtils.generateMessageID(), txId: txId, seed: seed).toJsonData()
         
-        let data = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-create-token")!, requestJsonData: requestJsonData)
+        let data = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-create-token")!, requestJsonData: requestJsonData)
         
         let requestCreateToken = try _RequestCreateToken.init(from: data)
 

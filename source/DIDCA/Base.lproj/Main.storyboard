@@ -846,7 +846,7 @@
                                                                     <rect key="frame" x="0.0" y="88.666666666666671" width="249" height="26.333333333333329"/>
                                                                     <subviews>
                                                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="VC" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ikk-8V-xRd" customClass="RoundedLabel" customModule="DIDCA" customModuleProvider="target">
-                                                                            <rect key="frame" x="8" y="3" width="35" height="20"/>
+                                                                            <rect key="frame" x="76" y="3" width="35" height="20"/>
                                                                             <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                                             <constraints>
                                                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="35" id="2Lb-Se-Hpe"/>
@@ -862,7 +862,7 @@
                                                                             </userDefinedRuntimeAttributes>
                                                                         </label>
                                                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="ZKP" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="zc2-4s-3T9" customClass="RoundedLabel" customModule="DIDCA" customModuleProvider="target">
-                                                                            <rect key="frame" x="51" y="3" width="35" height="20"/>
+                                                                            <rect key="frame" x="119" y="3" width="35" height="20"/>
                                                                             <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                                             <constraints>
                                                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="35" id="bjU-Ow-dSk"/>
@@ -877,13 +877,31 @@
                                                                                 </userDefinedRuntimeAttribute>
                                                                             </userDefinedRuntimeAttributes>
                                                                         </label>
+                                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="STATUS" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="k5y-VR-zTs" customClass="RoundedLabel" customModule="DIDCA" customModuleProvider="target">
+                                                                            <rect key="frame" x="8" y="3" width="60" height="20"/>
+                                                                            <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                                            <constraints>
+                                                                                <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="60" id="c1d-G8-8yb"/>
+                                                                                <constraint firstAttribute="height" constant="20" id="fmr-0H-KHj"/>
+                                                                            </constraints>
+                                                                            <fontDescription key="fontDescription" name="SUIT-Regular" family="SUIT" pointSize="10"/>
+                                                                            <color key="textColor" name="PrimaryColor"/>
+                                                                            <nil key="highlightedColor"/>
+                                                                            <userDefinedRuntimeAttributes>
+                                                                                <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                                                    <real key="value" value="10"/>
+                                                                                </userDefinedRuntimeAttribute>
+                                                                            </userDefinedRuntimeAttributes>
+                                                                        </label>
                                                                     </subviews>
                                                                     <constraints>
-                                                                        <constraint firstItem="ikk-8V-xRd" firstAttribute="leading" secondItem="3dY-Yt-KJz" secondAttribute="leading" constant="8" id="0Yw-eT-3Hu"/>
+                                                                        <constraint firstItem="ikk-8V-xRd" firstAttribute="leading" secondItem="k5y-VR-zTs" secondAttribute="trailing" constant="8" id="151-DR-gF8"/>
                                                                         <constraint firstItem="zc2-4s-3T9" firstAttribute="leading" secondItem="ikk-8V-xRd" secondAttribute="trailing" constant="8" symbolic="YES" id="K04-8i-MVI"/>
                                                                         <constraint firstItem="zc2-4s-3T9" firstAttribute="centerY" secondItem="3dY-Yt-KJz" secondAttribute="centerY" id="LiQ-cU-A6Y"/>
+                                                                        <constraint firstItem="k5y-VR-zTs" firstAttribute="centerY" secondItem="3dY-Yt-KJz" secondAttribute="centerY" id="XOH-Gq-gHY"/>
                                                                         <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="zc2-4s-3T9" secondAttribute="trailing" constant="20" symbolic="YES" id="f7w-Sr-Udn"/>
                                                                         <constraint firstItem="ikk-8V-xRd" firstAttribute="centerY" secondItem="3dY-Yt-KJz" secondAttribute="centerY" id="pxp-gq-I8O"/>
+                                                                        <constraint firstItem="k5y-VR-zTs" firstAttribute="leading" secondItem="3dY-Yt-KJz" secondAttribute="leading" constant="8" id="qcH-is-CJN"/>
                                                                     </constraints>
                                                                 </view>
                                                             </subviews>
@@ -934,6 +952,7 @@
                                         <size key="customSize" width="343" height="115"/>
                                         <connections>
                                             <outlet property="badgeVCLabel" destination="ikk-8V-xRd" id="0y2-mA-akp"/>
+                                            <outlet property="badgeVCStatusLabel" destination="k5y-VR-zTs" id="lJe-p1-e0e"/>
                                             <outlet property="badgeZKPLabel" destination="zc2-4s-3T9" id="rSW-2F-nmG"/>
                                             <outlet property="issuanceLabel" destination="TYO-bh-4ys" id="rN3-Yx-aX5"/>
                                             <outlet property="logoImgView" destination="25o-zA-3Qb" id="Oxe-PW-TXa"/>
@@ -1259,6 +1278,7 @@ submitted to the verifier</string>
                                             <constraint firstAttribute="bottom" secondItem="HPs-dU-mev" secondAttribute="bottom" id="HLN-zs-sGj"/>
                                             <constraint firstItem="HPs-dU-mev" firstAttribute="top" secondItem="GBT-qo-DaX" secondAttribute="bottom" id="K13-LP-Tlh"/>
                                             <constraint firstAttribute="trailing" secondItem="HPs-dU-mev" secondAttribute="trailing" constant="8" id="Ksq-Ro-wnC"/>
+                                            <constraint firstItem="n4i-by-ZMY" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="GBT-qo-DaX" secondAttribute="trailing" constant="8" symbolic="YES" id="MSq-BN-hBL"/>
                                             <constraint firstItem="GBT-qo-DaX" firstAttribute="centerY" secondItem="Xbm-E1-G95" secondAttribute="centerY" constant="-8" id="YsB-dp-xKf"/>
                                             <constraint firstItem="n4i-by-ZMY" firstAttribute="top" secondItem="Xbm-E1-G95" secondAttribute="top" constant="8" id="iwn-y4-iui"/>
                                             <constraint firstItem="HPs-dU-mev" firstAttribute="leading" secondItem="Xbm-E1-G95" secondAttribute="leading" constant="8" id="lOo-Yx-xer"/>
@@ -1407,9 +1427,58 @@ submitted to the verifier</string>
                     </view>
                     <connections>
                         <outlet property="nameLbl" destination="HPs-dU-mev" id="tdA-xk-Uwi"/>
+                        <outlet property="tableView" destination="jjB-7N-GF1" id="OfI-UL-koS"/>
+                        <outlet property="tableViewHeader" destination="9DZ-Nz-se9" id="ha9-6x-Z0k"/>
+                        <outlet property="vcStatusLabel" destination="5Rl-h6-wF5" id="jus-Sb-y7r"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="j27-mZ-XMh" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+                <view contentMode="scaleToFill" id="9DZ-Nz-se9">
+                    <rect key="frame" x="0.0" y="0.0" width="416" height="26"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                    <subviews>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="jfS-C9-ep0">
+                            <rect key="frame" x="0.0" y="0.0" width="416" height="26"/>
+                            <subviews>
+                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="-------" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5Rl-h6-wF5" customClass="RoundedLabel" customModule="DIDCA" customModuleProvider="target">
+                                    <rect key="frame" x="338" y="3" width="70" height="20"/>
+                                    <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    <constraints>
+                                        <constraint firstAttribute="height" constant="20" id="fMU-VU-T5H"/>
+                                        <constraint firstAttribute="width" constant="70" id="gCE-4x-bHx"/>
+                                    </constraints>
+                                    <fontDescription key="fontDescription" name="SUIT-Regular" family="SUIT" pointSize="12"/>
+                                    <color key="textColor" name="PrimaryColor"/>
+                                    <nil key="highlightedColor"/>
+                                    <userDefinedRuntimeAttributes>
+                                        <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                            <real key="value" value="10"/>
+                                        </userDefinedRuntimeAttribute>
+                                        <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                            <color key="value" name="PrimaryColor"/>
+                                        </userDefinedRuntimeAttribute>
+                                        <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                            <real key="value" value="1"/>
+                                        </userDefinedRuntimeAttribute>
+                                    </userDefinedRuntimeAttributes>
+                                </label>
+                            </subviews>
+                            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                            <constraints>
+                                <constraint firstItem="5Rl-h6-wF5" firstAttribute="centerY" secondItem="jfS-C9-ep0" secondAttribute="centerY" id="rXl-mJ-Vcc"/>
+                                <constraint firstAttribute="trailing" secondItem="5Rl-h6-wF5" secondAttribute="trailing" constant="8" id="vbA-zT-PIN"/>
+                            </constraints>
+                        </view>
+                    </subviews>
+                    <viewLayoutGuide key="safeArea" id="thb-iC-6SF"/>
+                    <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    <constraints>
+                        <constraint firstItem="jfS-C9-ep0" firstAttribute="top" secondItem="9DZ-Nz-se9" secondAttribute="top" id="WLN-6c-XLA"/>
+                        <constraint firstItem="jfS-C9-ep0" firstAttribute="leading" secondItem="thb-iC-6SF" secondAttribute="leading" id="hgU-fm-BqQ"/>
+                        <constraint firstAttribute="trailing" secondItem="jfS-C9-ep0" secondAttribute="trailing" id="kVP-lT-m5G"/>
+                        <constraint firstAttribute="bottom" secondItem="jfS-C9-ep0" secondAttribute="bottom" id="xvk-tJ-Yvr"/>
+                    </constraints>
+                </view>
             </objects>
             <point key="canvasLocation" x="1357" y="-719"/>
         </scene>
@@ -2233,7 +2302,7 @@ Verification method</string>
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemOrangeColor">
-            <color red="1" green="0.58431372549019611" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="1" green="0.58431372550000005" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

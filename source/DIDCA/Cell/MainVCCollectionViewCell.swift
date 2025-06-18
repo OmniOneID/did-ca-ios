@@ -25,6 +25,7 @@ class MainVCCollectionViewCell: UICollectionViewCell
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var validUntilLabel: UILabel!
     @IBOutlet weak var issuanceLabel: UILabel!
+    @IBOutlet weak var badgeVCStatusLabel: RoundedLabel!
     @IBOutlet weak var badgeVCLabel: RoundedLabel!
     @IBOutlet weak var badgeZKPLabel: RoundedLabel!
 }

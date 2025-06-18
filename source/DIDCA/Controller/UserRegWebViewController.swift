@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-import Foundation
-import WebKit
+
 import UIKit
-
-
+@preconcurrency import WebKit
 import DIDWalletSDK
-
-
-
 
 class UserRegWebViewController: UIViewController {
 

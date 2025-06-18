@@ -91,6 +91,7 @@
 		C9D519432DED3B9E00FD2E62 /* ActivityIndicatorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D519422DED3B9E00FD2E62 /* ActivityIndicatorViewController.swift */; };
 		C9D519452DED3CE200FD2E62 /* ActivityUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D519442DED3CE000FD2E62 /* ActivityUtil.swift */; };
 		C9D519492DED8BA600FD2E62 /* ErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D519482DED8BA100FD2E62 /* ErrorHandler.swift */; };
+		C9E1D6962E016306005A3ACE /* VCStatusGetter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E1D6952E0162FC005A3ACE /* VCStatusGetter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -209,6 +210,7 @@
 		C9D519422DED3B9E00FD2E62 /* ActivityIndicatorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityIndicatorViewController.swift; sourceTree = "<group>"; };
 		C9D519442DED3CE000FD2E62 /* ActivityUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityUtil.swift; sourceTree = "<group>"; };
 		C9D519482DED8BA100FD2E62 /* ErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorHandler.swift; sourceTree = "<group>"; };
+		C9E1D6952E0162FC005A3ACE /* VCStatusGetter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VCStatusGetter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -289,6 +291,7 @@
 		7CA981F92C85CBEE00EDF367 /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				C9E1D6952E0162FC005A3ACE /* VCStatusGetter.swift */,
 				C92702092E00247800B4B9D9 /* BiometricAuthenticator.swift */,
 				C92702072DFFD3C700B4B9D9 /* SelectAuthHelper.swift */,
 				C9D519482DED8BA100FD2E62 /* ErrorHandler.swift */,
@@ -636,6 +639,7 @@
 				7CA9822F2C85CBEE00EDF367 /* AddVcViewController.swift in Sources */,
 				7CA982352C85CBEE00EDF367 /* QRScanViewController.swift in Sources */,
 				7CA982452C85CBEE00EDF367 /* RegUserProtocol.swift in Sources */,
+				C9E1D6962E016306005A3ACE /* VCStatusGetter.swift in Sources */,
 				C91179442DD1D84100F3B573 /* AttrSelectionTableViewCell.swift in Sources */,
 				C9D519492DED8BA600FD2E62 /* ErrorHandler.swift in Sources */,
 				7CA982312C85CBEE00EDF367 /* IssueProfileViewController.swift in Sources */,

@@ -46,6 +46,7 @@ class MainViewController: UIViewController, DismissDelegate {
     
     private var vcSchemas : [String : VCSchema] = [:]
     private var zkpSchemas : [String : ZKPCredentialSchema] = [:]
+    private var vcStatus : [String : VCStatusEnum] = [:]
     
     func didDidmissWithData() {
         updateUI()
@@ -70,6 +71,8 @@ class MainViewController: UIViewController, DismissDelegate {
             
             if let credentials = try WalletAPI.shared.getAllCrentials(hWalletToken: hWalletToken) {
                 self.vcs = credentials
+                let vcIds = credentials.map { $0.id }
+                self.vcStatus = try await VCStatusGetter.getStatus(vcIds: vcIds)
                 
                 let didDoc = try WalletAPI.shared.getDidDocument(type: DidDocumentType.HolderDidDocumnet)
                 print("holderDidDoc : \(try didDoc.toJson(isPretty: true))")
@@ -140,7 +143,7 @@ class MainViewController: UIViewController, DismissDelegate {
         qrVC.modalPresentationStyle = .popover
         
         DispatchQueue.main.async {
-            self.present(qrVC, animated: false, completion: nil)
+            self.present(qrVC, animated: true, completion: nil)
         }
 #endif
     }
@@ -197,6 +200,7 @@ extension MainViewController: UICollectionViewDataSource {
         cell.titleLabel.text      = vcSchema.title
         cell.validUntilLabel.text = "ValidUntil: "+SDKUtils.convertDateFormat(dateString: vc.validUntil)!
         cell.issuanceLabel.text   = "IssuanceDate: "+SDKUtils.convertDateFormat(dateString: vc.issuanceDate)!
+        cell.badgeVCStatusLabel.text = vcStatus[vc.id]?.rawValue ?? VCStatusEnum.ACTIVE.rawValue
         cell.badgeZKPLabel.isHidden = !isZkpIncluded
         
         return cell
@@ -273,7 +277,7 @@ extension MainViewController
         navi.modalPresentationStyle = .fullScreen
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.present(navi, animated: false)
+            self.present(navi, animated: true)
         }
     }
     

@@ -34,6 +34,7 @@ class VerifyProfileViewController: UIViewController {
     private var zkpSchemas : [String : ZKPCredentialSchema] = [:]
     private var zkpDefs : [String : ZKPCredentialDefinition] = [:]
     private var referentNameMap : [String : String] = [:]
+    private var vcStatus: [String : VCStatusEnum] = [:]
     
     public func setVpOffer(vpOffer: VerifyOfferPayload)
     {
@@ -324,7 +325,29 @@ extension VerifyProfileViewController
             availableReferent = try WalletAPI.shared.searchCredentials(hWalletToken: hWalletToken,
                                                                            proofRequest: proofRequest!)
         } completeClosure: {
-            self.moveToSubmissionView(availableReferent: availableReferent!)
+            ActivityUtil.show(vc: self){
+                let credIdSet: Set<String> = Set(
+                    availableReferent!.attrReferent.flatMap { $0.referent }
+                        .compactMap { $0.credId } +
+                    availableReferent!.predicateReferent.flatMap { $0.referent }
+                        .compactMap { $0.credId }
+                )
+                self.vcStatus = try await VCStatusGetter.getStatus(vcIds: Array(credIdSet))
+                
+                try self.checkReferentIsAvailable(attrReferent: availableReferent!.attrReferent)
+                try self.checkReferentIsAvailable(attrReferent: availableReferent!.predicateReferent)
+                
+            } completeClosure: {
+                
+                
+                self.moveToSubmissionView(availableReferent: availableReferent!)
+            } failureCloseClosure: { title, message in
+                PopupUtils.showAlertPopup(title: title,
+                                          content: message,
+                                          VC: self){
+                    self.dismiss(animated: true)
+                }
+            }
         } failureCloseClosure: { title, message in
             PopupUtils.showAlertPopup(title: title,
                                       content: message,
@@ -334,6 +357,20 @@ extension VerifyProfileViewController
         }
     }
     
+    func checkReferentIsAvailable(attrReferent : [AttrReferent]) throws
+    {
+        for referent in attrReferent
+        {
+            let trues = Set(referent.referent.compactMap { self.vcStatus[$0.credId] == .ACTIVE })
+            if trues.count != 2
+            {
+                if trues.first! == false
+                {
+                    throw NSError(domain: "No eligible attributes to submit", code: 1)
+                }
+            }
+        }
+    }
     
 }
 
@@ -346,7 +383,8 @@ extension VerifyProfileViewController
         submissionZKP.zkpDefs = self.zkpDefs
         submissionZKP.zkpSchemas = self.zkpSchemas
         submissionZKP.referentNameMap = self.referentNameMap
-        submissionZKP.modalPresentationStyle = .fullScreen
+        submissionZKP.vcStatus = self.vcStatus
+//        submissionZKP.modalPresentationStyle = .fullScreen
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1)
         {

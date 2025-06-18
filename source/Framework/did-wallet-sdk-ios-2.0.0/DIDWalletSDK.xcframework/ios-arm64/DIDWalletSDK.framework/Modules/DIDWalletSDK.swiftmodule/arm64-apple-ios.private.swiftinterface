@@ -1752,17 +1752,16 @@ public struct _RequestProofRequestProfile : DIDWalletSDK.Jsonable {
   public init(from decoder: any Swift.Decoder) throws
 }
 public struct VCMeta : DIDWalletSDK.Jsonable {
-  public var vcId: Swift.String
+  public var id: Swift.String
   public var issuer: DIDWalletSDK.Provider
-  public var did: Swift.String
-  public var credentialSchema: DIDWalletSDK.VCSchema
+  public var subject: Swift.String
+  public var credentialSchema: DIDWalletSDK.IssueProfile.Profile.CredentialSchema
   public var status: DIDWalletSDK.VCStatusEnum
   public var issuanceDate: Swift.String
   public var validFrom: Swift.String
   public var validUntil: Swift.String
   public var formatVersion: Swift.String
   public var language: Swift.String
-  public init(vcId: Swift.String, issuer: DIDWalletSDK.Provider, did: Swift.String, credentialSchema: DIDWalletSDK.VCSchema, status: DIDWalletSDK.VCStatusEnum, issuanceDate: Swift.String, validFrom: Swift.String, validUntil: Swift.String, formatVersion: Swift.String, language: Swift.String)
   public func encode(to encoder: any Swift.Encoder) throws
   public init(from decoder: any Swift.Decoder) throws
 }
@@ -2680,10 +2679,10 @@ public struct OptionSetIterator<Element> : Swift.IteratorProtocol where Element 
   public init(element: Element)
   public mutating func next() -> Element?
 }
-public enum VCStatusEnum : Swift.String, DIDWalletSDK.Jsonable {
-  case Active
-  case Inactive
-  case Revoked
+public enum VCStatusEnum : Swift.String, Swift.Codable {
+  case ACTIVE
+  case INACTIVE
+  case REVOKED
   public init?(rawValue: Swift.String)
   public typealias RawValue = Swift.String
   public var rawValue: Swift.String {

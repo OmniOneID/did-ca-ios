@@ -38,6 +38,22 @@ class VCDetailViewController: UIViewController {
     
     weak var delegate: DismissDelegate?
     
+    @IBOutlet var tableViewHeader: UIView!
+    
+    @IBOutlet weak var tableView: UITableView!
+    {
+        didSet{
+            tableView.tableHeaderView = tableViewHeader
+        }
+    }
+    @IBOutlet weak var vcStatusLabel: RoundedLabel!{
+        didSet{
+            Task { @MainActor in
+                self.vcStatusLabel.text = try await VCStatusGetter.getStatus(vcId: vc!.id).rawValue
+            }
+        }
+    }
+    
     @IBOutlet weak var nameLbl: UILabel!{
         didSet{
             nameLbl.text = Properties.getUserName()
@@ -86,13 +102,16 @@ class VCDetailViewController: UIViewController {
     
     @IBAction func deleteAction()
     {
-        ActivityUtil.show(vc: self){
-            try await RevokeVcProtocol.shared.preProcess(vcId: self.vc!.id)
-        } completeClosure: {
-            SelectAuthHelper.show(on: self) { passcode in
-                //
+        Task { @MainActor in
+            let status = try await VCStatusGetter.getStatus(vcId: vc!.id)
+            
+            if status == .REVOKED
+            {
                 ActivityUtil.show(vc: self){
-                    _ = try await RevokeVcProtocol.shared.process(passcode: passcode)
+                    let hWalletToken = try await SDKUtils.createWalletToken(purpose: .REMOVE_VC,
+                                                                            userId: Properties.getUserId()!)
+                    _ = try WalletAPI.shared.deleteCredentials(hWalletToken: hWalletToken,
+                                                               ids: [self.vc!.id])
                 } completeClosure: {
                     self.dismiss(animated: false)
                 } failureCloseClosure: { title, message in
@@ -100,15 +119,34 @@ class VCDetailViewController: UIViewController {
                                               content: message,
                                               VC: self)
                 }
-            } cancelClosure: {
-                PopupUtils.showAlertPopup(title: "Notification",
-                                          content: "canceled by user",
-                                          VC: self)
+                
             }
-        } failureCloseClosure: { title, message in
-            PopupUtils.showAlertPopup(title: title,
-                                      content: message,
-                                      VC: self)
+            else{
+                ActivityUtil.show(vc: self){
+                    try await RevokeVcProtocol.shared.preProcess(vcId: self.vc!.id)
+                } completeClosure: {
+                    SelectAuthHelper.show(on: self) { passcode in
+                        //
+                        ActivityUtil.show(vc: self){
+                            _ = try await RevokeVcProtocol.shared.process(passcode: passcode)
+                        } completeClosure: {
+                            self.dismiss(animated: false)
+                        } failureCloseClosure: { title, message in
+                            PopupUtils.showAlertPopup(title: title,
+                                                      content: message,
+                                                      VC: self)
+                        }
+                    } cancelClosure: {
+                        PopupUtils.showAlertPopup(title: "Notification",
+                                                  content: "canceled by user",
+                                                  VC: self)
+                    }
+                } failureCloseClosure: { title, message in
+                    PopupUtils.showAlertPopup(title: title,
+                                              content: message,
+                                              VC: self)
+                }
+            }
         }
     }
 }

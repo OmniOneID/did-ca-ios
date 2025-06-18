@@ -69,7 +69,8 @@ class ZKPSubmissionViewController: UIViewController {
     public var referentNameMap : [String : String] = [:]
     
     public var availableReferent : AvailableReferent!
-
+    public var vcStatus: [String : VCStatusEnum]!
+    
     var tempTextField : UnderlinedTextField?
     var tableContentHeight : CGFloat = 0
     
@@ -360,11 +361,12 @@ extension ZKPSubmissionViewController
         vc.indexPath = indexPath
         vc.delegate = self
         vc.zkpSchemas = zkpSchemas
+        vc.vcStatus = vcStatus
         
-        if let value = selectedIndexMap[indexPath]
-        {
-            vc.selectedIndex = value
-        }
+//        if let value = selectedIndexMap[indexPath]
+//        {
+//            vc.selectedIndex = value
+//        }
         
         DispatchQueue.main.async
         {

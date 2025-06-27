@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,14 @@ import UIKit
 
 class VerifyCompletedViewController: UIViewController {
  
-    @IBAction func confirmBtnAction(_ sender: Any) {
-        let submitVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "MainViewController") as! MainViewController
-        submitVC.modalPresentationStyle = .fullScreen
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.present(submitVC, animated: false, completion: nil)
-        }
-    }
     override func viewDidLoad() {
         super.viewDidLoad()
         
     }
+    
+    @IBAction func confirmBtnAction(_ sender: Any)
+    {
+        self.dismiss(animated: true)
+    }
+    
 }

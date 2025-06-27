@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,22 @@ class VCDetailViewController: UIViewController {
     
     weak var delegate: DismissDelegate?
     
+    @IBOutlet var tableViewHeader: UIView!
+    
+    @IBOutlet weak var tableView: UITableView!
+    {
+        didSet{
+            tableView.tableHeaderView = tableViewHeader
+        }
+    }
+    @IBOutlet weak var vcStatusLabel: RoundedLabel!{
+        didSet{
+            Task { @MainActor in
+                self.vcStatusLabel.text = try await VCStatusGetter.getStatus(vcId: vc!.id).rawValue
+            }
+        }
+    }
+    
     @IBOutlet weak var nameLbl: UILabel!{
         didSet{
             nameLbl.text = Properties.getUserName()
@@ -68,7 +84,6 @@ class VCDetailViewController: UIViewController {
     override func viewDidLoad()
     {
         super.viewDidLoad()
-  
     }
     
     public func setVcInfo(vc: VerifiableCredential,
@@ -88,73 +103,50 @@ class VCDetailViewController: UIViewController {
     @IBAction func deleteAction()
     {
         Task { @MainActor in
-            do
+            let status = try await VCStatusGetter.getStatus(vcId: vc!.id)
+            
+            if status == .REVOKED
             {
-                try await RevokeVcProtocol.shared.preProcess(vcId: vc!.id)
-            }
-            catch let error as WalletSDKError
-            {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            }
-            catch let error as WalletCoreError
-            {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            }
-            catch let error as CommunicationSDKError
-            {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            }
-            catch let e as NSError
-            {
-                PopupUtils.showDialogPopup(title: "Error",
-                                           content: e.domain,
-                                           VC: self)
-            }
+                ActivityUtil.show(vc: self){
+                    let hWalletToken = try await SDKUtils.createWalletToken(purpose: .REMOVE_VC,
+                                                                            userId: Properties.getUserId()!)
+                    _ = try WalletAPI.shared.deleteCredentials(hWalletToken: hWalletToken,
+                                                               ids: [self.vc!.id])
+                } completeClosure: {
+                    self.dismiss(animated: false)
+                } failureCloseClosure: { title, message in
+                    PopupUtils.showAlertPopup(title: title,
+                                              content: message,
+                                              VC: self)
+                }
                 
-            do {
-                _ = try WalletAPI.shared.getKeyInfos(ids: ["pin","bio"])
-                
-                let selectAuthVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "SelectAuthViewController") as! SelectAuthViewController
-                selectAuthVC.setCommandType(command: 0)
-                selectAuthVC.modalPresentationStyle = .fullScreen
-                DispatchQueue.main.async { self.present(selectAuthVC, animated: false, completion: nil) }
-            } catch {
-                let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
-                pinVC.modalPresentationStyle = .fullScreen
-                pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_AUTHENTICATION_SIGNATURE_TYPE)
-                pinVC.confirmButtonCompleteClosure = { [self] passcode in
-                    Task { @MainActor in
-                        do {
+            }
+            else{
+                ActivityUtil.show(vc: self){
+                    try await RevokeVcProtocol.shared.preProcess(vcId: self.vc!.id)
+                } completeClosure: {
+                    SelectAuthHelper.show(on: self) { passcode in
+                        //
+                        ActivityUtil.show(vc: self){
                             _ = try await RevokeVcProtocol.shared.process(passcode: passcode)
-                            
-                            let mainVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "MainViewController") as! MainViewController
-                            mainVC.modalPresentationStyle = .fullScreen
-                            DispatchQueue.main.async {
-                                self.present(mainVC, animated: false, completion: nil)
-                            }
-                        } catch let error as WalletSDKError {
-                            print("error code: \(error.code), message: \(error.message)")
-                            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                        } catch let error as WalletCoreError {
-                            print("error code: \(error.code), message: \(error.message)")
-                            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                        } catch let error as CommunicationSDKError {
-                            print("error code: \(error.code), message: \(error.message)")
-                            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                        } catch {
-                            print("error :\(error)")
+                        } completeClosure: {
+                            self.dismiss(animated: false)
+                        } failureCloseClosure: { title, message in
+                            PopupUtils.showAlertPopup(title: title,
+                                                      content: message,
+                                                      VC: self)
                         }
+                    } cancelClosure: {
+                        PopupUtils.showAlertPopup(title: "Notification",
+                                                  content: "canceled by user",
+                                                  VC: self)
                     }
+                } failureCloseClosure: { title, message in
+                    PopupUtils.showAlertPopup(title: title,
+                                              content: message,
+                                              VC: self)
                 }
-                pinVC.cancelButtonCompleteClosure = {
-                    PopupUtils.showAlertPopup(title: "Notification", content: "canceled by user", VC: self)
-                }
-                DispatchQueue.main.async { self.present(pinVC, animated: false, completion: nil) }
             }
-        
         }
     }
 }
@@ -170,7 +162,6 @@ extension VCDetailViewController: UITableViewDelegate, UITableViewDataSource
     {
         if let header = view as? UITableViewHeaderFooterView {
             header.contentView.backgroundColor = .white
-//            header.contentView.directionalLayoutMargins = .zero
             header.preservesSuperviewLayoutMargins = false
             header.contentView.layoutMargins = .zero
             
@@ -181,17 +172,6 @@ extension VCDetailViewController: UITableViewDelegate, UITableViewDataSource
             header.textLabel?.textAlignment = .left
             
         }
-        
-//        guard let header = view as? UITableViewHeaderFooterView else { return }
-//        header.contentView.backgroundColor = .white
-//        
-//        var config = UIListContentConfiguration.plainHeader()
-//        config.text = SectionTitleEnum.init(rawValue: section)!.getTitle()
-//        config.textProperties.font = .init(name: "SUIT-Bold", size: 20)!
-//        config.textProperties.color = ColorPalette.primary
-//        
-//        
-//        header.contentConfiguration = config
         
     }
     
@@ -229,24 +209,18 @@ extension VCDetailViewController: UITableViewDelegate, UITableViewDataSource
             
             if claim.type == .image
             {
-                let image = try! SDKUtils.generateImg(base64String: claim.value)
-                let targetSize = CGSize(width: 100, height: 100)
-                UIGraphicsBeginImageContextWithOptions(targetSize, false, 0.0)
-                image.draw(in: CGRect(origin: .zero, size: targetSize))
-                let newImage = UIGraphicsGetImageFromCurrentImageContext()
-                UIGraphicsEndImageContext()
-                
                 let cell = tableView.dequeueReusableCell(withIdentifier: "imageCell") as! VCDetailImageTableViewCell
-                cell.captionLabel.text = claim.caption
-                cell.claimImageView.image = newImage
-                
+                cell.captionLabel.text    = claim.caption
+                cell.claimImageView.image = try! ImageUtils.generateImg(base64String: claim.value,
+                                                                   targetSize: CGSize(width: 100, height: 100))
+
                 return cell
             }
             else
             {
                 let cell = tableView.dequeueReusableCell(withIdentifier: "stringCell") as! VCDetailStringTableViewCell
                 cell.captionLabel.text = claim.caption
-                cell.valueLabel.text = claim.value
+                cell.valueLabel.text   = claim.value
                 
                 return cell
             }
@@ -266,4 +240,3 @@ extension VCDetailViewController: UITableViewDelegate, UITableViewDataSource
         
     }
 }
-                                        

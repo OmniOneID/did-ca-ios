@@ -44,18 +44,4 @@ class AddVCCell: UICollectionViewCell {
         }
         self.img.contentMode = .scaleAspectFit
     }
-    
-    /// Remove prefix from base64 string
-    /// - Parameter base64String: base64String for img
-    /// - Returns: image
-    private func generateImg(base64String: String) throws -> UIImage {
-        let base64StringWithoutPrefix = base64String.replacingOccurrences(of: "data:image/png;base64,", with: "")
-        if let imageData = Data(base64Encoded: base64StringWithoutPrefix, options: .ignoreUnknownCharacters) {
-            // Convert the Data object to a UIImage object
-            if let image = UIImage(data: imageData) {
-                return image
-            }
-        }
-        throw NSError(domain: "generateImg error", code: 1)
-    }
 }

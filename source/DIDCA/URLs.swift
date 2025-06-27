@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 import Foundation
 
-class URLs {
-    public static let TAS_URL: String = "http://192.168.3.130:8090"
-    public static let VERIFIER_URL: String = "http://192.168.3.130:8092"
-    public static let CAS_URL: String = "http://192.168.3.130:8094"
-    public static let WALLET_URL: String = "http://192.168.3.130:8095"
-    public static let API_URL: String = "http://192.168.3.130:8093"
-    public static let DEMO_URL: String = "http://192.168.3.130:8099"
+struct URLs
+{
+    public static let TAS_URL       : String = "http://192.168.3.130:18090"
+    public static let VERIFIER_URL  : String = "http://192.168.3.130:18092"
+    public static let CAS_URL       : String = "http://192.168.3.130:18094"
+    public static let WALLET_URL    : String = "http://192.168.3.130:18095"
+    public static let API_URL       : String = "http://192.168.3.130:18093"
+    public static let DEMO_URL      : String = "http://192.168.3.130:18099"
 }

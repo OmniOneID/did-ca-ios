@@ -19,25 +19,32 @@ import UIKit
 import DIDWalletSDK
 
 class IssueCompletedViewController: UIViewController {
- 
-    @IBOutlet weak var comfirmBtn: UIButton!
+    
     @IBOutlet weak var userNameLbl: UILabel!
-    @IBOutlet weak var userImage: UIImageView!
-    
-    @IBOutlet weak var completedInfoDescLbl: UILabel!
-    
-    @IBAction func confirmBtnAction(_ sender: Any) {
-        let submitVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "MainViewController") as! MainViewController
-        submitVC.modalPresentationStyle = .fullScreen
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.present(submitVC, animated: false, completion: nil)
+    {
+        didSet
+        {
+            userNameLbl.text = Properties.getUserName()
         }
     }
     
+    @IBOutlet weak var completedInfoDescLbl: UILabel!
+    {
+        didSet
+        {
+            completedInfoDescLbl.text = "you can now add your \(titleString)"
+        }
+    }
+    
+    public var titleString: String = ""
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        userNameLbl.text = Properties.getUserName()
-        completedInfoDescLbl.text = "you can now add your "+(IssueVcProtocol.shared.getIssueProfile()?.profile.title)!
     }
+    
+    @IBAction func confirmBtnAction(_ sender: Any)
+    {
+        self.dismiss(animated: true)
+    }
+    
 }

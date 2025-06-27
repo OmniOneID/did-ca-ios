@@ -28,7 +28,7 @@ class UpdateUserProtocol: CommonProtocol {
     private func proposeUpdateUser(did: String) async throws -> _ProposeUpdateDidDoc {
         
         let parameter = try ProposeUpdateDidDoc(id: SDKUtils.generateMessageID(), did: did).toJsonData()
-        if let data = try? await CommnunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-update-diddoc")!, requestJsonData: parameter) {
+        if let data = try? await CommunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-update-diddoc")!, requestJsonData: parameter) {
             let proposeUpdateDidDoc = try _ProposeUpdateDidDoc.init(from: data)
             super.txId = proposeUpdateDidDoc.txId
             super.authNonce = proposeUpdateDidDoc.authNonce
@@ -52,7 +52,7 @@ class UpdateUserProtocol: CommonProtocol {
     private func confirmUpdateUser(responseData: _RequestUpdateDidDoc) async throws -> _ConfirmUpdateDidDoc {
         
         let parameter = try ConfirmUpdateDidDoc(id: SDKUtils.generateMessageID(), txId: responseData.txId, serverToken: super.hServerToken).toJsonData()
-        let data = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-update-diddoc")!, requestJsonData: parameter)
+        let data = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-update-diddoc")!, requestJsonData: parameter)
         let confirmUpdateUser = try _ConfirmUpdateDidDoc(from: data)
         return confirmUpdateUser
     }

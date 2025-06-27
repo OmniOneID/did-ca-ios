@@ -33,7 +33,7 @@ class IssueVcProtocol : CommonProtocol {
     private func proposeIssueVc(vcPlanId: String, issuer: String, offerId: String? = nil) async throws -> _ProposeIssueVc? {
         
         let parameter = try ProposeIssueVc(id: SDKUtils.generateMessageID(), vcPlanId: vcPlanId, issuer: issuer, offerId: offerId).toJsonData()
-        if let responseData = try? await CommnunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-issue-vc")!, requestJsonData: parameter) {
+        if let responseData = try? await CommunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-issue-vc")!, requestJsonData: parameter) {
             
             let decodedResponse = try _ProposeIssueVc.init(from: responseData)
 
@@ -49,7 +49,7 @@ class IssueVcProtocol : CommonProtocol {
     private func requestIssueProfile() async throws {
         
         let parameter = try RequestIssueProfile(id: SDKUtils.generateMessageID(), txId: txId, serverToken: hServerToken).toJsonData()
-        let responseData = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-issue-profile")!, requestJsonData: parameter)
+        let responseData = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-issue-profile")!, requestJsonData: parameter)
         
         self.issueProfile = try _RequestIssueProfile.init(from: responseData)
         print("issue profile: \(try issueProfile!.toJson())")
@@ -83,7 +83,7 @@ class IssueVcProtocol : CommonProtocol {
         
         let parameter = try ConfirmIssueVc(id: SDKUtils.generateMessageID(), txId: super.txId, serverToken: hServerToken, vcId: vcId).toJsonData()
                 
-        let responseData = try await CommnunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-issue-vc")!, requestJsonData: parameter)
+        let responseData = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-issue-vc")!, requestJsonData: parameter)
         
         let decodedResponse = try _ConfirmIssueVc.init(from: responseData)
             
@@ -101,6 +101,8 @@ class IssueVcProtocol : CommonProtocol {
     }
     
     public func preProcess(vcPlanId: String, issuer: String, offerId: String? = nil) async throws /*-> (String, String, String, _M210_RequestIssueProfile)*/ {
+        
+        self.reset()
         
         try await proposeIssueVc(vcPlanId: vcPlanId, issuer: issuer, offerId: offerId)
                 

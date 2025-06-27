@@ -18,11 +18,8 @@ import UIKit
 import CoreData
 import FirebaseCore
 import FirebaseMessaging
-import DIDUtilitySDK
-import DIDDataModelSDK
-import DIDCoreSDK
 import DIDWalletSDK
-import DIDCommunicationSDK
+
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -120,8 +117,8 @@ extension AppDelegate {
         WalletLogger.shared.setEnable(true)
         WalletLogger.shared.setLogLevel(WalletLogLevel.debug)
         
-        CommunicationLogger.shared.setEnable(true)
-        CommunicationLogger.shared.setLogLevel(CommunicationLogLevel.debug)
+        WalletLogger.shared.setEnable(true)
+        WalletLogger.shared.setLogLevel(.debug)
     }
     
     func initFCMSettings(application: UIApplication) {

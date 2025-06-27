@@ -1,6 +1,0 @@
-framework module DIDCommunicationSDK {
-  umbrella header "DIDCommunicationSDK.h"
-  export *
-
-  module * { export * }
-}

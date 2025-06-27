@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 
 import Foundation
-import DIDUtilitySDK
+
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
+
+
 
 class RestoreUserProtocol: CommonProtocol {
     public static let shared: RestoreUserProtocol = {
@@ -31,7 +31,7 @@ class RestoreUserProtocol: CommonProtocol {
     private func proposeRestoreUser(offerId: String, did: String) async throws -> _ProposeRestoreDidDoc {
         
         let parameter = try ProposeRestoreDidDoc(id: SDKUtils.generateMessageID(), offerId: offerId, did: did).toJsonData()
-        if let data = try? await CommnunicationClient().doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-restore-diddoc")!, requestJsonData: parameter) {
+        if let data = try? await CommunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-restore-diddoc")!, requestJsonData: parameter) {
             let proposeRestoreUser = try _ProposeRestoreDidDoc.init(from: data)
             super.txId = proposeRestoreUser.txId
             super.authNonce = proposeRestoreUser.authNonce
@@ -56,7 +56,7 @@ class RestoreUserProtocol: CommonProtocol {
     private func confirmRestoreUser(responseData: _RequestRestoreDidDoc) async throws -> _ConfirmRestoreDidDoc {
         
         let parameter = try ConfirmRegisterUser(id: SDKUtils.generateMessageID(), txId: responseData.txId, serverToken: super.hServerToken).toJsonData()
-        let data = try await CommnunicationClient().doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-restore-diddoc")!, requestJsonData: parameter)
+        let data = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-restore-diddoc")!, requestJsonData: parameter)
         let confirmRegisterUser = try _ConfirmRestoreDidDoc(from: data)
         return confirmRegisterUser
     }

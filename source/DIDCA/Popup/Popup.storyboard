@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina5_9" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22684"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
+    <customFonts key="customFonts">
+        <array key="SUIT-Bold.otf">
+            <string>SUIT-Bold</string>
+        </array>
+        <array key="SUIT-Regular.otf">
+            <string>SUIT-Regular</string>
+        </array>
+    </customFonts>
     <scenes>
         <!--One Button Dialog View Controller-->
         <scene sceneID="s0d-6b-0kx">
@@ -49,30 +58,22 @@
                                         </attributedString>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" hasAttributedTitle="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Z3g-EW-I4r">
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Z3g-EW-I4r" customClass="RoundedButton" customModule="DIDCA" customModuleProvider="target">
                                         <rect key="frame" x="8" y="122" width="279" height="52"/>
-                                        <color key="backgroundColor" red="1" green="0.51928317550000003" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <color key="backgroundColor" name="PrimaryColor"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="52" id="2DQ-aC-vMl"/>
                                         </constraints>
+                                        <fontDescription key="fontDescription" name="SUIT-Bold" family="SUIT" pointSize="16"/>
                                         <color key="tintColor" systemColor="labelColor"/>
                                         <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
-                                        <state key="normal" title="Button">
-                                            <attributedString key="attributedTitle">
-                                                <fragment content="OK">
-                                                    <attributes>
-                                                        <color key="NSColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
-                                                        <font key="NSFont" size="16" name="SUIT-Bold"/>
-                                                        <paragraphStyle key="NSParagraphStyle" alignment="natural" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0"/>
-                                                    </attributes>
-                                                </fragment>
-                                            </attributedString>
+                                        <state key="normal" title="OK">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         </state>
                                         <userDefinedRuntimeAttributes>
-                                            <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
-                                                <integer key="value" value="10"/>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="10"/>
                                             </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="YES"/>
                                         </userDefinedRuntimeAttributes>
                                         <connections>
                                             <action selector="confirmButtonAction:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="5fP-b6-PzU"/>
@@ -147,73 +148,48 @@
                                         </attributedString>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" hasAttributedTitle="YES" translatesAutoresizingMaskIntoConstraints="NO" id="efa-vT-BPr">
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="efa-vT-BPr" customClass="RoundedButton" customModule="DIDCA" customModuleProvider="target">
                                         <rect key="frame" x="155" y="123" width="132" height="52"/>
-                                        <color key="backgroundColor" red="1" green="0.51764705882352935" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <color key="backgroundColor" name="PrimaryColor"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="52" id="DTr-cU-H9Q"/>
                                         </constraints>
+                                        <fontDescription key="fontDescription" name="SUIT-Bold" family="SUIT" pointSize="16"/>
                                         <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
-                                        <state key="normal">
-                                            <attributedString key="attributedTitle">
-                                                <fragment content="YES">
-                                                    <attributes>
-                                                        <color key="NSColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                                        <font key="NSFont" size="16" name="SUIT-Bold"/>
-                                                        <paragraphStyle key="NSParagraphStyle" alignment="natural" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0"/>
-                                                    </attributes>
-                                                </fragment>
-                                            </attributedString>
-                                        </state>
-                                        <state key="selected">
-                                            <attributedString key="attributedTitle">
-                                                <fragment content="YES">
-                                                    <attributes>
-                                                        <font key="NSFont" metaFont="smallSystem"/>
-                                                        <paragraphStyle key="NSParagraphStyle" alignment="natural" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0"/>
-                                                    </attributes>
-                                                </fragment>
-                                            </attributedString>
+                                        <state key="normal" title="YES">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         </state>
                                         <userDefinedRuntimeAttributes>
-                                            <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
-                                                <integer key="value" value="10"/>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="10"/>
                                             </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="YES"/>
                                         </userDefinedRuntimeAttributes>
                                         <connections>
                                             <action selector="yesButtonAction:" destination="w4d-lx-fDj" eventType="touchUpInside" id="m3C-Nd-CQW"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" hasAttributedTitle="YES" translatesAutoresizingMaskIntoConstraints="NO" id="saX-CJ-i81">
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="saX-CJ-i81" customClass="RoundedButton" customModule="DIDCA" customModuleProvider="target">
                                         <rect key="frame" x="8" y="123" width="139.33333333333334" height="52"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="52" id="AVb-Th-FK9"/>
                                         </constraints>
-                                        <color key="tintColor" red="1" green="0.51764705879999995" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <fontDescription key="fontDescription" name="SUIT-Bold" family="SUIT" pointSize="16"/>
+                                        <color key="tintColor" systemColor="labelColor"/>
                                         <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
-                                        <state key="normal">
-                                            <attributedString key="attributedTitle">
-                                                <fragment content="NO">
-                                                    <attributes>
-                                                        <color key="NSColor" red="1" green="0.51928317550000003" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                                        <font key="NSFont" size="16" name="SUIT-Bold"/>
-                                                        <paragraphStyle key="NSParagraphStyle" alignment="natural" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0"/>
-                                                    </attributes>
-                                                </fragment>
-                                            </attributedString>
+                                        <state key="normal" title="NO">
+                                            <color key="titleColor" name="PrimaryColor"/>
                                         </state>
                                         <userDefinedRuntimeAttributes>
-                                            <userDefinedRuntimeAttribute type="number" keyPath="layer.borderWidth">
-                                                <integer key="value" value="1"/>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="10"/>
                                             </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
-                                                <integer key="value" value="10"/>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                                <real key="value" value="1"/>
                                             </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="YES"/>
-                                            <userDefinedRuntimeAttribute type="color" keyPath="layer.borderUIColor">
-                                                <color key="value" red="0.12658014889999999" green="0.55385082959999998" blue="0.93431550259999996" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                                <color key="value" name="PrimaryColor"/>
                                             </userDefinedRuntimeAttribute>
                                         </userDefinedRuntimeAttributes>
                                         <connections>
@@ -310,30 +286,22 @@
                                         </attributedString>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" hasAttributedTitle="YES" translatesAutoresizingMaskIntoConstraints="NO" id="p0p-j2-iIJ">
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="p0p-j2-iIJ" customClass="RoundedButton" customModule="DIDCA" customModuleProvider="target">
                                         <rect key="frame" x="10" y="166" width="275" height="52"/>
-                                        <color key="backgroundColor" red="1" green="0.51928317550000003" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <color key="backgroundColor" name="PrimaryColor"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="52" id="Rbj-jo-sAS"/>
                                         </constraints>
+                                        <fontDescription key="fontDescription" name="SUIT-Bold" family="SUIT" pointSize="16"/>
                                         <color key="tintColor" systemColor="labelColor"/>
                                         <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
-                                        <state key="normal" title="Button">
-                                            <attributedString key="attributedTitle">
-                                                <fragment content="OK">
-                                                    <attributes>
-                                                        <color key="NSColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
-                                                        <font key="NSFont" size="16" name="SUIT-Bold"/>
-                                                        <paragraphStyle key="NSParagraphStyle" alignment="natural" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0"/>
-                                                    </attributes>
-                                                </fragment>
-                                            </attributedString>
+                                        <state key="normal" title="OK">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         </state>
                                         <userDefinedRuntimeAttributes>
-                                            <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
-                                                <integer key="value" value="10"/>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="10"/>
                                             </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="YES"/>
                                         </userDefinedRuntimeAttributes>
                                         <connections>
                                             <action selector="confirmButtonAction:" destination="7q9-ni-Iig" eventType="touchUpInside" id="1to-zm-BvX"/>
@@ -393,14 +361,202 @@
             </objects>
             <point key="canvasLocation" x="-1591.2" y="5.9113300492610836"/>
         </scene>
+        <!--Input Pop Up View Controller-->
+        <scene sceneID="sDS-LF-Pyj">
+            <objects>
+                <viewController storyboardIdentifier="InputPopUpViewController" id="pfc-1X-gX6" customClass="InputPopUpViewController" customModule="DIDCA" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="ttu-3x-QjE">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="812"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="llB-xr-EUP">
+                                <rect key="frame" x="40" y="290" width="295" height="183"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ClF-aY-mED" customClass="RoundedButton" customModule="DIDCA" customModuleProvider="target">
+                                        <rect key="frame" x="155" y="123" width="132" height="52"/>
+                                        <color key="backgroundColor" name="PrimaryColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="52" id="cOH-wo-XyQ"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="SUIT-Bold" family="SUIT" pointSize="16"/>
+                                        <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
+                                        <state key="normal" title="YES">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="10"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="confirmAction" destination="pfc-1X-gX6" eventType="touchUpInside" id="xDL-pv-tqA"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="QRG-Pl-nYn" customClass="RoundedButton" customModule="DIDCA" customModuleProvider="target">
+                                        <rect key="frame" x="8" y="123" width="139.33333333333334" height="52"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="52" id="k0K-2m-9bT"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="SUIT-Bold" family="SUIT" pointSize="16"/>
+                                        <color key="tintColor" systemColor="labelColor"/>
+                                        <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
+                                        <state key="normal" title="NO">
+                                            <color key="titleColor" name="PrimaryColor"/>
+                                        </state>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="10"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                                <real key="value" value="1"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                                <color key="value" name="PrimaryColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="cancelAction" destination="pfc-1X-gX6" eventType="touchUpInside" id="iIo-gg-UKb"/>
+                                        </connections>
+                                    </button>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WNa-8i-UnQ">
+                                        <rect key="frame" x="0.0" y="0.0" width="295" height="123"/>
+                                        <subviews>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Title" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="N4C-0g-Xrz">
+                                                <rect key="frame" x="8" y="8" width="279" height="20"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="height" constant="20" id="vzH-zf-O6p"/>
+                                                </constraints>
+                                                <fontDescription key="fontDescription" name="SUIT-Regular" family="SUIT" pointSize="17"/>
+                                                <nil key="textColor"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Subtitle" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="AdT-hW-o1i">
+                                                <rect key="frame" x="8" y="36" width="279" height="20"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="height" constant="20" id="FDa-Fj-8hI"/>
+                                                </constraints>
+                                                <fontDescription key="fontDescription" name="SUIT-Regular" family="SUIT" pointSize="15"/>
+                                                <nil key="textColor"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                            <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="please enter the contents." textAlignment="natural" minimumFontSize="17" clearButtonMode="whileEditing" translatesAutoresizingMaskIntoConstraints="NO" id="8Mw-75-ALX" customClass="UnderlinedTextField" customModule="DIDCA" customModuleProvider="target">
+                                                <rect key="frame" x="8" y="64" width="279" height="34"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="height" constant="34" id="WEb-qI-EDh"/>
+                                                </constraints>
+                                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                                <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" returnKeyType="done" smartDashesType="no" smartInsertDeleteType="no" smartQuotesType="no"/>
+                                                <userDefinedRuntimeAttributes>
+                                                    <userDefinedRuntimeAttribute type="color" keyPath="underlineColor">
+                                                        <color key="value" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                    </userDefinedRuntimeAttribute>
+                                                </userDefinedRuntimeAttributes>
+                                                <connections>
+                                                    <outlet property="delegate" destination="pfc-1X-gX6" id="rxQ-hH-tOE"/>
+                                                </connections>
+                                            </textField>
+                                        </subviews>
+                                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                        <constraints>
+                                            <constraint firstItem="AdT-hW-o1i" firstAttribute="top" secondItem="N4C-0g-Xrz" secondAttribute="bottom" constant="8" id="3n9-Ge-AY7"/>
+                                            <constraint firstItem="N4C-0g-Xrz" firstAttribute="leading" secondItem="WNa-8i-UnQ" secondAttribute="leading" constant="8" id="47S-RO-tSa"/>
+                                            <constraint firstItem="8Mw-75-ALX" firstAttribute="leading" secondItem="WNa-8i-UnQ" secondAttribute="leading" constant="8" id="C10-w4-Ynl"/>
+                                            <constraint firstAttribute="trailing" secondItem="AdT-hW-o1i" secondAttribute="trailing" constant="8" id="Icg-5u-vDb"/>
+                                            <constraint firstItem="AdT-hW-o1i" firstAttribute="leading" secondItem="WNa-8i-UnQ" secondAttribute="leading" constant="8" id="M2s-bb-nri"/>
+                                            <constraint firstAttribute="trailing" secondItem="8Mw-75-ALX" secondAttribute="trailing" constant="8" id="gZL-ze-dXe"/>
+                                            <constraint firstItem="N4C-0g-Xrz" firstAttribute="top" secondItem="WNa-8i-UnQ" secondAttribute="top" constant="8" id="iHn-Rl-q8y"/>
+                                            <constraint firstAttribute="trailing" secondItem="N4C-0g-Xrz" secondAttribute="trailing" constant="8" id="lL2-N0-beq"/>
+                                            <constraint firstItem="8Mw-75-ALX" firstAttribute="top" secondItem="AdT-hW-o1i" secondAttribute="bottom" constant="8" id="pG6-YU-Zj4"/>
+                                        </constraints>
+                                    </view>
+                                </subviews>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="trailing" secondItem="ClF-aY-mED" secondAttribute="trailing" constant="8" id="7TH-GN-CBx"/>
+                                    <constraint firstItem="ClF-aY-mED" firstAttribute="leading" secondItem="QRG-Pl-nYn" secondAttribute="trailing" constant="7.6666666666666572" id="FAf-XP-AvT"/>
+                                    <constraint firstItem="QRG-Pl-nYn" firstAttribute="top" secondItem="WNa-8i-UnQ" secondAttribute="bottom" id="PNx-MO-fq2"/>
+                                    <constraint firstItem="ClF-aY-mED" firstAttribute="width" secondItem="QRG-Pl-nYn" secondAttribute="width" multiplier="1.11594" constant="-23.487639999999999" id="PPc-6K-LX6"/>
+                                    <constraint firstAttribute="bottom" secondItem="QRG-Pl-nYn" secondAttribute="bottom" constant="8" id="WBd-2Q-B0R"/>
+                                    <constraint firstItem="WNa-8i-UnQ" firstAttribute="leading" secondItem="llB-xr-EUP" secondAttribute="leading" id="ZTl-66-sPR"/>
+                                    <constraint firstItem="QRG-Pl-nYn" firstAttribute="leading" secondItem="llB-xr-EUP" secondAttribute="leading" constant="8" id="a4g-aG-Mwy"/>
+                                    <constraint firstAttribute="trailing" secondItem="WNa-8i-UnQ" secondAttribute="trailing" id="cb8-OU-Onq"/>
+                                    <constraint firstAttribute="bottom" secondItem="ClF-aY-mED" secondAttribute="bottom" constant="8" id="ePJ-Rz-BRq"/>
+                                    <constraint firstItem="WNa-8i-UnQ" firstAttribute="top" secondItem="llB-xr-EUP" secondAttribute="top" id="n2u-V6-CF9"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <integer key="value" value="10"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="YES"/>
+                                </userDefinedRuntimeAttributes>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="Im2-Q8-c28"/>
+                        <color key="backgroundColor" white="0.66666666669999997" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="llB-xr-EUP" firstAttribute="top" secondItem="Im2-Q8-c28" secondAttribute="top" constant="240" id="US7-WM-KZP"/>
+                            <constraint firstItem="llB-xr-EUP" firstAttribute="centerX" secondItem="Im2-Q8-c28" secondAttribute="centerX" id="Z5S-ul-NlU"/>
+                            <constraint firstItem="Im2-Q8-c28" firstAttribute="trailing" secondItem="llB-xr-EUP" secondAttribute="trailing" constant="40" id="cZv-5X-Xxh"/>
+                            <constraint firstItem="llB-xr-EUP" firstAttribute="centerY" secondItem="Im2-Q8-c28" secondAttribute="centerY" constant="-32.5" id="iqw-w2-B40"/>
+                            <constraint firstItem="llB-xr-EUP" firstAttribute="leading" secondItem="Im2-Q8-c28" secondAttribute="leading" constant="40" id="lDY-2V-db5"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="mainView" destination="llB-xr-EUP" id="Fp5-j5-5W7"/>
+                        <outlet property="subtitleLabel" destination="AdT-hW-o1i" id="rsE-uJ-XdI"/>
+                        <outlet property="textField" destination="8Mw-75-ALX" id="qbq-ja-d3q"/>
+                        <outlet property="titleLabel" destination="N4C-0g-Xrz" id="UWG-os-V32"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="MwH-ER-OV5" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1060" y="5.9113300492610836"/>
+        </scene>
+        <!--Activity Indicator View Controller-->
+        <scene sceneID="8ce-HQ-QXq">
+            <objects>
+                <viewController storyboardIdentifier="ActivityIndicatorViewController" id="KHr-ma-hHa" customClass="ActivityIndicatorViewController" customModule="DIDCA" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="WOt-mL-4Co">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="812"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" animating="YES" style="large" translatesAutoresizingMaskIntoConstraints="NO" id="l1c-IZ-onR">
+                                <rect key="frame" x="167.66666666666666" y="394" width="40" height="40"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="40" id="EzN-PE-ond"/>
+                                    <constraint firstAttribute="width" constant="40" id="uUj-3L-hfS"/>
+                                </constraints>
+                                <color key="color" name="PrimaryColor"/>
+                            </activityIndicatorView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="yCj-cp-Sgl"/>
+                        <color key="backgroundColor" white="0.67000000000000004" alpha="0.94999999999999996" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="l1c-IZ-onR" firstAttribute="centerX" secondItem="yCj-cp-Sgl" secondAttribute="centerX" id="t4X-Zz-hU9"/>
+                            <constraint firstItem="l1c-IZ-onR" firstAttribute="centerY" secondItem="yCj-cp-Sgl" secondAttribute="centerY" id="yn8-4U-jLo"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="hYm-MX-3U6" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1969" y="4"/>
+        </scene>
     </scenes>
     <resources>
         <image name="fail_icon" width="60" height="60"/>
+        <namedColor name="PrimaryColor">
+            <color red="1" green="0.51800000667572021" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <systemColor name="labelColor">
             <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
         <systemColor name="systemGray6Color">
-            <color red="0.94901960780000005" green="0.94901960780000005" blue="0.96862745100000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.94901960784313721" green="0.94901960784313721" blue="0.96862745098039216" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

@@ -27,7 +27,10 @@ class SettingViewController: UITableViewController {
         data = [
                 URLs.TAS_URL,
                 URLs.VERIFIER_URL,
-                (try? WalletAPI.shared.getDidDocument(type: .HolderDidDocumnet).id) ?? ""]
+                (try? WalletAPI.shared.getDidDocument(type: .HolderDidDocumnet).id) ?? "",
+//                "Provides management of authentication methods.",
+//                "",""
+                ]
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -39,19 +42,35 @@ class SettingViewController: UITableViewController {
             return UITableViewCell()
         }
         
-        if (indexPath.row == 0) {
+        if indexPath.row == 0 {
             cell.content1?.text = "TAS URL"
         }
-        else if (indexPath.row == 1) {
+        else if indexPath.row == 1 {
             cell.content1?.text = "Verifier URL"
         }
-        else if (indexPath.row == 2) {
+        else if indexPath.row == 2 {
             cell.content1?.text = "DID"
+        } 
+        else if indexPath.row == 3 {
+            cell.content1?.text = "Change PIN for Signing"
         }
+        else if indexPath.row == 4 {
+            cell.content1?.text = "DID Document Update"
+        }
+        else if indexPath.row == 5 {
+            cell.content1?.text = "DID Document Restore"
+        }
+        
+        
         cell.content2?.text = data[indexPath.row]
         
         return cell
     }
+    
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+         
+        return 70
+     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
@@ -61,7 +80,13 @@ class SettingViewController: UITableViewController {
             let textToCopy = data[indexPath.row]
             UIPasteboard.general.string = textToCopy
             PopupUtils.showDialogPopup(title: "DID text was copied.", content: "\(textToCopy)", VC: self)
+        } 
+        else if indexPath.row == 3 {
+            let authSettingVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "AuthSettingViewController") as! AuthSettingViewController
+            authSettingVC.modalPresentationStyle = .popover
+            DispatchQueue.main.async {
+                self.present(authSettingVC, animated: false, completion: nil)
+            }
         }
     }
-    
 }

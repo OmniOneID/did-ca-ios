@@ -15,7 +15,7 @@
  */
 
 import Foundation
-import DIDDataModelSDK
+import DIDWalletSDK
 
 struct UpdatePushToken: Jsonable {
     public var id: String

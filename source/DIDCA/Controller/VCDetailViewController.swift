@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,145 +14,229 @@
  * limitations under the License.
  */
 
-import Foundation
 import UIKit
-import DIDUtilitySDK
-import DIDDataModelSDK
-import DIDCoreSDK
 import DIDWalletSDK
-import DIDCommunicationSDK
 
 class VCDetailViewController: UIViewController {
     
-    weak var delegate: DismissDelegate?
-    @IBOutlet weak var txtView: UITextView!
-    @IBOutlet weak var nameLbl: UILabel!
-    
-    private var vc: VerifiableCredential? = nil
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    enum SectionTitleEnum : Int
+    {
+        case verifiableCredential
+        case zkp
         
-        do {
-            nameLbl.text = Properties.getUserName()
-            
-            if self.vc != nil {
-                let attributedString = NSMutableAttributedString()
-                for claim in vc!.credentialSubject.claims {
-                    print("claim: \(claim)")
-                    
-                    if claim.type.rawValue == "image" {
-                        // 이미지를 생성합니다.
-                        let image = try! SDKUtils.generateImg(base64String: claim.value)
-                        let targetSize = CGSize(width: 100, height: 100)
-                        UIGraphicsBeginImageContextWithOptions(targetSize, false, 0.0)
-                        image.draw(in: CGRect(origin: .zero, size: targetSize))
-                        let newImage = UIGraphicsGetImageFromCurrentImageContext()
-                        UIGraphicsEndImageContext()
-                        
-                        
-                        // Add an image by creating an NSAttributedString.
-                        let attachment = NSTextAttachment()
-                        attachment.image = newImage
-                        
-                        let imageString = NSAttributedString(attachment: attachment)
-                        
-                        // Add an image to UITextView.
-                        attributedString.append(NSAttributedString(string: "["+claim.caption+"]"))
-                        attributedString.append(NSAttributedString(string: "\n"))
-                        attributedString.append(imageString)
-                        attributedString.append(NSAttributedString(string: "\n\n"))
-                        
-                        
-                    } else {
-                        attributedString.append(NSAttributedString(string: "["+claim.caption+"]"))
-                        attributedString.append(NSAttributedString(string: "\n"))
-                        attributedString.append(NSAttributedString(string: claim.value))
-                        attributedString.append(NSAttributedString(string: "\n\n"))
-//                     = self.txtView.text.appending(claim.code).appending("\n").appending(claim.value).appending("\n\n")
-                    }
-                    self.txtView.attributedText = attributedString
-                }
+        func getTitle() -> String
+        {
+            switch self
+            {
+            case .verifiableCredential:
+                return "Verifiable Credential"
+            case .zkp:
+                return "Zero-Knowledge Proof"
             }
-        } catch let error as WalletSDKError {
-            print("error code: \(error.code), message: \(error.message)")
-            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-        } catch let error as WalletCoreError {
-            print("error code: \(error.code), message: \(error.message)")
-            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-        } catch let error as CommunicationSDKError {
-            print("error code: \(error.code), message: \(error.message)")
-            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-        } catch {
-            print("error :\(error)")
         }
     }
     
-    public func setVcInfo(vc: VerifiableCredential!) {
-        self.vc = vc
+    weak var delegate: DismissDelegate?
+    
+    @IBOutlet var tableViewHeader: UIView!
+    
+    @IBOutlet weak var tableView: UITableView!
+    {
+        didSet{
+            tableView.tableHeaderView = tableViewHeader
+        }
+    }
+    @IBOutlet weak var vcStatusLabel: RoundedLabel!{
+        didSet{
+            Task { @MainActor in
+                self.vcStatusLabel.text = try await VCStatusGetter.getStatus(vcId: vc!.id).rawValue
+            }
+        }
     }
     
-    @IBAction func okBtnAction(_ sender: Any) {
+    @IBOutlet weak var nameLbl: UILabel!{
+        didSet{
+            nameLbl.text = Properties.getUserName()
+        }
+    }
+    
+    private var zkpCaptionDict : [String : String] = [:]
+    private var vc: VerifiableCredential? = nil
+    private var zkpVC : ZKPCredential? = nil
+    private var zkpSchema : ZKPCredentialSchema? = nil
+    {
+        didSet
+        {
+            guard let zkpSchema = zkpSchema else { return }
+            zkpCaptionDict = zkpSchema.attrTypes
+                .flatMap { attr in
+                    attr.items.map { item in
+                        (attr.namespace.id + "." + item.label, item.caption)
+                    }
+                }
+                .reduce(into: [String: String]()) { dict, pair in
+                    dict[pair.0] = pair.1
+                }
+            
+        }
+    }
+    
+    override func viewDidLoad()
+    {
+        super.viewDidLoad()
+    }
+    
+    public func setVcInfo(vc: VerifiableCredential,
+                          zkpVC : ZKPCredential?,
+                          zkpSchema : ZKPCredentialSchema?)
+    {
+        self.vc = vc
+        self.zkpVC = zkpVC
+        self.zkpSchema = zkpSchema
+    }
+    
+    @IBAction func continueAction() {
         self.dismiss(animated: false, completion: nil)
     }
     
-    @IBAction func deleteVcBtnAction(_ sender: Any) {
-
+    
+    @IBAction func deleteAction()
+    {
         Task { @MainActor in
-            do {
-                try await RevokeVcProtocol.shared.preProcess(vcId: vc!.id)
-            } catch let error as WalletSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as WalletCoreError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as CommunicationSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
+            let status = try await VCStatusGetter.getStatus(vcId: vc!.id)
+            
+            if status == .REVOKED
+            {
+                ActivityUtil.show(vc: self){
+                    let hWalletToken = try await SDKUtils.createWalletToken(purpose: .REMOVE_VC,
+                                                                            userId: Properties.getUserId()!)
+                    _ = try WalletAPI.shared.deleteCredentials(hWalletToken: hWalletToken,
+                                                               ids: [self.vc!.id])
+                } completeClosure: {
+                    self.dismiss(animated: false)
+                } failureCloseClosure: { title, message in
+                    PopupUtils.showAlertPopup(title: title,
+                                              content: message,
+                                              VC: self)
+                }
+                
             }
-                
-            do {
-                _ = try WalletAPI.shared.getKeyInfos(ids: ["pin","bio"])
-                
-                let selectAuthVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "SelectAuthViewController") as! SelectAuthViewController
-                selectAuthVC.setCommandType(command: 0)
-                selectAuthVC.modalPresentationStyle = .fullScreen
-                DispatchQueue.main.async { self.present(selectAuthVC, animated: false, completion: nil) }
-            } catch {
-                let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
-                pinVC.modalPresentationStyle = .fullScreen
-                pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_AUTHENTICATION_SIGNATURE_TYPE)
-                pinVC.confirmButtonCompleteClosure = { [self] passcode in
-                    Task { @MainActor in
-                        do {
+            else{
+                ActivityUtil.show(vc: self){
+                    try await RevokeVcProtocol.shared.preProcess(vcId: self.vc!.id)
+                } completeClosure: {
+                    SelectAuthHelper.show(on: self) { passcode in
+                        //
+                        ActivityUtil.show(vc: self){
                             _ = try await RevokeVcProtocol.shared.process(passcode: passcode)
-                            
-                            let mainVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "MainViewController") as! MainViewController
-                            mainVC.modalPresentationStyle = .fullScreen
-                            DispatchQueue.main.async {
-                                self.present(mainVC, animated: false, completion: nil)
-                            }
-                        } catch let error as WalletSDKError {
-                            print("error code: \(error.code), message: \(error.message)")
-                            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                        } catch let error as WalletCoreError {
-                            print("error code: \(error.code), message: \(error.message)")
-                            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                        } catch let error as CommunicationSDKError {
-                            print("error code: \(error.code), message: \(error.message)")
-                            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-                        } catch {
-                            print("error :\(error)")
+                        } completeClosure: {
+                            self.dismiss(animated: false)
+                        } failureCloseClosure: { title, message in
+                            PopupUtils.showAlertPopup(title: title,
+                                                      content: message,
+                                                      VC: self)
                         }
+                    } cancelClosure: {
+                        PopupUtils.showAlertPopup(title: "Notification",
+                                                  content: "canceled by user",
+                                                  VC: self)
                     }
+                } failureCloseClosure: { title, message in
+                    PopupUtils.showAlertPopup(title: title,
+                                              content: message,
+                                              VC: self)
                 }
-                pinVC.cancelButtonCompleteClosure = { 
-                    PopupUtils.showAlertPopup(title: "Notification", content: "canceled by user", VC: self)
-                }
-                DispatchQueue.main.async { self.present(pinVC, animated: false, completion: nil) }
             }
-        
         }
+    }
+}
+
+extension VCDetailViewController: UITableViewDelegate, UITableViewDataSource
+{
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        
+        return SectionTitleEnum.init(rawValue: section)!.getTitle()
+    }
+    
+    func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
+    {
+        if let header = view as? UITableViewHeaderFooterView {
+            header.contentView.backgroundColor = .white
+            header.preservesSuperviewLayoutMargins = false
+            header.contentView.layoutMargins = .zero
+            
+            header.textLabel?.textColor = ColorPalette.primary
+            header.textLabel?.font = .init(name: "SUIT-Bold", size: 20)
+            header.textLabel?.frame.size.width = tableView.frame.width
+            header.textLabel?.frame.origin.x = 0
+            header.textLabel?.textAlignment = .left
+            
+        }
+        
+    }
+    
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat
+    {
+        return 40
+    }
+    
+    func numberOfSections(in tableView: UITableView) -> Int
+    {
+        return (zkpVC != nil) ? 2 : 1
+    }
+    
+    //MARK: Cell
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        switch SectionTitleEnum(rawValue: section)!
+        {
+        case .verifiableCredential:
+            return vc!.credentialSubject.claims.count
+        case .zkp:
+            return zkpVC!.values.count
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
+        let section = SectionTitleEnum(rawValue: indexPath.section)!
+        let row = indexPath.row
+        
+        switch section
+        {
+        case .verifiableCredential:
+            
+            let claim = vc!.credentialSubject.claims[row]
+            
+            if claim.type == .image
+            {
+                let cell = tableView.dequeueReusableCell(withIdentifier: "imageCell") as! VCDetailImageTableViewCell
+                cell.captionLabel.text    = claim.caption
+                cell.claimImageView.image = try! ImageUtils.generateImg(base64String: claim.value,
+                                                                   targetSize: CGSize(width: 100, height: 100))
+
+                return cell
+            }
+            else
+            {
+                let cell = tableView.dequeueReusableCell(withIdentifier: "stringCell") as! VCDetailStringTableViewCell
+                cell.captionLabel.text = claim.caption
+                cell.valueLabel.text   = claim.value
+                
+                return cell
+            }
+            
+            
+        case .zkp:
+            let cell = tableView.dequeueReusableCell(withIdentifier: "stringCell") as! VCDetailStringTableViewCell
+            
+            let keys = Array(zkpVC!.values.keys).sorted()
+            let key = keys[row]
+            
+            cell.captionLabel.text = zkpCaptionDict[key] ?? key
+            cell.valueLabel.text = zkpVC!.values[key]!.raw
+            
+            return cell
+        }
+        
     }
 }

@@ -9,4 +9,5 @@ If you have any questions or require support, please reach out to the maintainer
 
 | Name                      | GitHub                  | email                                      |
 |---------------------------|-------------------------|--------------------------------------------|
+| JooHyun Park              | JoshuaLeeshock          | jhpark0512@raoncorp.com                    |
 | Dongjun Park              | djpark0402              | djpark0402@raoncorp.com                    |

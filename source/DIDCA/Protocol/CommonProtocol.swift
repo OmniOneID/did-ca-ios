@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,7 @@
  */
 
 import Foundation
-import DIDUtilitySDK
-import DIDDataModelSDK
-import DIDCoreSDK
 import DIDWalletSDK
-import DIDCommunicationSDK
 
 class CommonProtocol {
     // 
@@ -27,6 +23,7 @@ class CommonProtocol {
     internal var refId: String = ""
     internal var issueProfile: _RequestIssueProfile?
     internal var verifyProfile: _RequestProfile?
+    internal var proofRequestProfile: _RequestProofRequestProfile?
     internal var hServerToken: String = ""
     internal var hWalletToken: String = ""
     internal var clientNonce: String = ""
@@ -42,6 +39,7 @@ class CommonProtocol {
         self.refId = ""
         self.issueProfile = nil
         self.verifyProfile = nil
+        self.proofRequestProfile = nil
         self.hServerToken = ""
         self.hWalletToken = ""
         self.clientNonce = ""
@@ -70,6 +68,10 @@ class CommonProtocol {
     
     public func getVerifyProfile() -> _RequestProfile? {
         return self.verifyProfile
+    }
+    
+    public func getProofRequestProfile() -> _RequestProofRequestProfile? {
+        return self.proofRequestProfile
     }
     
     public func getIssueProfile() -> _RequestIssueProfile? {
@@ -105,7 +107,7 @@ class CommonProtocol {
                 .setClient(clientType)   // Wallet DID
                 .setClientNonce(clientNonce)
                 .setPublicKey(MultibaseUtils.encode(type: MultibaseType.base58BTC, data: keyPair.publicKey) )
-                .setCurve(EllipticCurveType.secp256r1)
+                .setCurve(.secp256r1)
                 .setProof(Proof(created: Date.getUTC0Date(seconds: 0),
                                 proofPurpose: ProofPurpose.keyAgreement,
                                 verificationMethod: proofType,
@@ -121,7 +123,7 @@ class CommonProtocol {
             reqEcdh.proof?.proofValue = MultibaseUtils.encode(type: MultibaseType.base58BTC, data: signature)
             
             let requestJsonData = try RequestEcdh(id: SDKUtils.generateMessageID(), txId: txId, reqEcdh: reqEcdh).toJsonData()
-            let accEcdh = try await CommnunicationClient().doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-ecdh")!, requestJsonData: requestJsonData)
+            let accEcdh = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-ecdh")!, requestJsonData: requestJsonData)
 
             return try _RequestEcdh.init(from: accEcdh)
             
@@ -136,7 +138,7 @@ class CommonProtocol {
                 .setClient(clientType)   // Wallet DID
                 .setClientNonce(clientNonce)
                 .setPublicKey(MultibaseUtils.encode(type: MultibaseType.base58BTC, data: keyPair.publicKey) )
-                .setCurve(EllipticCurveType.secp256r1)
+                .setCurve(.secp256r1)
                 .setProof(Proof(created: Date.getUTC0Date(seconds: 0),
                                 proofPurpose: ProofPurpose.keyAgreement,
                                 verificationMethod: proofType,
@@ -152,7 +154,7 @@ class CommonProtocol {
             reqEcdh.proof?.proofValue = MultibaseUtils.encode(type: MultibaseType.base58BTC, data: signature)
             
             let requestJsonData = try RequestEcdh(id: SDKUtils.generateMessageID(), txId: txId, reqEcdh: reqEcdh).toJsonData()
-            let accEcdh = try await CommnunicationClient().doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-ecdh")!, requestJsonData: requestJsonData)
+            let accEcdh = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-ecdh")!, requestJsonData: requestJsonData)
 
             return try _RequestEcdh.init(from: accEcdh)
         }
@@ -166,7 +168,7 @@ class CommonProtocol {
     internal func requestAttestedAppInfo() async throws -> AttestedAppInfo {
         
         let requestAttestedAppInfo = try RequestAttestedAppInfo(appId: Properties.getCaAppId()!).toJsonData()
-        let data = try await CommnunicationClient().doPost(url: URL(string: URLs.CAS_URL + "/cas/api/v1/request-attested-appinfo")!, requestJsonData: requestAttestedAppInfo)
+        let data = try await CommunicationClient.doPost(url: URL(string: URLs.CAS_URL + "/cas/api/v1/request-attested-appinfo")!, requestJsonData: requestAttestedAppInfo)
         return try AttestedAppInfo.init(from: data)
     }
     
@@ -178,7 +180,7 @@ class CommonProtocol {
         
         let requestJsonData = try RequestCreateToken(id: SDKUtils.generateMessageID(), txId: txId, seed: seed).toJsonData()
         
-        let data = try await CommnunicationClient().doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-create-token")!, requestJsonData: requestJsonData)
+        let data = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-create-token")!, requestJsonData: requestJsonData)
         
         let requestCreateToken = try _RequestCreateToken.init(from: data)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,32 +14,33 @@
  * limitations under the License.
  */
 
-import Foundation
 import UIKit
-import DIDCoreSDK
 import DIDWalletSDK
-import DIDCommunicationSDK
-import DIDDataModelSDK
 
-public enum PinCodeTypeEnum: Int {
-    case PIN_CODE_UNKNOWN = -1
-    case PIN_CODE_REGISTRATION_LOCK_TYPE = 0
-    case PIN_CODE_AUTHENTICATION_LOCK_TYPE
-    case PIN_CODE_REGISTRATION_SIGNATURE_TYPE
-    case PIN_CODE_AUTHENTICATION_SIGNATURE_TYPE
+private enum MessageLevel : String
+{
+    case register       = "Please register a PIN"
+    case registerLock   = "Please register a Unlock PIN"
+    case input          = "Please input a PIN"
+    case inputLock      = "Please input a Unlock PIN"
+    case reEnterPin     = "Please re-enter your PIN"
+    case newPin         = "Please input new PIN"
+    case notMatchPin    = "PIN does not match"
 }
 
-class PincodeViewController: UIViewController {
-    
-    @IBOutlet weak var img1: UIImageView!
-    @IBOutlet weak var img2: UIImageView!
-    @IBOutlet weak var img3: UIImageView!
-    @IBOutlet weak var img4: UIImageView!
-    @IBOutlet weak var img5: UIImageView!
-    @IBOutlet weak var img6: UIImageView!
-    
-    @IBOutlet weak var deleteBtn: UIButton!
-    @IBOutlet weak var cancelBtn: UIButton!
+enum PinCodeType
+{
+    case register(isLock : Bool)
+    case authenticate(isLock : Bool)
+    case change
+}
+
+//register retry count is < 1
+//authenticate retry count is < 4
+
+class PincodeViewController: UIViewController
+{
+    @IBOutlet var inputImgViews: [UIImageView]!
     @IBOutlet weak var messageLbl: UILabel!
     
     var confirmButtonCompleteClosure:((_ passcode: String) -> Void)?
@@ -47,231 +48,196 @@ class PincodeViewController: UIViewController {
     
     private var securityNumber: String! = ""
     
-    private var requestType: PinCodeTypeEnum = PinCodeTypeEnum.PIN_CODE_UNKNOWN
-    
-    private var passwordCnt: Int = 0
     private var passwordTempValue = ""
+    
+    public var pinCodeType: PinCodeType = .authenticate(isLock: false)
+    
+    var retryCount : Int = 0
+    
+    public func setRequestType(type: PinCodeType)
+    {
+        self.pinCodeType = type
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-    }
-    
-    public func setRequestType(type: PinCodeTypeEnum) {
-        self.requestType = type
-    }
-    
-    public func getRequestType() -> PinCodeTypeEnum {
-        return requestType
-    }
-    
-    private func deleteNumber() throws {
         
-        if securityNumber.count > 1 {
-            securityNumber = String(securityNumber.dropLast())
-        } else if securityNumber.count == 1 {
-            securityNumber = ""
-        }
-        try drowSecurityChar()
+        updateUI()
     }
-    
-    private func cancelNumber() {
-        if let cancelButtonCompleteClosure = cancelButtonCompleteClosure {
-            cancelButtonCompleteClosure()
-            self.dismiss(animated: false, completion: nil)
+        
+    private func drawSecurityChar()
+    {
+        
+        for inputImgView in inputImgViews
+        {
+            inputImgView.image = UIImage(named: inputImgView.tag < securityNumber.count
+                                         ? "Pin_num_out"
+                                         : "Pin_num_in")
         }
     }
     
-    private func drowSecurityChar() throws {
-        
-        let images = (0..<6).map { index -> UIImage? in
-            return UIImage(named: index < securityNumber.count ? "Pin_num_out" : "Pin_num_in")
-        }
-        
-        img1.image = images[0]
-        img2.image = images[1]
-        img3.image = images[2]
-        img4.image = images[3]
-        img5.image = images[4]
-        img6.image = images[5]
-        
+    func completeInputted() throws
+    {
         if securityNumber.count == 6 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 Task { @MainActor in
-            try self.completeInputPassword(passcode: self.securityNumber)
+                    try self.completeInputPassword()
                 }
             }
         }
     }
     
-    private func resetWithUI() {
+    private func updateUI()
+    {
+        switch pinCodeType
+        {
+        case .register(let isLock):
+            self.messageLbl.text = {
+                if retryCount == 0
+                {
+                    return (isLock)
+                    ? MessageLevel.registerLock.rawValue
+                    : MessageLevel.register.rawValue
+                }
+                else
+                {
+                    return MessageLevel.reEnterPin.rawValue
+                }
+            }()
+            
+            
+        case .authenticate(let isLock):
+            self.messageLbl.text = (isLock)
+            ? MessageLevel.inputLock.rawValue
+            : MessageLevel.input.rawValue
+        case .change:
+            self.messageLbl.text = (retryCount == 0)
+            ? MessageLevel.newPin.rawValue
+            : MessageLevel.reEnterPin.rawValue
+        }
+        
         securityNumber = ""
         
-        img1.image = UIImage(named: "Pin_num_in")
-        img2.image = UIImage(named: "Pin_num_in")
-        img3.image = UIImage(named: "Pin_num_in")
-        img4.image = UIImage(named: "Pin_num_in")
-        img5.image = UIImage(named: "Pin_num_in")
-        img6.image = UIImage(named: "Pin_num_in")
+        for inputImgView in inputImgViews
+        {
+            inputImgView.image = UIImage(named: "Pin_num_in")
+        }
     }
     
-    private func lockReg(passcode: String) -> Void {
-        print("passwordCnt: \(passwordCnt)")
-        print("passwordTempValue: \(passwordTempValue)")
+    private func completeInputPassword() throws
+    {
+        var showNotMatch = true
+        switch pinCodeType {
+        case .register, .change:
+            if retryCount == 0
+            {
+                passwordTempValue = self.securityNumber
+                retryCount = 1
+                showNotMatch = false
+            }
+            else
+            {
+                if passwordTempValue == self.securityNumber
+                {
+                    self.dismiss(animated: false) {
+                        self.confirmButtonCompleteClosure?(self.securityNumber)
+                    }
+                    return
+                }
+                else
+                {
+                    retryCount = 0
+                }
+            }
+        case .authenticate(let isLock):
+            if isLock
+            {
+                if (0...3) ~= retryCount
+                {
+                    if try WalletAPI.shared.authenticateLock(passcode: self.securityNumber) == nil
+                    {
+                        retryCount += 1
+                    }
+                    else
+                    {
+                        self.dismiss(animated: false) {
+                            self.confirmButtonCompleteClosure?(self.securityNumber)
+                        }
+                        return
+                    }
+                }
+                else
+                {
+                    retryCount = 0
+                    self.dismiss(animated: false) {
+                        self.cancelButtonCompleteClosure?()
+                    }
+                    return
+                }
+            }
+            else
+            {
+                self.dismiss(animated: false) {
+                    self.confirmButtonCompleteClosure?(self.securityNumber)
+                }
+                return
+            }
+        }
         
-        switch passwordCnt {
-        case 0:
-            passwordTempValue = String(passcode)
-            passwordCnt += 1
-            self.messageLbl.text = "Please re-enter your password"
-            resetWithUI()
-            break
-        case 1:
-            if passwordTempValue == passcode {
-                if let confirmButtonCompleteClosure = confirmButtonCompleteClosure {
-                    confirmButtonCompleteClosure(passcode)
-                    self.dismiss(animated: false, completion: nil)
-                }
-            } else {
-                self.messageLbl.text = "Password does not match"
-                resetWithUI()
-            }
-            passwordCnt = 0
-            passwordTempValue = ""
-            break
-        default:
-            break
-        }
-    }
-    
-    private func lockAuth(passcode: String) throws {
-        switch passwordCnt {
-        case 0...3:
-            if try WalletAPI.shared.authenticateLock(passcode: passcode) == nil {
-                passwordCnt += 1
-                
-                self.messageLbl.text = "Password does not match"
-                resetWithUI()
-                
-            } else {
-                passwordCnt = 0
-                if let confirmButtonCompleteClosure = confirmButtonCompleteClosure {
-                    confirmButtonCompleteClosure(passcode)
-                    self.dismiss(animated: false, completion: nil)
-                }
-            }
-            break
-        case 4:
-            passwordCnt = 0
-            if let cancelButtonCompleteClosure = cancelButtonCompleteClosure {
-                cancelButtonCompleteClosure()
-                self.dismiss(animated: false, completion: nil)
-            }
-            break
-        default:
-            break;
-        }
-    }
-    
-    private func regSignature(passcode: String) {
-        print("passwordCnt: \(passwordCnt)")
-        print("passwordTempValue: \(passwordTempValue)")
-        switch passwordCnt {
-        case 0:
-            passwordTempValue = String(passcode)
-            passwordCnt += 1
-            self.messageLbl.text = "Please re-enter your password"
-            resetWithUI()
-            break
-        case 1:
-            if passwordTempValue == passcode {
-                //키쌍 생성 및 VC발급
-                if let confirmButtonCompleteClosure = confirmButtonCompleteClosure {
-                    confirmButtonCompleteClosure(passcode)
-                    self.dismiss(animated: false, completion: nil)
-                }
-            } else {
-                self.messageLbl.text = "Password does not match"
-                resetWithUI()
-            }
-            passwordCnt = 0
-            passwordTempValue = ""
-            break
-        default:
-            break
-        }
-    }
-    
-    private func authSignature(passcode: String) {
-        switch passwordCnt {
-        case 0...3:
-            passwordCnt = 0
-            if let confirmButtonCompleteClosure = confirmButtonCompleteClosure {
-                confirmButtonCompleteClosure(passcode)
-                self.dismiss(animated: false, completion: nil)
-            }
-            break
-        case 4:
-            passwordCnt = 0
-            if let cancelButtonCompleteClosure = cancelButtonCompleteClosure {
-                cancelButtonCompleteClosure()
-                self.dismiss(animated: false, completion: nil)
-            }
-            break
-        default:
-            break;
-        }
-    }
-    
-    
-    private func completeInputPassword(passcode: String) throws {
+        var delayTime : TimeInterval = 0
         
-        switch self.requestType {
-        case .PIN_CODE_REGISTRATION_LOCK_TYPE:
-            print("reg")
-            lockReg(passcode: passcode)
-            break
-        case .PIN_CODE_AUTHENTICATION_LOCK_TYPE:
-            print("auth")
-            try lockAuth(passcode: passcode)
-            break
-        case .PIN_CODE_REGISTRATION_SIGNATURE_TYPE:
-            print("reg signature")
-            regSignature(passcode: passcode)
-            break;
-        case .PIN_CODE_AUTHENTICATION_SIGNATURE_TYPE:
-            print("auth signature")
-            authSignature(passcode: passcode)
-            break;
-        default:
-            break
+        if showNotMatch
+        {
+            self.messageLbl.text = MessageLevel.notMatchPin.rawValue
+            delayTime = 1
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + delayTime) {
+            self.updateUI()
+        }
+        
+    }
+    
+    @IBAction func onClickButton(_ sender: UIButton)
+    {
+        if securityNumber.count == 6 { return }
+        
+        let number = sender.tag
+        securityNumber += String(number)
+        drawSecurityChar()
+        
+        do
+        {
+            try completeInputted()
+        }
+        catch
+        {
+            let (title, message) = ErrorHandler.handle(error)
+            
+            print("error code: \(title), message: \(message)")
+            PopupUtils.showAlertPopup(title: title,
+                                      content: message,
+                                      VC: self)
         }
     }
     
-    @IBAction func onClickButton(_ sender: UIButton) {
-        
-        do {
-            if sender.tag == -1 {
-                try deleteNumber()
-            } else if sender.tag == -2 {
-                cancelNumber()
-            } else {
-                if let title = sender.currentTitle, let number = Int(title) {
-                    if securityNumber.count == 6 { return }
-                    securityNumber += String(number)
-                    try drowSecurityChar()
-                }
-            }
-        } catch let error as WalletSDKError {
-            print("error code: \(error.code), message: \(error.message)")
-            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-        } catch let error as WalletCoreError {
-            print("error code: \(error.code), message: \(error.message)")
-            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-        } catch let error as CommunicationSDKError {
-            print("error code: \(error.code), message: \(error.message)")
-            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-        } catch {
-            print("error :\(error)")
+    @IBAction func cancelAction()
+    {
+        self.dismiss(animated: false) {
+            self.cancelButtonCompleteClosure?()
         }
     }
+    
+    @IBAction func deleteAction()
+    {
+        if securityNumber.isEmpty { return }
+        
+        securityNumber = String(securityNumber.dropLast())
+        
+        print(#function)
+        print("\(String(describing: securityNumber))")
+        
+        drawSecurityChar()
+    }
+    
 }

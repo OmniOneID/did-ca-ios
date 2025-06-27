@@ -17,14 +17,13 @@
 import Foundation
 import WebKit
 import UIKit
-import DIDDataModelSDK
 import DIDWalletSDK
-import DIDCommunicationSDK
 
 class IssueVCWebViewController: UIViewController {
 
     weak var delegate: DismissDelegate?
     private let hostUrlString = URLs.DEMO_URL + "/addVcInfo?did="
+    public var vcSchemaId : String!
     
     private var webView: WKWebView!
     
@@ -82,7 +81,7 @@ class IssueVCWebViewController: UIViewController {
         do {
             let holderDidDoc = try WalletAPI.shared.getDidDocument(type: DidDocumentType.HolderDidDocumnet)
             
-            let serviceUrl = URL(string: hostUrlString+holderDidDoc.id+"&userName="+Properties.getUserName()!)
+            let serviceUrl = URL(string:"\(hostUrlString)\(holderDidDoc.id)&userName=\(Properties.getUserName()!)&vcSchemaId=\(vcSchemaId!)")
             print("servierUrl: \(serviceUrl!)")
             urlRequest = URLRequest(url: serviceUrl!)
             // progress 바 구현시 사용
@@ -106,7 +105,7 @@ class IssueVCWebViewController: UIViewController {
     
     private func issueVC() {
         self.delegate?.didDidmissWithData()
-        dismiss(animated: true, completion: nil)
+        self.dismiss(animated: false)
     }
 }
 

@@ -41,11 +41,12 @@ class ErrorDialogViewController: UIViewController {
         }
     }
     
-    @IBAction func confirmButtonAction(_ sender: Any) {
-        if let confirmButtonCompleteClosure = confirmButtonCompleteClosure {
-            confirmButtonCompleteClosure()
-            self.dismiss(animated: false, completion: nil)
+    @IBAction func confirmButtonAction(_ sender: Any)
+    {
+        self.dismiss(animated: false) {
+            self.confirmButtonCompleteClosure?()
         }
+        
     }
     
     public func setContentsMessage(message: String) {

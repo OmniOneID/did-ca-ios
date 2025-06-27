@@ -16,11 +16,8 @@
 
 import Foundation
 import UIKit
-import DIDUtilitySDK
-import DIDDataModelSDK
-import DIDCoreSDK
 import DIDWalletSDK
-import DIDCommunicationSDK
+
 
 class SplashViewController: UIViewController {
     
@@ -37,7 +34,7 @@ class SplashViewController: UIViewController {
                 // PIN 화면 호출
                 let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
                 pinVC.modalPresentationStyle = .fullScreen
-                pinVC.setRequestType(type: PinCodeTypeEnum.PIN_CODE_AUTHENTICATION_LOCK_TYPE)
+                pinVC.setRequestType(type: .authenticate(isLock: true))
                 pinVC.confirmButtonCompleteClosure = { [self] passcode in
                     
                     if let vcOfferPayload {
@@ -90,21 +87,23 @@ class SplashViewController: UIViewController {
     private func createWallet() async {
                 
         // create wallet
-        do {
+        do
+        {
             if try WalletAPI.shared.isExistWallet() == false {
                 print("createWallet: \(try await WalletAPI.shared.createWallet(tasURL: URLs.TAS_URL, walletURL: URLs.WALLET_URL))")
             }
-        } catch let error as WalletSDKError {
-            print("error code: \(error.code), message: \(error.message)")
-            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-        } catch let error as WalletCoreError {
-            print("error code: \(error.code), message: \(error.message)")
-            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-        } catch let error as CommunicationSDKError {
-            print("error code: \(error.code), message: \(error.message)")
-            PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-        } catch {
-            print("error \(error)")
+        }
+        catch
+        {
+            let (title, message) = ErrorHandler.handle(error)
+            
+            print("error code: \(title), message: \(message)")
+            PopupUtils.showAlertPopup(title: title,
+                                      content: message,
+                                      VC: self) {
+                try? WalletAPI.shared.deleteWallet()
+                exit(1)
+            }
         }
         
     }

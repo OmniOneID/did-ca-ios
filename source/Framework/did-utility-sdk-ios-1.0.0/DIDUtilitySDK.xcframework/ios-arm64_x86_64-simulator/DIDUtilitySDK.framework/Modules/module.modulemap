@@ -1,6 +1,0 @@
-framework module DIDUtilitySDK {
-  umbrella header "DIDUtilitySDK.h"
-  export *
-
-  module * { export * }
-}

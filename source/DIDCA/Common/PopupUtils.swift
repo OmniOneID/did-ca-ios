@@ -15,15 +15,18 @@
  */
 
 import UIKit
-import Foundation
 
 public class PopupUtils {
-    static public func showAlertPopup(title:String, content: String, VC: UIViewController) {
+    static public func showAlertPopup(title:String,
+                                      content: String,
+                                      VC: UIViewController,
+                                      completeClosure : (()->Void)? = nil)
+    {
         let popupVC = UIStoryboard.init(name: "Popup", bundle: nil).instantiateViewController(withIdentifier: "ErrorDialogViewController") as! ErrorDialogViewController
         popupVC.modalPresentationStyle = .overCurrentContext
         popupVC.setTitleMessage(message: title)
         popupVC.setContentsMessage(message: content)
-        popupVC.confirmButtonCompleteClosure = {}
+        popupVC.confirmButtonCompleteClosure = completeClosure
         DispatchQueue.main.async {
             VC.present(popupVC, animated: false, completion: nil) }
     }
@@ -34,6 +37,18 @@ public class PopupUtils {
         popupVC.setTitleMessage(message: title)
         popupVC.setContentsMessage(message: content)
         popupVC.confirmButtonCompleteClosure = {}
+        DispatchQueue.main.async {
+            VC.present(popupVC, animated: false, completion: nil) }
+    }
+    
+    static public func showInputPopUp(title: String, subtitle : String, VC: UIViewController, completeClosure : @escaping ((String)->Void))
+    {
+        let popupVC = UIStoryboard.init(name: "Popup", bundle: nil).instantiateViewController(withIdentifier: "InputPopUpViewController") as! InputPopUpViewController
+        popupVC.modalPresentationStyle = .overCurrentContext
+        popupVC.setTitleText(titleText: title)
+        popupVC.setSubtitleText(subtitleText: subtitle)
+        popupVC.confirmButtonCompleteClosure = completeClosure
+        
         DispatchQueue.main.async {
             VC.present(popupVC, animated: false, completion: nil) }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 OmniOne.
+ * Copyright 2024-2025 OmniOne.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,54 +16,46 @@
 
 import Foundation
 import UIKit
-import DIDUtilitySDK
-import DIDDataModelSDK
-import DIDCoreSDK
 import DIDWalletSDK
-import DIDCommunicationSDK
 
-class AddVcViewController: UIViewController {
+class AddVcViewController: UIViewController
+{
     
     @IBOutlet weak var vcCollectionView: UICollectionView!
     
-    @IBOutlet weak var addDocBtn: UIButton!
-    @IBOutlet weak var showQrBtn: UIButton!
-    
     private var vcPlans = [VCPlan]()
     
-    override func viewDidLoad() {
+    override func viewDidLoad()
+    {
         super.viewDidLoad()
-       
+    }
+    
+    override func viewDidAppear(_ animated: Bool)
+    {
+        super.viewDidAppear(animated)
+        
         fatchVcPlanList()
     }
     
     private func fatchVcPlanList() {
         
-        Task { @MainActor in
-            do {
-                let responseData = try await CommnunicationClient().doGet(url: URL(string: URLs.TAS_URL + "/list/api/v1/vcplan/list")!)
-                let decodedResponse = try VCPlanList.init(from: responseData)
-                vcPlans = decodedResponse.items
-                setUpCollectionView()
-                
-            } catch let error as WalletSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as WalletCoreError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as CommunicationSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch {
-                print("error :\(error)")
+        ActivityUtil.show(vc: self){
+            let responseData = try await CommunicationClient.doGet(url: URL(string: URLs.TAS_URL + "/list/api/v1/vcplan/list")!)
+            let decodedResponse = try VCPlanList.init(from: responseData)
+            self.vcPlans = decodedResponse.items
+        } completeClosure: {
+            self.setUpCollectionView()
+        } failureCloseClosure: { title, message in
+            PopupUtils.showAlertPopup(title: title,
+                                      content: message,
+                                      VC: self){
+                self.dismiss(animated: true)
             }
         }
     }
     
     private func setUpCollectionView() {
         
-//        vcCollectionView.register(AddVCCell.self, forCellWithReuseIdentifier: "AddVCCell")
         vcCollectionView.delegate = self
         vcCollectionView.dataSource = self
         
@@ -75,26 +67,10 @@ class AddVcViewController: UIViewController {
         vcCollectionView.setCollectionViewLayout(layout, animated: true)
     }
     
-    private func requestVC(qrData: Data) async throws {
-            
-        let vcOffer = try IssueOfferPayload(from: qrData)
-        print("vcOffer JSON: \(try vcOffer.toJson())")
-        
-        let issueProfileVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "IssueProfileViewController") as! IssueProfileViewController
-        issueProfileVC.modalPresentationStyle = .fullScreen
-        DispatchQueue.main.async {
-            self.present(issueProfileVC, animated: false, completion: nil)
-        }
-    }
-    
     @IBAction func backBtnAction(_ sender: Any) {
         DispatchQueue.main.async {
-            self.dismiss(animated: false, completion: nil)
+            self.dismiss(animated: true)
         }
-    }
-    
-    @IBAction func cancelBtnAction(_ sender: Any) {
-        
     }
 }
 
@@ -110,19 +86,17 @@ extension AddVcViewController: UICollectionViewDataSource {
         cell.layer.cornerRadius = 10
         cell.layer.masksToBounds = true
         Task {
-            do {
+            do
+            {
                 try await cell.drowVcPlanInfo(data: try vcPlans[indexPath.row].toJsonData())
-            } catch let error as WalletSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as WalletCoreError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch let error as CommunicationSDKError {
-                print("error code: \(error.code), message: \(error.message)")
-                PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)
-            } catch {
-                print("error :\(error)")
+            }
+            catch {
+                let (title, message) = ErrorHandler.handle(error)
+                
+                print("error code: \(title), message: \(message)")
+                PopupUtils.showAlertPopup(title: title,
+                                          content: message,
+                                          VC: self)
             }
         }
         
@@ -131,16 +105,14 @@ extension AddVcViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let vcPlan = vcPlans[indexPath.row]
-        print("vcPlan: \(try! vcPlan.toJson(isPretty: true))")        
+        let vcSchemaId = vcPlan.credentialSchema.id.components(separatedBy: "=").last!
+         
+        print("vcPlan: \(try! vcPlan.toJson(isPretty: true))")
         let vcOffer = IssueOfferPayload(type: OfferTypeEnum.IssueOffer, vcPlanId: vcPlan.vcPlanId, issuer: vcPlan.allowedIssuers![0])
         print("vcOffer JSON: \(try! vcOffer.toJson())")
         
-        let issueProfileVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "IssueProfileViewController") as! IssueProfileViewController
-        issueProfileVC.setVcOffer(vcOfferPayload: vcOffer, isWebView: true)
-        issueProfileVC.modalPresentationStyle = .fullScreen
-        DispatchQueue.main.async {
-            self.present(issueProfileVC, animated: false, completion: nil)
-        }
+        moveToProfileView(vcSchemaId: vcSchemaId,
+                          vcOffer: vcOffer)
     }
 }
 
@@ -158,5 +130,20 @@ extension AddVcViewController: UICollectionViewDelegateFlowLayout {
         let widthPerItem = collectionView.frame.width / 2 - lay.minimumInteritemSpacing
         
         return CGSize(width: widthPerItem - 20, height: 200)
+    }
+}
+
+extension AddVcViewController
+{
+    func moveToProfileView(vcSchemaId : String,
+                           vcOffer: IssueOfferPayload)
+    {
+        let issueProfileVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "IssueProfileViewController") as! IssueProfileViewController
+        issueProfileVC.vcSchemaId = vcSchemaId
+        issueProfileVC.setVcOffer(vcOfferPayload: vcOffer,
+                                  isWebView: true)
+        
+        self.navigationController?.pushViewController(issueProfileVC,
+                                                      animated: true)
     }
 }

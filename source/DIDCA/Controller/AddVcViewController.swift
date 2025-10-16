@@ -40,8 +40,9 @@ class AddVcViewController: UIViewController
     private func fatchVcPlanList() {
         
         ActivityUtil.show(vc: self){
-            let responseData = try await CommunicationClient.doGet(url: URL(string: URLs.TAS_URL + "/list/api/v1/vcplan/list")!)
-            let decodedResponse = try VCPlanList.init(from: responseData)
+            let urlString = URLs.TAS_URL + "/list/api/v1/vcplan/list"
+            let decodedResponse : VCPlanList = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                                         httpMethod: .GET)
             self.vcPlans = decodedResponse.items
         } completeClosure: {
             self.setUpCollectionView()

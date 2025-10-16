@@ -108,15 +108,12 @@ class IssueProfileViewController: UIViewController
     }
     private func switchAuthentications() {
         
-        do {
-            let keyInfos: [KeyInfo] = try WalletAPI.shared.getKeyInfos(ids: ["pin", "bio"])
-            print("keyInfos: \(keyInfos)")
-            
-            issueVcProcess()
-        } catch {
-            
-            print("issueVcProcess error: \(error.localizedDescription)")
-            self.showPin()
+        SelectAuthHelper.show(on: self) { passcode in
+            self.issueVcProcess(passcode: passcode)
+        } cancelClosure: {
+            PopupUtils.showAlertPopup(title: "Notification",
+                                      content: "canceled by user",
+                                      VC: self)
         }
     }
     
@@ -149,21 +146,6 @@ extension IssueProfileViewController
         {
             self.navigationController?.pushViewController(issueCompletedVC, animated: true)
         }
-    }
-    
-    func showPin()
-    {
-        let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
-        pinVC.modalPresentationStyle = .fullScreen
-        pinVC.setRequestType(type: .authenticate(isLock: false))
-        pinVC.confirmButtonCompleteClosure = { passcode in
-            
-            self.issueVcProcess(passcode: passcode)
-        }
-        pinVC.cancelButtonCompleteClosure = {
-            PopupUtils.showAlertPopup(title: "Notification", content: "canceled by user", VC: self)
-        }
-        DispatchQueue.main.async { self.present(pinVC, animated: false, completion: nil) }
     }
 }
 

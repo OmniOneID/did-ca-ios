@@ -64,14 +64,16 @@
 		7CFA77EC2CBDFDCB00893B70 /* UpdatePushTokenVO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CFA77EB2CBDFDCB00893B70 /* UpdatePushTokenVO.swift */; };
 		7CFA77F02CBE06DB00893B70 /* UpdateUserProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CFA77EF2CBE06DB00893B70 /* UpdateUserProtocol.swift */; };
 		C91179332DD1B6F000F3B573 /* RoundedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91179322DD1B6EC00F3B573 /* RoundedView.swift */; };
-		C91179372DD1BEE100F3B573 /* DIDWalletSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C91179342DD1B8B800F3B573 /* DIDWalletSDK.xcframework */; };
-		C91179382DD1BEE100F3B573 /* DIDWalletSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C91179342DD1B8B800F3B573 /* DIDWalletSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		C911793C2DD1C07400F3B573 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = C911793B2DD1C07400F3B573 /* OrderedCollections */; };
 		C911793E2DD1C89F00F3B573 /* ZKP.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C911793D2DD1C89F00F3B573 /* ZKP.storyboard */; };
 		C91179412DD1D64C00F3B573 /* AttrSelectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91179402DD1D64C00F3B573 /* AttrSelectionViewController.swift */; };
 		C91179442DD1D84100F3B573 /* AttrSelectionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91179432DD1D84100F3B573 /* AttrSelectionTableViewCell.swift */; };
+		C91620D42E8BA798003B23A0 /* DIDWalletSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C99462302E8A479A00031721 /* DIDWalletSDK.xcframework */; };
+		C91620D52E8BA798003B23A0 /* DIDWalletSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C99462302E8A479A00031721 /* DIDWalletSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		C916229B2E8BC0DA003B23A0 /* ChevronSettingCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C916229A2E8BC0DA003B23A0 /* ChevronSettingCell.swift */; };
 		C92702082DFFD3D500B4B9D9 /* SelectAuthHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C92702072DFFD3C700B4B9D9 /* SelectAuthHelper.swift */; };
 		C927020A2E00248900B4B9D9 /* BiometricAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C92702092E00247800B4B9D9 /* BiometricAuthenticator.swift */; };
+		C930A6502E9E247800DABB8F /* KeyIds.swift in Sources */ = {isa = PBXBuildFile; fileRef = C930A64F2E9E247400DABB8F /* KeyIds.swift */; };
 		C936B5742DCDDA3700ADA345 /* RoundedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */; };
 		C936B5782DCDDBA100ADA345 /* ColorAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C936B5772DCDDBA100ADA345 /* ColorAssets.xcassets */; };
 		C936B57A2DCDDDFB00ADA345 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = C936B5792DCDDDF600ADA345 /* ColorPalette.swift */; };
@@ -112,13 +114,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		C91179392DD1BEE200F3B573 /* Embed Frameworks */ = {
+		C91620D62E8BA798003B23A0 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				C91179382DD1BEE100F3B573 /* DIDWalletSDK.xcframework in Embed Frameworks */,
+				C91620D52E8BA798003B23A0 /* DIDWalletSDK.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -191,8 +193,10 @@
 		C911793D2DD1C89F00F3B573 /* ZKP.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = ZKP.storyboard; sourceTree = "<group>"; };
 		C91179402DD1D64C00F3B573 /* AttrSelectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttrSelectionViewController.swift; sourceTree = "<group>"; };
 		C91179432DD1D84100F3B573 /* AttrSelectionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttrSelectionTableViewCell.swift; sourceTree = "<group>"; };
+		C916229A2E8BC0DA003B23A0 /* ChevronSettingCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChevronSettingCell.swift; sourceTree = "<group>"; };
 		C92702072DFFD3C700B4B9D9 /* SelectAuthHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectAuthHelper.swift; sourceTree = "<group>"; };
 		C92702092E00247800B4B9D9 /* BiometricAuthenticator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricAuthenticator.swift; sourceTree = "<group>"; };
+		C930A64F2E9E247400DABB8F /* KeyIds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyIds.swift; sourceTree = "<group>"; };
 		C936B5732DCDDA2D00ADA345 /* RoundedButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedButton.swift; sourceTree = "<group>"; };
 		C936B5772DCDDBA100ADA345 /* ColorAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ColorAssets.xcassets; sourceTree = "<group>"; };
 		C936B5792DCDDDF600ADA345 /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
@@ -204,6 +208,7 @@
 		C96F38A02DD31FA300A198D5 /* ZKPSubmissionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZKPSubmissionTableViewCell.swift; sourceTree = "<group>"; };
 		C9878CF42DD4AA87002A192D /* VCDetailStringTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VCDetailStringTableViewCell.swift; sourceTree = "<group>"; };
 		C9878CF82DD4AAA9002A192D /* VCDetailImageTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VCDetailImageTableViewCell.swift; sourceTree = "<group>"; };
+		C99462302E8A479A00031721 /* DIDWalletSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = DIDWalletSDK.xcframework; path = "Framework/did-wallet-sdk-ios-2.0.1/DIDWalletSDK.xcframework"; sourceTree = "<group>"; };
 		C9BDA66D2DE980A6002A6C42 /* RoundedLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedLabel.swift; sourceTree = "<group>"; };
 		C9BDA66F2DE98BD6002A6C42 /* ImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUtils.swift; sourceTree = "<group>"; };
 		C9BDA6712DE98CB9002A6C42 /* MainVCCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainVCCollectionViewCell.swift; sourceTree = "<group>"; };
@@ -221,7 +226,7 @@
 				C9C7C9E12D2F93350023D8E5 /* FirebaseMessaging in Frameworks */,
 				C9C7C9DF2D2F93350023D8E5 /* FirebaseAnalytics in Frameworks */,
 				C911793C2DD1C07400F3B573 /* OrderedCollections in Frameworks */,
-				C91179372DD1BEE100F3B573 /* DIDWalletSDK.xcframework in Frameworks */,
+				C91620D42E8BA798003B23A0 /* DIDWalletSDK.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -245,6 +250,7 @@
 		51C2D5ECF3D26ECA1BF8BCD2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C99462302E8A479A00031721 /* DIDWalletSDK.xcframework */,
 				C91179342DD1B8B800F3B573 /* DIDWalletSDK.xcframework */,
 			);
 			name = Frameworks;
@@ -313,6 +319,7 @@
 				C9878CF82DD4AAA9002A192D /* VCDetailImageTableViewCell.swift */,
 				C9878CF42DD4AA87002A192D /* VCDetailStringTableViewCell.swift */,
 				C9BDA6712DE98CB9002A6C42 /* MainVCCollectionViewCell.swift */,
+				C916229A2E8BC0DA003B23A0 /* ChevronSettingCell.swift */,
 			);
 			path = Cell;
 			sourceTree = "<group>";
@@ -405,6 +412,7 @@
 				7CA982242C85CBEE00EDF367 /* LaunchScreen.storyboard */,
 				7CA982262C85CBEE00EDF367 /* Main.storyboard */,
 				7CA982272C85CBEE00EDF367 /* URLs.swift */,
+				C930A64F2E9E247400DABB8F /* KeyIds.swift */,
 				7CA982282C85CBEE00EDF367 /* SceneDelegate.swift */,
 			);
 			path = DIDCA;
@@ -479,7 +487,7 @@
 				7C985EA42BC9292A00AF788F /* Sources */,
 				7C985EA52BC9292A00AF788F /* Frameworks */,
 				7C985EA62BC9292A00AF788F /* Resources */,
-				C91179392DD1BEE200F3B573 /* Embed Frameworks */,
+				C91620D62E8BA798003B23A0 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -638,11 +646,13 @@
 				7CA9823A2C85CBEE00EDF367 /* UserRegWebViewController.swift in Sources */,
 				7CA9822F2C85CBEE00EDF367 /* AddVcViewController.swift in Sources */,
 				7CA982352C85CBEE00EDF367 /* QRScanViewController.swift in Sources */,
+				C930A6502E9E247800DABB8F /* KeyIds.swift in Sources */,
 				7CA982452C85CBEE00EDF367 /* RegUserProtocol.swift in Sources */,
 				C9E1D6962E016306005A3ACE /* VCStatusGetter.swift in Sources */,
 				C91179442DD1D84100F3B573 /* AttrSelectionTableViewCell.swift in Sources */,
 				C9D519492DED8BA600FD2E62 /* ErrorHandler.swift in Sources */,
 				7CA982312C85CBEE00EDF367 /* IssueProfileViewController.swift in Sources */,
+				C916229B2E8BC0DA003B23A0 /* ChevronSettingCell.swift in Sources */,
 				7CB772972C86D1B600E05B5D /* PopupUtils.swift in Sources */,
 				7CA9823C2C85CBEE00EDF367 /* VerifyCompletedViewController.swift in Sources */,
 				7CA9823D2C85CBEE00EDF367 /* VerifyProfileViewController.swift in Sources */,

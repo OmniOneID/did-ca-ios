@@ -22,16 +22,20 @@ import DIDWalletSDK
 /// for CA SDK
 public class SDKUtils {
     
-    public static func createWalletToken(purpose: WalletTokenPurposeEnum, userId: String) async throws -> String {
+    public static func createWalletToken(purpose: WalletTokenPurposeEnum, userId: String) async throws -> String
+    {
         // Request for Personalization + Wallet Lock Configuration Token Seed
-        let parameter = try WalletAPI.shared.createWalletTokenSeed(purpose: purpose, pkgName: Bundle.main.bundleIdentifier!, userId: userId).toJsonData()
+        let parameter = try WalletAPI.shared.createWalletTokenSeed(purpose: purpose,
+                                                                   pkgName: Bundle.main.bundleIdentifier!,
+                                                                   userId: userId)
         
-        let responseData = try await CommunicationClient.doPost(url: URL(string: URLs.CAS_URL + "/cas/api/v1/request-wallet-tokendata")!, requestJsonData: parameter)
-        
-        let walletTokenData = try WalletTokenData.init(from: responseData)
+        let urlString = URLs.CAS_URL + "/cas/api/v1/request-wallet-tokendata"
+        let walletTokenData : WalletTokenData = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                  requestJsonable: parameter)
         // certVcRef
         
-        let resultNonce = try await WalletAPI.shared.createNonceForWalletToken(walletTokenData: walletTokenData, APIGatewayURL: URLs.API_URL)
+        let resultNonce = try await WalletAPI.shared.createNonceForWalletToken(walletTokenData: walletTokenData,
+                                                                               APIGatewayURL: URLs.API_URL)
         
         let digest = DigestUtils.getDigest(source: (try! walletTokenData.toJson()+resultNonce).data(using: String.Encoding.utf8)!, digestEnum: DigestEnum.sha256)
         // Hex
@@ -75,18 +79,17 @@ public class SDKUtils {
         let did = serverTokenData.provider.did
         let url = serverTokenData.provider.certVcRef
         
-        let certVcData = try await CommunicationClient.doGet(url: URL(string: url)!)
-        var certVc = try VerifiableCredential.init(from: certVcData)
-        
+        var certVc : VerifiableCredential = try await CommunicationClient.sendRequest(urlString: url,
+                                                                                      httpMethod: .GET)
         // DID comparison
         if did != certVc.credentialSubject.id {
             throw NSError(domain: "did matching fail", code: 1)
         }
         
         // Fetch CAS DIDDoc
-        let didDocData = try await CommunicationClient.doGet(url: URL(string: URLs.API_URL+"/api-gateway/api/v1/did-doc?did=" + certVc.issuer.id)!)
-        let _didDoc = try DIDDocVO(from: didDocData)
-        
+        let docUrlString = URLs.API_URL+"/api-gateway/api/v1/did-doc?did=" + certVc.issuer.id
+        let _didDoc : DIDDocVO = try await CommunicationClient.sendRequest(urlString: docUrlString,
+                                                                           httpMethod: .GET)
         
         let didDoc = try DIDDocument(from: try MultibaseUtils.decode(encoded: _didDoc.didDoc))
         
@@ -94,9 +97,10 @@ public class SDKUtils {
         
         // check rule
         let schemaUrl = certVc.credentialSchema.id
-        let schemaData = try await CommunicationClient.doGet(url: URL(string: schemaUrl)!)
         
-        let vcSchema = try VCSchema.init(from: schemaData)
+        let vcSchema : VCSchema = try await CommunicationClient.sendRequest(urlString: schemaUrl,
+                                                                           httpMethod: .GET)
+        
         let vcSchemaClaims = vcSchema.credentialSubject.claims
         
         let certVcClaims = certVc.credentialSubject.claims

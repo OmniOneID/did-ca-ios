@@ -30,35 +30,44 @@ class RestoreUserProtocol: CommonProtocol {
     @discardableResult
     private func proposeRestoreUser(offerId: String, did: String) async throws -> _ProposeRestoreDidDoc {
         
-        let parameter = try ProposeRestoreDidDoc(id: SDKUtils.generateMessageID(), offerId: offerId, did: did).toJsonData()
-        if let data = try? await CommunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-restore-diddoc")!, requestJsonData: parameter) {
-            let proposeRestoreUser = try _ProposeRestoreDidDoc.init(from: data)
-            super.txId = proposeRestoreUser.txId
-            super.authNonce = proposeRestoreUser.authNonce
-            // authNonce 저장 proposeRestoreUser.authNonce
-            return proposeRestoreUser
-        }
+        let parameter = ProposeRestoreDidDoc(id: SDKUtils.generateMessageID(),
+                                             offerId: offerId,
+                                             did: did)
         
-        throw NSError(domain: "proposeIssueVc error", code: 1)
+        let urlString = URLs.TAS_URL+"/tas/api/v1/propose-restore-diddoc"
+        
+        let proposeRestoreUser : _ProposeRestoreDidDoc = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                                                   requestJsonable: parameter)
+        super.txId = proposeRestoreUser.txId
+        super.authNonce = proposeRestoreUser.authNonce
+
+        return proposeRestoreUser
     }
 
     @discardableResult
     private func requestRestoreUser(passcode: String? = nil) async throws -> _RequestRestoreDidDoc {
 
-        guard let didAuth = try WalletAPI.shared.getSignedDidAuth(authNonce: super.authNonce, passcode: passcode) else {
-            throw NSError(domain: "getDidAuth error", code: 1)
-        }
+        let didAuth = try WalletAPI.shared.getSignedDidAuth(authNonce: super.authNonce,
+                                                            passcode: passcode)
         
-        return try await WalletAPI.shared.requestRestoreUser(tasURL: URLs.TAS_URL + "/tas/api/v1/request-restore-diddoc", txId: super.txId, hWalletToken: super.hWalletToken, serverToken: super.hServerToken, didAuth: didAuth)
+        return try await WalletAPI.shared.requestRestoreUser(tasURL: URLs.TAS_URL + "/tas/api/v1/request-restore-diddoc",
+                                                             txId: super.txId,
+                                                             hWalletToken: super.hWalletToken,
+                                                             serverToken: super.hServerToken,
+                                                             didAuth: didAuth)
     }
     
     @discardableResult
     private func confirmRestoreUser(responseData: _RequestRestoreDidDoc) async throws -> _ConfirmRestoreDidDoc {
         
-        let parameter = try ConfirmRegisterUser(id: SDKUtils.generateMessageID(), txId: responseData.txId, serverToken: super.hServerToken).toJsonData()
-        let data = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-restore-diddoc")!, requestJsonData: parameter)
-        let confirmRegisterUser = try _ConfirmRestoreDidDoc(from: data)
-        return confirmRegisterUser
+        let parameter = ConfirmRegisterUser(id: SDKUtils.generateMessageID(),
+                                            txId: responseData.txId,
+                                            serverToken: super.hServerToken)
+        
+        let urlString = URLs.TAS_URL + "/tas/api/v1/confirm-restore-diddoc"
+        
+        return try await CommunicationClient.sendRequest(urlString: urlString,
+                                                         requestJsonable: parameter)
     }
     
 
@@ -75,7 +84,7 @@ class RestoreUserProtocol: CommonProtocol {
         
         try await proposeRestoreUser(offerId: offerId, did: did)
             
-        let accEcdh = try await super.requestEcdh(type: 0)
+        let accEcdh = try await super.requestEcdh(type: .DeviceDidDocument)
                 
         let attestedAppInfo: AttestedAppInfo = try await super.requestAttestedAppInfo()
         

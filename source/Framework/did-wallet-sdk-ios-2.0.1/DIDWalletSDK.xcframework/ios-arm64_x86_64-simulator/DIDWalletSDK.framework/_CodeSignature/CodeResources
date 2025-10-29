@@ -10,11 +10,11 @@
 		</data>
 		<key>Info.plist</key>
 		<data>
-		5YmvasU8MzA7Y+WH0bPEucS2UxI=
+		FXS1UJIrjvSYlGdYnmaRZL2S3ms=
 		</data>
 		<key>Modules/DIDWalletSDK.swiftmodule/arm64-apple-ios-simulator.abi.json</key>
 		<data>
-		NArlvpGp+g9iF8SA6IGUjHUz6mI=
+		Pu8+5x6YaAEcuYDN/f4psTKK2ZM=
 		</data>
 		<key>Modules/DIDWalletSDK.swiftmodule/arm64-apple-ios-simulator.private.swiftinterface</key>
 		<data>
@@ -30,11 +30,11 @@
 		</data>
 		<key>Modules/DIDWalletSDK.swiftmodule/arm64-apple-ios-simulator.swiftmodule</key>
 		<data>
-		bLqLKit0NPJYZfKTkt5AqB6bb34=
+		o+atH9mmvQhM1ya95CXcblFR45U=
 		</data>
 		<key>Modules/DIDWalletSDK.swiftmodule/x86_64-apple-ios-simulator.abi.json</key>
 		<data>
-		NArlvpGp+g9iF8SA6IGUjHUz6mI=
+		Pu8+5x6YaAEcuYDN/f4psTKK2ZM=
 		</data>
 		<key>Modules/DIDWalletSDK.swiftmodule/x86_64-apple-ios-simulator.private.swiftinterface</key>
 		<data>
@@ -50,7 +50,7 @@
 		</data>
 		<key>Modules/DIDWalletSDK.swiftmodule/x86_64-apple-ios-simulator.swiftmodule</key>
 		<data>
-		E5nxfXQHQGW0TK82PRI1vQ+vWEY=
+		XITces4LW0bk2ahZLo/tDbDy4Zo=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -78,7 +78,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			+m7K3YaF+BKOAjR+wNhWpj5R2bbKagNWhkCcDL1bdGk=
+			uG6ourjApAf70j9ZoWO53lIy7h+EfLSIK4EV9RmWUto=
 			</data>
 		</dict>
 		<key>Modules/DIDWalletSDK.swiftmodule/arm64-apple-ios-simulator.private.swiftinterface</key>
@@ -106,14 +106,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			ajcy4M9uwb2EkleS6mWyiR1/AP5B2x1c3YuR07hlnYc=
+			F7XcavSLGpMaYL5vXfEL2vJzOxGVMnuWnrJds9mHQxI=
 			</data>
 		</dict>
 		<key>Modules/DIDWalletSDK.swiftmodule/x86_64-apple-ios-simulator.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			+m7K3YaF+BKOAjR+wNhWpj5R2bbKagNWhkCcDL1bdGk=
+			uG6ourjApAf70j9ZoWO53lIy7h+EfLSIK4EV9RmWUto=
 			</data>
 		</dict>
 		<key>Modules/DIDWalletSDK.swiftmodule/x86_64-apple-ios-simulator.private.swiftinterface</key>
@@ -141,7 +141,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			/KXQuG0uETQK0GyZDd8gjhpnRHDZLvie1rIbTKckYGQ=
+			JqpzhJf9APD9j7ZYKY8kW3oWmllecqSSSZnQZQVeMDI=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>

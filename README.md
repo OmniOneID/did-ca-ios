@@ -13,7 +13,7 @@ This document is a guide for using the OpenDID authentication client, and provid
 |------------------|-----------------------------|
 | OS               | iOS 15                      |
 | Language         | Swift 5.8                   |
-| IDE              | Xcode 16.2                  |
+| IDE              | Xcode 26.0.1                |
 | Build System     | Xcode Basic build system    |
 | Compatibility    | iOS 15 or higher            |
 | Test Environment | iPhone 15 (17.5) Simulator  |
@@ -40,7 +40,7 @@ How to compile and test your app using Xcode's default build system.
 
 
 ## SDK Application Method
-Below, we refer to `iOS framework as DIDWalletSDK`. We recommend that you clone and check out the DIDWalletSDK project and download the latest version to the release folder to use it.
+Below, we refer to `iOS framework as DIDWalletSDK`. We recommend that you clone and check out the DIDWalletSDK project, then either download the latest version from the release folder or use SPM.
 ```
 git https://github.com/OmniOneID/did-client-sdk-ios
 ```
@@ -53,7 +53,10 @@ Please refer to the respective links for their own licenses for third-party libr
 [Client SDK License-dependencies](https://github.com/OmniOneID/did-client-sdk-ios/blob/main/dependencies-license.md)
                                 
 <br>
-How to apply DIDWalletSDK framework to DIDCA project in Xcode  
+
+## How to apply DIDWalletSDK framework to DIDCA project in Xcode
+
+### Using the framework’s own application method.
 
 1. Preparing DIDWalletSDK framework files
 
@@ -79,7 +82,28 @@ How to apply DIDWalletSDK framework to DIDCA project in Xcode
     - Set Runpath Search Paths
         - In the search bar, find Runpath Search Paths. If the added framework is not running properly, add the @executable_path/Frameworks value. This sets the path to find the framework when running the app.
 
-4. Import and Use
+4. Add dependencies to SPM
+
+- DIDWalletSDK has a dependency on Swift Collections.
+- If the framework is added via SPM, the dependency is included automatically, so this does not apply.
+- In the app project’s `Package Dependencies`, click the `+` to add the following items.
+```text
+https://github.com/apple/swift-collections.git
+Exact Version 1.1.4
+```
+- In the **Choose Package Products** screen, select **OrderedCollections** and set **Add to Target** to your app target.
+
+### Apply Framework via SPM
+
+- In the app project’s `Package Dependencies`, click the `+` to add the following items.
+```text
+https://github.com/OmniOneID/did-client-sdk-ios.git
+```
+- Select **Version ≥ 2.0.1** (or choose a version rule such as “Up to Next Major”).
+- Add the package to your target.
+<br>
+
+### Import and Use
 
 First, modify the URL information for each business in the URLs.swift file.
 ```swift
@@ -104,7 +128,7 @@ Task { @MainActor in
     do {
         let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.LIST_VC, userId: Properties.getUserId()!)
 
-        guard let credentials = try WalletAPI.shared.getAllCrentials(hWalletToken: hWalletToken) else {    
+        guard let credentials = try WalletAPI.shared.getAllCredentials(hWalletToken: hWalletToken) else {    
             return
         }
         for credential in self.credentials {
@@ -122,26 +146,27 @@ Task { @MainActor in
 }
 ```
 
-5. Build and Test
+### Build and Test
 
-    - Build and Run    
-        - Build your project by pressing the Build (Command + B) button at the top of Xcode. If any errors occur during the build, check the error message in the Issue Navigator and resolve the issue.
+- Build and Run    
+    - Build your project by pressing the Build (Command + B) button at the top of Xcode. If any errors occur during the build, check the error message in the Issue Navigator and resolve the issue.
 
-    - Test
-        - Once the build is completed successfully, run your app to verify that the framework is working properly. You can use Xcode's debugger and logs to determine if there are any issues.
+- Test
+    - Once the build is completed successfully, run your app to verify that the framework is working properly. You can use Xcode's debugger and logs to determine if there are any issues.
 
-6. Troubleshooting
-    - If the DIDWalletSDK framework is not loading or working properly, check the following:
+### Troubleshooting
 
-        - Correct Search Paths: Check if the framework paths are set correctly.
-        - Signing & Capabilities: Check if the code signing and certificate settings are set correctly.
-        - Dependencies: Check if there are any other libraries that the DIDWalletSDK framework additionally depend on.
+- If the DIDWalletSDK framework is not loading or working properly, check the following:
+
+    - Correct Search Paths: Check if the framework paths are set correctly.
+    - Signing & Capabilities: Check if the code signing and certificate settings are set correctly.
+    - Dependencies: Check if there are any other libraries that the DIDWalletSDK framework additionally depend on.
 
 ## Change Log
 
 ChangeLog can be found : 
 <br>
-- [CA IOS](CHANGELOG.md)  
+- [CA iOS](CHANGELOG.md)  
 
 ## OpenDID Demonstration Videos <br>
 To watch our demonstration videos of the OpenDID system in action, please visit our [Demo Repository](https://github.com/OmniOneID/did-demo-server). <br>

@@ -87,77 +87,49 @@ class CommonProtocol {
     }
     
     @discardableResult
-    internal func requestEcdh(type: Int) async throws -> _RequestEcdh {
+    internal func requestEcdh(type: DidDocumentType) async throws -> _RequestEcdh {
         
         let nonce = try CryptoUtils.generateNonce(size: 16)
-        let clientNonce = MultibaseUtils.encode(type: MultibaseType.base58BTC, data: nonce)
+        let clientNonce = MultibaseUtils.encode(type: .base58BTC,
+                                                data: nonce)
         
         self.clientNonce = clientNonce
         
-        let keyPair = try CryptoUtils.generateECKeyPair(ecType: ECType.secp256r1)
-        self.priKey = MultibaseUtils.encode(type: MultibaseType.base58BTC, data: keyPair.privateKey)
+        let keyPair = try CryptoUtils.generateECKeyPair(ecType: .secp256r1)
+        self.priKey = MultibaseUtils.encode(type: .base58BTC,
+                                            data: keyPair.privateKey)
         
-        if type == 0 {
-            let deviceKey = try WalletAPI.shared.getDidDocument(type: DidDocumentType.DeviceDidDocument)
-            let docType = DidDocumentType.DeviceDidDocument
-            let proofType = deviceKey.id + "?versionId=" + deviceKey.versionId + "#keyagree"
-            let clientType = deviceKey.id
-            
-            var reqEcdh: ReqEcdh = ReqEcdhBuilder()
-                .setClient(clientType)   // Wallet DID
-                .setClientNonce(clientNonce)
-                .setPublicKey(MultibaseUtils.encode(type: MultibaseType.base58BTC, data: keyPair.publicKey) )
-                .setCurve(.secp256r1)
-                .setProof(Proof(created: Date.getUTC0Date(seconds: 0),
-                                proofPurpose: ProofPurpose.keyAgreement,
-                                verificationMethod: proofType,
-                                type: ProofType.secp256r1Signature2018))
-                .build()
-            let source = try DigestUtils.getDigest(source: reqEcdh.toJsonData(), digestEnum: DigestEnum.sha256)
-            
-            // (core func)
-            let signature = try WalletAPI.shared.sign(keyId: "keyagree", data: source, type: docType)
-            
-            print("sig: \(MultibaseUtils.encode(type: MultibaseType.base58BTC, data: signature))")
-            
-            reqEcdh.proof?.proofValue = MultibaseUtils.encode(type: MultibaseType.base58BTC, data: signature)
-            
-            let requestJsonData = try RequestEcdh(id: SDKUtils.generateMessageID(), txId: txId, reqEcdh: reqEcdh).toJsonData()
-            let accEcdh = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-ecdh")!, requestJsonData: requestJsonData)
-
-            return try _RequestEcdh.init(from: accEcdh)
-            
-        } else {
-            let holderKey = try WalletAPI.shared.getDidDocument(type: DidDocumentType.HolderDidDocumnet)
-            let docType = DidDocumentType.HolderDidDocumnet
-            
-            let proofType = holderKey.id + "?versionId="+holderKey.versionId + "#keyagree"
-            let clientType = holderKey.id
-            
-            var reqEcdh: ReqEcdh = ReqEcdhBuilder()
-                .setClient(clientType)   // Wallet DID
-                .setClientNonce(clientNonce)
-                .setPublicKey(MultibaseUtils.encode(type: MultibaseType.base58BTC, data: keyPair.publicKey) )
-                .setCurve(.secp256r1)
-                .setProof(Proof(created: Date.getUTC0Date(seconds: 0),
-                                proofPurpose: ProofPurpose.keyAgreement,
-                                verificationMethod: proofType,
-                                type: ProofType.secp256r1Signature2018))
-                .build()
-            let source = try DigestUtils.getDigest(source: reqEcdh.toJsonData(), digestEnum: DigestEnum.sha256)
-            
-            // (core func)
-            let signature = try WalletAPI.shared.sign(keyId: "keyagree", data: source, type: docType)
-            
-            print("sig: \(MultibaseUtils.encode(type: MultibaseType.base58BTC, data: signature))")
-            
-            reqEcdh.proof?.proofValue = MultibaseUtils.encode(type: MultibaseType.base58BTC, data: signature)
-            
-            let requestJsonData = try RequestEcdh(id: SDKUtils.generateMessageID(), txId: txId, reqEcdh: reqEcdh).toJsonData()
-            let accEcdh = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-ecdh")!, requestJsonData: requestJsonData)
-
-            return try _RequestEcdh.init(from: accEcdh)
-        }
+        let didDoc = try WalletAPI.shared.getDidDocument(type: type)
+        
+        let proofType = didDoc.id + "?versionId=" + didDoc.versionId + "#keyagree"
+        let clientType = didDoc.id
+        
+        var reqEcdh: ReqEcdh = ReqEcdhBuilder()
+            .setClient(clientType)   // Wallet DID
+            .setClientNonce(clientNonce)
+            .setPublicKey(MultibaseUtils.encode(type: .base58BTC,
+                                                data: keyPair.publicKey) )
+            .setCurve(.secp256r1)
+            .setProof(Proof(created: Date.getUTC0Date(seconds: 0),
+                            proofPurpose: .keyAgreement,
+                            verificationMethod: proofType,
+                            type: .secp256r1Signature2018))
+            .build()
+        let source = try DigestUtils.getDigest(source: reqEcdh.toJsonData(),
+                                               digestEnum: .sha256)
+        
+        // (core func)
+        let signature = try WalletAPI.shared.sign(keyId: KeyIds.keyagree, data: source, type: type)
+        
+        reqEcdh.proof?.proofValue = MultibaseUtils.encode(type: .base58BTC, data: signature)
+        print("sig: \(String(describing: reqEcdh.proof?.proofValue)))")
+        
+        let request = RequestEcdh(id: SDKUtils.generateMessageID(), txId: txId, reqEcdh: reqEcdh)
+        
+        let urlString = URLs.TAS_URL + "/tas/api/v1/request-ecdh"
+        let accEcdh : _RequestEcdh = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                               requestJsonable: request)
+        return accEcdh
     }
     
     internal func requestWalletTokenData(purpose: WalletTokenPurposeEnum) async throws {
@@ -167,9 +139,13 @@ class CommonProtocol {
     // To generate server token seeds
     internal func requestAttestedAppInfo() async throws -> AttestedAppInfo {
         
-        let requestAttestedAppInfo = try RequestAttestedAppInfo(appId: Properties.getCaAppId()!).toJsonData()
-        let data = try await CommunicationClient.doPost(url: URL(string: URLs.CAS_URL + "/cas/api/v1/request-attested-appinfo")!, requestJsonData: requestAttestedAppInfo)
-        return try AttestedAppInfo.init(from: data)
+        let requestAttestedAppInfo = RequestAttestedAppInfo(appId: Properties.getCaAppId()!)
+        
+        let urlString = URLs.CAS_URL + "/cas/api/v1/request-attested-appinfo"
+        
+        let attested : AttestedAppInfo = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                                   requestJsonable: requestAttestedAppInfo)
+        return attested
     }
     
     @discardableResult
@@ -178,11 +154,14 @@ class CommonProtocol {
         let walletInfo = try WalletAPI.shared.getSignedWalletInfo()
         let seed = ServerTokenSeed(purpose: purpose, walletInfo: walletInfo, attestedAppInfo: attestedAppInfo)
         
-        let requestJsonData = try RequestCreateToken(id: SDKUtils.generateMessageID(), txId: txId, seed: seed).toJsonData()
+        let request = RequestCreateToken(id: SDKUtils.generateMessageID(),
+                                         txId: txId,
+                                         seed: seed)
         
-        let data = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-create-token")!, requestJsonData: requestJsonData)
+        let urlString = URLs.TAS_URL + "/tas/api/v1/request-create-token"
         
-        let requestCreateToken = try _RequestCreateToken.init(from: data)
+        let requestCreateToken : _RequestCreateToken = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                                                 requestJsonable: request)
 
         // Generate server token data
         let encStd = try MultibaseUtils.decode(encoded: requestCreateToken.encStd)

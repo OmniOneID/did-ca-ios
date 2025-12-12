@@ -28,17 +28,15 @@ class RegUserProtocol: CommonProtocol {
     }()
     
     @discardableResult
-    private func proposeRegisterUser() async throws -> _ProposeRegisterUser? {
+    private func proposeRegisterUser() async throws -> _ProposeRegisterUser
+    {
+        let parameter = ProposeRegisterUser(id: SDKUtils.generateMessageID())
         
-        let parameter = try ProposeRegisterUser(id: SDKUtils.generateMessageID()).toJsonData()
-        if let data = try? await CommunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-register-user")!, requestJsonData: parameter) {
-            let proposeRegisterUser = try _ProposeRegisterUser.init(from: data)
-            super.txId = proposeRegisterUser.txId
-            
-            return proposeRegisterUser
-        }
-        
-        throw NSError(domain: "proposeIssueVc error", code: 1)
+        let urlString = URLs.TAS_URL+"/tas/api/v1/propose-register-user"
+        let proposeRegisterUser: _ProposeRegisterUser = try await CommunicationClient.sendRequest(urlString:urlString,
+                                                                                                  requestJsonable: parameter)
+        super.txId = proposeRegisterUser.txId
+        return proposeRegisterUser
     }
 
     private func requestRegisterUser(signedDidDoc: SignedDIDDoc) async throws -> _RequestRegisterUser {
@@ -48,34 +46,50 @@ class RegUserProtocol: CommonProtocol {
     
     private func confirmRegisterUser(responseData: _RequestRegisterUser) async throws -> _ConfirmRegisterUser {
         
-        let parameter = try ConfirmRegisterUser(id: SDKUtils.generateMessageID(), txId: responseData.txId, serverToken: super.hServerToken).toJsonData()
-        let data = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-register-user")!, requestJsonData: parameter)
-        let confirmRegisterUser = try _ConfirmRegisterUser(from: data)
+        let parameter = ConfirmRegisterUser(id: SDKUtils.generateMessageID(),
+                                            txId: responseData.txId,
+                                            serverToken: super.hServerToken)
+        
+        let urlString = URLs.TAS_URL + "/tas/api/v1/confirm-register-user"
+        let confirmRegisterUser: _ConfirmRegisterUser = try await CommunicationClient.sendRequest(urlString:urlString,
+                                                                                                  requestJsonable: parameter)
         return confirmRegisterUser
     }
     
     @discardableResult
     private func retrieveKyc() async throws -> _RetrieveKyc {
         
-        let parameter = try RetrieveKyc(id: SDKUtils.generateMessageID(), txId: txId, serverToken: hServerToken, kycTxId: Properties.getUserId()!).toJsonData()
-        let data = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/retrieve-kyc")!, requestJsonData: parameter)
+        let parameter = RetrieveKyc(id: SDKUtils.generateMessageID(),
+                                    txId: txId,
+                                    serverToken: hServerToken,
+                                    kycTxId: Properties.getUserId()!,
+                                    kycToken: nil)
         
-        return try _RetrieveKyc(from: data)
+        let urlString = URLs.TAS_URL + "/tas/api/v1/retrieve-kyc"
+        
+        let retrieveKyc: _RetrieveKyc = try await CommunicationClient.sendRequest(urlString:urlString,
+                                                                                  requestJsonable: parameter)
+        return retrieveKyc
     }
     
     @discardableResult
-    public func process(signedDidDoc: SignedDIDDoc) async throws -> _ConfirmRegisterUser {
+    public func process(signedDidDoc: SignedDIDDoc) async throws -> _ConfirmRegisterUser
+    {
         
         let regUserResponse = try await requestRegisterUser(signedDidDoc: signedDidDoc)
         
-        return try await confirmRegisterUser(responseData: regUserResponse)
+        let result = try await confirmRegisterUser(responseData: regUserResponse)
+        
+        try WalletAPI.shared.saveHolderDIDDocument()
+        
+        return result
     }
     
     public func preProcess() async throws {
         
         try await proposeRegisterUser()
             
-        let accEcdh = try await super.requestEcdh(type: 0)
+        let accEcdh = try await super.requestEcdh(type: .DeviceDidDocument)
                 
         let attestedAppInfo: AttestedAppInfo = try await super.requestAttestedAppInfo()
         

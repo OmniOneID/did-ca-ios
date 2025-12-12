@@ -27,11 +27,13 @@ class VerifyVcProtocol: CommonProtocol {
     
     private func requestProfile(txId: String? = nil, offerId: String) async throws {
         
-        let parameter = try RequestProfile(id: SDKUtils.generateMessageID(), offerId: offerId).toJsonData()
+        let parameter = RequestProfile(id: SDKUtils.generateMessageID(),
+                                       offerId: offerId)
         
-        let data = try await CommunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-profile")!, requestJsonData: parameter)
-            
-        self.verifyProfile = try _RequestProfile.init(from: data)
+        let urlString = URLs.VERIFIER_URL+"/verifier/api/v1/request-profile"
+        
+        self.verifyProfile = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                       requestJsonable: parameter)
         
         print("vp profile: \(try verifyProfile!.toJson())")
         
@@ -39,19 +41,28 @@ class VerifyVcProtocol: CommonProtocol {
     }
     
     @discardableResult
-    private func requestVerify(claimInfos: [ClaimInfo]? = nil, verifierProfile: _RequestProfile, passcode: String? = nil) async throws -> _RequestVerify {
+    private func requestVerify(claimInfos: [ClaimInfo]? = nil,
+                               verifierProfile: _RequestProfile,
+                               passcode: String? = nil) async throws -> _RequestVerify {
         
-        let (accE2e, encVp) = try await WalletAPI.shared.createEncVp(hWalletToken: hWalletToken, claimInfos: claimInfos, verifierProfile: verifierProfile, APIGatewayURL: URLs.API_URL, passcode: passcode)
+        let (accE2e, encVp) = try await WalletAPI.shared.createEncVp(hWalletToken: hWalletToken,
+                                                                     claimInfos: claimInfos,
+                                                                     verifierProfile: verifierProfile,
+                                                                     APIGatewayURL: URLs.API_URL,
+                                                                     passcode: passcode)
             
-        let parameter = try RequestVerify(id: SDKUtils.generateMessageID(),
-                                               txId:super.txId,
-                                               accE2e: accE2e,
-                                               encVp: MultibaseUtils.encode(type: MultibaseType.base58BTC, data: encVp)).toJsonData()
+        let parameter = RequestVerify(
+            id: SDKUtils.generateMessageID(),
+            txId:super.txId,
+            accE2e: accE2e,
+            encVp: MultibaseUtils.encode(type: .base58BTC,
+                                         data: encVp)
+        )
         
-        let data = try await CommunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-verify")!, requestJsonData: parameter)
+        let urlString = URLs.VERIFIER_URL+"/verifier/api/v1/request-verify"
         
-        let decodedResponse = try _RequestVerify.init(from: data)
-        
+        let decodedResponse : _RequestVerify = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                                         requestJsonable: parameter)
         super.txId = decodedResponse.txId
         
         return decodedResponse

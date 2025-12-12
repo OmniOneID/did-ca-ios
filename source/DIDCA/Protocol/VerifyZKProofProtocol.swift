@@ -28,14 +28,14 @@ class VerifyZKProofProtocol: CommonProtocol {
     
     private func requestProfile(txId: String? = nil, offerId: String) async throws {
         
-        let parameter = try RequestProfile(id: SDKUtils.generateMessageID(), offerId: offerId).toJsonData()
+        let parameter = RequestProfile(id: SDKUtils.generateMessageID(),
+                                       offerId: offerId)
         
-        let data = try await CommunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-proof-request-profile")!, requestJsonData: parameter)
-            
-        print("proofRequest data - \(data.base64EncodedString())")
-        self.proofRequestProfile = try _RequestProofRequestProfile.init(from: data)
+        let urlString = URLs.VERIFIER_URL+"/verifier/api/v1/request-proof-request-profile"
         
-        print("vp profile: \(try proofRequestProfile!.toJson())")
+        self.proofRequestProfile = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                             requestJsonable: parameter)
+        print("proof request profile: \(try proofRequestProfile!.toJson())")
         
         super.txId = proofRequestProfile!.txId
     }
@@ -51,21 +51,22 @@ class VerifyZKProofProtocol: CommonProtocol {
                                                                           proofRequestProfile: proofRequestProfile,
                                                                           APIGatewayURL: URLs.API_URL)
             
-        let nonce = proofRequestProfile.proofRequestProfile.profile.proofRequest.nonce
-        let parameter = try RequestZKPVerify(id: SDKUtils.generateMessageID(),
-                                             txId:super.txId,
-                                             accE2e: accE2e,
-                                             encProof: MultibaseUtils.encode(type: .base64,
-                                                                             data: encProof),
-                                             nonce: nonce).toJsonData()
+        let parameter = RequestZKPVerify(
+            id: SDKUtils.generateMessageID(),
+            txId:super.txId,
+            accE2e: accE2e,
+            encProof: MultibaseUtils.encode(type: .base64,
+                                            data: encProof),
+            nonce: proofRequestProfile.proofRequestProfile.profile.proofRequest.nonce
+        )
         
-        let data = try await CommunicationClient.doPost(url: URL(string:URLs.VERIFIER_URL+"/verifier/api/v1/request-verify-proof")!, requestJsonData: parameter)
+        let urlString = URLs.VERIFIER_URL+"/verifier/api/v1/request-verify-proof"
         
-        let decodedResponse = try _RequestVerify.init(from: data)
+        let response : _RequestVerify = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                                  requestJsonable: parameter)
+        super.txId = response.txId
         
-        super.txId = decodedResponse.txId
-        
-        return decodedResponse
+        return response
     }
     
     public func process(hWalletToken: String,

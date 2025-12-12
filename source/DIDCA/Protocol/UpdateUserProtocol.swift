@@ -25,36 +25,46 @@ class UpdateUserProtocol: CommonProtocol {
     }()
     
     @discardableResult
-    private func proposeUpdateUser(did: String) async throws -> _ProposeUpdateDidDoc {
+    private func proposeUpdateUser(did: String) async throws -> _ProposeUpdateDidDoc
+    {
+        let parameter = ProposeUpdateDidDoc(id: SDKUtils.generateMessageID(),
+                                            did: did)
         
-        let parameter = try ProposeUpdateDidDoc(id: SDKUtils.generateMessageID(), did: did).toJsonData()
-        if let data = try? await CommunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-update-diddoc")!, requestJsonData: parameter) {
-            let proposeUpdateDidDoc = try _ProposeUpdateDidDoc.init(from: data)
-            super.txId = proposeUpdateDidDoc.txId
-            super.authNonce = proposeUpdateDidDoc.authNonce
-            return proposeUpdateDidDoc
-        }
+        let urlString = URLs.TAS_URL+"/tas/api/v1/propose-update-diddoc"
         
-        throw NSError(domain: "proposeUpdateDidDoc error", code: 1)
+        let proposeUpdateDidDoc : _ProposeUpdateDidDoc = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                                                   requestJsonable: parameter)
+        super.txId      = proposeUpdateDidDoc.txId
+        super.authNonce = proposeUpdateDidDoc.authNonce
+        
+        return proposeUpdateDidDoc
     }
 
     @discardableResult
     private func requestUpdateUser(passcode: String? = nil, signedDidDoc: SignedDIDDoc) async throws -> _RequestUpdateDidDoc {
 
-        guard let didAuth = try WalletAPI.shared.getSignedDidAuth(authNonce: super.authNonce, passcode: passcode) else {
-            throw NSError(domain: "getDidAuth error", code: 1)
-        }
+        let didAuth = try WalletAPI.shared.getSignedDidAuth(authNonce: super.authNonce,
+                                                            passcode: passcode)
         
-        return try await WalletAPI.shared.requestUpdateUser(tasURL: URLs.TAS_URL + "/tas/api/v1/request-update-diddoc", txId: super.txId, hWalletToken: super.hWalletToken, serverToken: super.hServerToken, didAuth: didAuth, signedDIDDoc: signedDidDoc)
+        return try await WalletAPI.shared.requestUpdateUser(tasURL: URLs.TAS_URL + "/tas/api/v1/request-update-diddoc",
+                                                            txId: super.txId,
+                                                            hWalletToken: super.hWalletToken,
+                                                            serverToken: super.hServerToken,
+                                                            didAuth: didAuth,
+                                                            signedDIDDoc: signedDidDoc)
     }
     
     @discardableResult
-    private func confirmUpdateUser(responseData: _RequestUpdateDidDoc) async throws -> _ConfirmUpdateDidDoc {
+    private func confirmUpdateUser(responseData: _RequestUpdateDidDoc) async throws -> _ConfirmUpdateDidDoc
+    {
+        let parameter = ConfirmUpdateDidDoc(id: SDKUtils.generateMessageID(),
+                                            txId: responseData.txId,
+                                            serverToken: super.hServerToken)
         
-        let parameter = try ConfirmUpdateDidDoc(id: SDKUtils.generateMessageID(), txId: responseData.txId, serverToken: super.hServerToken).toJsonData()
-        let data = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-update-diddoc")!, requestJsonData: parameter)
-        let confirmUpdateUser = try _ConfirmUpdateDidDoc(from: data)
-        return confirmUpdateUser
+        let urlString = URLs.TAS_URL + "/tas/api/v1/confirm-update-diddoc"
+        
+        return try await CommunicationClient.sendRequest(urlString: urlString,
+                                                         requestJsonable: parameter)
     }
         
     @discardableResult
@@ -62,14 +72,18 @@ class UpdateUserProtocol: CommonProtocol {
         
         let regUpdateUserResponse = try await requestUpdateUser(passcode: passcode, signedDidDoc: signedDidDoc)
         
-        return try await confirmUpdateUser(responseData: regUpdateUserResponse)
+        let response : _ConfirmUpdateDidDoc = try await confirmUpdateUser(responseData: regUpdateUserResponse)
+        
+        try WalletAPI.shared.saveHolderDIDDocument()
+        
+        return response
     }
     
     public func preProcess(did: String) async throws {
         
         try await proposeUpdateUser(did: did)
             
-        let accEcdh = try await super.requestEcdh(type: 0)
+        let accEcdh = try await super.requestEcdh(type: .DeviceDidDocument)
                 
         let attestedAppInfo: AttestedAppInfo = try await super.requestAttestedAppInfo()
         

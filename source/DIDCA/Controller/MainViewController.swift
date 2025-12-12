@@ -60,7 +60,7 @@ class MainViewController: UIViewController, DismissDelegate {
         ActivityUtil.show(vc: self){
             let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.LIST_VC, userId: Properties.getUserId()!)
             
-            if let zkpCredentials = try WalletAPI.shared.getAllZKPCrentials(hWalletToken: hWalletToken)
+            if let zkpCredentials = try WalletAPI.shared.getAllZKPCredentials(hWalletToken: hWalletToken)
             {
                 self.zkpIncludedStates = zkpCredentials.reduce(into: [String:Bool](), { $0[$1.credentialId] = true })
             }
@@ -69,7 +69,7 @@ class MainViewController: UIViewController, DismissDelegate {
                 self.zkpSchemas = [:]
             }
             
-            if let credentials = try WalletAPI.shared.getAllCrentials(hWalletToken: hWalletToken) {
+            if let credentials = try WalletAPI.shared.getAllCredentials(hWalletToken: hWalletToken) {
                 self.vcs = credentials
                 let vcIds = credentials.map { $0.id }
                 self.vcStatus = try await VCStatusGetter.getStatus(vcIds: vcIds)
@@ -84,9 +84,8 @@ class MainViewController: UIViewController, DismissDelegate {
                     let vcSchemaId = vc.credentialSchema.id
                     if self.vcSchemas[vcSchemaId] == nil
                     {
-                        let schemaData = try await CommunicationClient.doGet(url: URL(string: vcSchemaId)!)
-                        let schema     = try VCSchema.init(from: schemaData)
-                        
+                        let schema : VCSchema = try await CommunicationClient.sendRequest(urlString: vcSchemaId,
+                                                                                          httpMethod: .GET)
                         self.vcSchemas[vcSchemaId] = schema
                     }
                 }
@@ -147,6 +146,18 @@ class MainViewController: UIViewController, DismissDelegate {
         }
 #endif
     }
+    
+    @IBAction func showSettings() {
+        
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        let viewController = storyboard.instantiateViewController(withIdentifier: "SettingViewController") as! SettingViewController
+        viewController.contents = [.tasURL, .verifierURL, .did, .userAuthentication]
+        
+        let navi = UINavigationController(rootViewController: viewController)
+        self.present(navi, animated: true)
+        
+    }
+    
 }
 
 extension MainViewController: ScanQRViewControllerDelegate {

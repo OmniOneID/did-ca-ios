@@ -32,7 +32,7 @@ enum PinCodeType
 {
     case register(isLock : Bool)
     case authenticate(isLock : Bool)
-    case change
+    case change(isLock : Bool)
 }
 
 //register retry count is < 1
@@ -44,11 +44,14 @@ class PincodeViewController: UIViewController
     @IBOutlet weak var messageLbl: UILabel!
     
     var confirmButtonCompleteClosure:((_ passcode: String) -> Void)?
+    var changeConfirmButtonCompleteClosure:((_ oldPasscode: String, _ newPasscode: String) -> Void)?
     var cancelButtonCompleteClosure:(()->Void)?
     
-    private var securityNumber: String! = ""
+    private var securityNumber: String = ""
     
     private var passwordTempValue = ""
+    
+    private var oldPassword = ""
     
     public var pinCodeType: PinCodeType = .authenticate(isLock: false)
     
@@ -104,16 +107,23 @@ class PincodeViewController: UIViewController
                     return MessageLevel.reEnterPin.rawValue
                 }
             }()
-            
-            
         case .authenticate(let isLock):
             self.messageLbl.text = (isLock)
             ? MessageLevel.inputLock.rawValue
             : MessageLevel.input.rawValue
-        case .change:
-            self.messageLbl.text = (retryCount == 0)
-            ? MessageLevel.newPin.rawValue
-            : MessageLevel.reEnterPin.rawValue
+        case .change(let isLock):
+            if oldPassword.isEmpty
+            {
+                self.messageLbl.text = (isLock)
+                ? MessageLevel.inputLock.rawValue
+                : MessageLevel.input.rawValue
+            }
+            else
+            {
+                self.messageLbl.text = (retryCount == 0)
+                ? MessageLevel.newPin.rawValue
+                : MessageLevel.reEnterPin.rawValue
+            }
         }
         
         securityNumber = ""
@@ -128,7 +138,16 @@ class PincodeViewController: UIViewController
     {
         var showNotMatch = true
         switch pinCodeType {
-        case .register, .change:
+        case .change:
+            if oldPassword.isEmpty
+            {
+                showNotMatch = false
+                oldPassword = self.securityNumber
+            }
+            else{
+                fallthrough
+            }
+        case .register:
             if retryCount == 0
             {
                 passwordTempValue = self.securityNumber
@@ -140,7 +159,16 @@ class PincodeViewController: UIViewController
                 if passwordTempValue == self.securityNumber
                 {
                     self.dismiss(animated: false) {
-                        self.confirmButtonCompleteClosure?(self.securityNumber)
+                        
+                        if let change = self.changeConfirmButtonCompleteClosure
+                        {
+                            change(self.oldPassword, self.securityNumber)
+                        }
+                        else
+                        {
+                            self.confirmButtonCompleteClosure?(self.securityNumber)
+                        }
+                        
                     }
                     return
                 }

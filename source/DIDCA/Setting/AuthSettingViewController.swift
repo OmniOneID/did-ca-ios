@@ -78,11 +78,11 @@ class AuthSettingViewController: UITableViewController {
         
         let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
         pinVC.modalPresentationStyle = .fullScreen
-        pinVC.setRequestType(type: .change)
+//        pinVC.setRequestType(type: .change)
         pinVC.confirmButtonCompleteClosure = { [self] passcode in
             
             do {
-                try WalletAPI.shared.changePin(id: "pin", oldPIN: oldPIN, newPIN: passcode)
+                try WalletAPI.shared.changePin(id: KeyIds.pin, oldPIN: oldPIN, newPIN: passcode)
             } catch let error as WalletSDKError {
                 print("error code: \(error.code), message: \(error.message)")
                 PopupUtils.showAlertPopup(title: error.code, content: error.message, VC: self)

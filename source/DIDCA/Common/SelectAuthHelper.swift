@@ -24,17 +24,29 @@ struct SelectAuthHelper
                      completeClosure : @escaping ((_ passcode: String?) -> Void),
                      cancelClosure: @escaping (()->Void))
     {
-        do {
-            _ = try WalletAPI.shared.getKeyInfos(ids: ["pin","bio"])
-            try BiometricAuthenticator.canEvaluatePolicy()
-            
-            showSelectAuth(on: viewController,
-                           completeClosure: completeClosure,
-                           cancelClosure: cancelClosure)
+        do
+        {
+            if try WalletAPI.shared.isSavedKey(keyId: KeyIds.bio)
+            {
+                try BiometricAuthenticator.canEvaluatePolicy()
+                
+                showSelectAuth(on: viewController,
+                               completeClosure: completeClosure,
+                               cancelClosure: cancelClosure)
+            }
+            else
+            {
+                showPin(on: viewController,
+                        completeClosure: completeClosure,
+                        cancelClosure: cancelClosure)
+            }
         } catch {
-            showPin(on: viewController,
-                    completeClosure: completeClosure,
-                    cancelClosure: cancelClosure)
+            let (title, message) = ErrorHandler.handle(error)
+            
+            print("error code: \(title), message: \(message)")
+            PopupUtils.showAlertPopup(title: title,
+                                      content: message,
+                                      VC: viewController)
         }
     }
     

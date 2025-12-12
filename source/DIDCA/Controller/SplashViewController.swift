@@ -89,7 +89,7 @@ class SplashViewController: UIViewController {
         // create wallet
         do
         {
-            if try WalletAPI.shared.isExistWallet() == false {
+            if WalletAPI.shared.isExistWallet() == false {
                 print("createWallet: \(try await WalletAPI.shared.createWallet(tasURL: URLs.TAS_URL, walletURL: URLs.WALLET_URL))")
             }
         }
@@ -101,7 +101,7 @@ class SplashViewController: UIViewController {
             PopupUtils.showAlertPopup(title: title,
                                       content: message,
                                       VC: self) {
-                try? WalletAPI.shared.deleteWallet()
+                try? WalletAPI.shared.deleteWallet(deleteAll: true)
                 exit(1)
             }
         }

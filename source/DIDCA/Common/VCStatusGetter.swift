@@ -30,12 +30,10 @@ struct VCStatusGetter
     {
         let urlString = "\(URLs.API_URL)/api-gateway/api/v1/vc-meta?vcId=\(vcId)"
         
-        
-        let response = try await CommunicationClient.doGet(url: .init(string: urlString)!)
-        let vo : VCMetaVO = try .init(from: response)
+        let vo : VCMetaVO = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                      httpMethod: .GET)
         
         let vcMeta : VCMeta = try .init(from: try MultibaseUtils.decode(encoded: vo.vcMeta))
-        print(response)
         return vcMeta.status
     }
     

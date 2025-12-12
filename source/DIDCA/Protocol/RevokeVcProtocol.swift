@@ -27,20 +27,22 @@ class RevokeVcProtocol : CommonProtocol {
     }()
     
     @discardableResult
-    private func proposeRevokeVc(vcId: String) async throws -> _ProposeRevokeVc? {
+    private func proposeRevokeVc(vcId: String) async throws -> _ProposeRevokeVc
+    {
         
-        let parameter = try ProposeRevokeVc(id: SDKUtils.generateMessageID(), vcId: vcId).toJsonData()
-        if let responseData = try? await CommunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-revoke-vc")!, requestJsonData: parameter) {
-            
-            let decodedResponse = try _ProposeRevokeVc.init(from: responseData)
-            super.vcId = vcId
-            super.txId = decodedResponse.txId
-            super.issuerNonce = decodedResponse.issuerNonce
-            super.authType = decodedResponse.authType
-            
-            return decodedResponse
-        }
-        throw NSError(domain: "proposeRevokeVc error", code: 1)
+        let parameter = ProposeRevokeVc(id: SDKUtils.generateMessageID(),
+                                        vcId: vcId)
+        
+        let urlString = URLs.TAS_URL+"/tas/api/v1/propose-revoke-vc"
+        
+        let propose : _ProposeRevokeVc = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                                           requestJsonable: parameter)
+        super.vcId        = vcId
+        super.txId        = propose.txId
+        super.issuerNonce = propose.issuerNonce
+        super.authType    = propose.authType
+        
+        return propose
     }
    
     @discardableResult
@@ -59,20 +61,22 @@ class RevokeVcProtocol : CommonProtocol {
     }
     
     @discardableResult
-    private func confirmRevokeVc(txId: String) async throws -> _ConfirmRevokeVc {
+    private func confirmRevokeVc(txId: String) async throws -> _ConfirmRevokeVc
+    {
+        let parameter = ConfirmRevokeVc(id: SDKUtils.generateMessageID(),
+                                        txId: txId,
+                                        serverToken: super.hServerToken)
         
-        let parameter = try ConfirmRevokeVc(id: SDKUtils.generateMessageID(), txId: txId, serverToken: super.hServerToken).toJsonData()
-                
-        let responseData = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-revoke-vc")!, requestJsonData: parameter)
+        let urlString = URLs.TAS_URL + "/tas/api/v1/confirm-revoke-vc"
         
-        let decodedResponse = try _ConfirmRevokeVc.init(from: responseData)
-            
-        super.txId = decodedResponse.txId
+        let response : _ConfirmRevokeVc = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                                    requestJsonable: parameter)
+        super.txId = response.txId
         
         let result = try WalletAPI.shared.deleteCredentials(hWalletToken: self.hWalletToken, ids: [super.vcId])
         print("delete result: \(result)")
         
-        return decodedResponse
+        return response
     }
     
     public func process(passcode: String? = nil) async throws -> _ConfirmRevokeVc {
@@ -86,7 +90,7 @@ class RevokeVcProtocol : CommonProtocol {
         
         try await proposeRevokeVc(vcId: vcId)
                 
-        let ecdh = try await super.requestEcdh(type: 1)
+        let ecdh = try await super.requestEcdh(type: .HolderDidDocumnet)
                 
         let attestedAppInfo: AttestedAppInfo = try await super.requestAttestedAppInfo()
                     

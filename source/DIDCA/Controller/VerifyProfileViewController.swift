@@ -107,7 +107,8 @@ extension VerifyProfileViewController
                     let schema = schemas[index]
                     print("schema: \(try schema.toJson())")
                     
-                    let vcSchema : VCSchema = try .init(from: try await CommunicationClient.doGet(url: URL.init(string: schema.id)!))
+                    let vcSchema : VCSchema = try await CommunicationClient.sendRequest(urlString: schema.id,
+                                                                                        httpMethod: .GET)
                     
                     self.vcSchemas[index] = vcSchema
                     
@@ -144,7 +145,7 @@ extension VerifyProfileViewController
         SelectAuthHelper.show(on: self) { passcode in
             
             ActivityUtil.show(vc: self){
-                if let vcs = try WalletAPI.shared.getAllCrentials(hWalletToken: VerifyVcProtocol.shared.getWalletToken()) {
+                if let vcs = try WalletAPI.shared.getAllCredentials(hWalletToken: VerifyVcProtocol.shared.getWalletToken()) {
                     
                     let schemas = VerifyVcProtocol.shared.verifyProfile!.profile.profile.filter.credentialSchemas
                     
@@ -322,8 +323,8 @@ extension VerifyProfileViewController
             let proofRequest = VerifyZKProofProtocol.shared.proofRequestProfile?.proofRequestProfile.profile.proofRequest
             
             let hWalletToken = try await SDKUtils.createWalletToken(purpose: .PRESENT_VP, userId: Properties.getUserId()!)
-            availableReferent = try WalletAPI.shared.searchCredentials(hWalletToken: hWalletToken,
-                                                                           proofRequest: proofRequest!)
+            availableReferent = try WalletAPI.shared.searchZKPCredentials(hWalletToken: hWalletToken,
+                                                                          proofRequest: proofRequest!)
         } completeClosure: {
             ActivityUtil.show(vc: self){
                 let credIdSet: Set<String> = Set(

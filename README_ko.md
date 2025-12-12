@@ -12,7 +12,7 @@
 |-------------------|-------------------------------|
 | OS                | iOS 15                        |
 | Language          | Swift 5.8                     |
-| IDE               | Xcode 16.2                    |
+| IDE               | Xcode 26.0.1                  |
 | Build System      | Xcode 기본 빌드 시스템            |
 | Compatibility     | iOS 15 or higher              |
 | Test Environment  | iPhone 15 (17.5) 시뮬레이터      |
@@ -41,7 +41,7 @@ Xcode의 기본 빌드 시스템을 사용하여 앱을 컴파일하고 테스�
 
 ## SDK 적용 방법
 아래 `iOS framework를 DIDWalletSDK`로 지칭합니다.
-DIDWalletSDK 프로젝트 클론 및 체크아웃 후 release 폴더에 최신버전을 다운받아 사용하길 권장합니다.
+DIDWalletSDK 프로젝트 클론 및 체크아웃 후 release 폴더에 최신버전을 다운받아 사용하거나 SPM을 사용하길 권장합니다.
 ```
 git https://github.com/OmniOneID/did-client-sdk-ios
 ```
@@ -54,7 +54,10 @@ SDK가 사용하는 타사 라이브러리에 대한 자체 라이선스는 해�
 
 <br>
 
-Xcode에서 DIDWalletSDK framework를 DIDCA 프로젝트에 적용하는 방법
+## Xcode에서 DIDWalletSDK framework를 DIDCA 프로젝트에 적용하는 방법
+
+### 기존 적용 방식 사용  
+
 1. DIDWalletSDK framework 파일 준비
 
     - 만약 DIDWalletSDK framework가 없는 경우, framework 레포지토리에서 빌드하여 .framework 파일을 생성해야 합니다. simulator, device 각각 빌드하여 각 레포지토리 별 build_xcframework 스크립트를 활용하여 xcframework를 사용 할 수 있습니다.
@@ -79,7 +82,28 @@ Xcode에서 DIDWalletSDK framework를 DIDCA 프로젝트에 적용하는 방법
     - Runpath Search Paths 설정
         - 검색 창에서 Runpath Search Paths를 찾습니다. 만약 추가된 프레임워크가 정상적으로 실행되지 않는 경우, @executable_path/Frameworks 값을 추가합니다. 이는 앱 실행 시 프레임워크를 찾기 위한 경로를 설정하는 것입니다.
 
-4. Import 및 사용
+4. SPM에 의존성 추가하기
+
+    - DIDWalletSDK는 Swift-collections의 의존성을 갖습니다.
+    - Framework를 SPM으로 추가한 경우에는 자동으로 추가되기 때문에 해당되지 않습니다.
+    - 앱 프로젝트의 `Package Dependencies`에서 `+`를 눌러 다음 항목을 추가합니다.
+    ```text
+    https://github.com/apple/swift-collections.git
+    Exact Version 1.1.4
+    ```
+    - **Choose Package Products** 화면에서 **OrderedCollections** 항목을 선택한 후, **Add to Target**을 앱 타겟으로 설정합니다.
+
+
+### SPM을 통한 Framework 추가
+
+- 앱 프로젝트의 `Package Dependencies`에서 `+`를 눌러 다음 항목을 추가합니다.
+```text
+https://github.com/OmniOneID/did-client-sdk-ios.git
+```
+- **Version ≥ 2.0.1**을 선택하거나, “Up to Next Major” 규칙을 선택합니다.
+- 패키지를 타겟에 추가합니다.
+
+### Import 및 사용
 
 먼저 URLs.swift 파일에서 각 사업자의 URL정보를 수정합니다.
 ```swift
@@ -104,7 +128,7 @@ Task { @MainActor in
     do {
         let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.LIST_VC, userId: Properties.getUserId()!)
 
-        guard let credentials = try WalletAPI.shared.getAllCrentials(hWalletToken: hWalletToken) else {    
+        guard let credentials = try WalletAPI.shared.getAllCredentials(hWalletToken: hWalletToken) else {    
             return
         }
         for credential in self.credentials {
@@ -122,20 +146,20 @@ Task { @MainActor in
 }
 ```
 
-5. 빌드 및 테스트
+### 빌드 및 테스트
 
-    - 빌드 및 실행    
-        - Xcode 상단의 Build (Command + B) 버튼을 눌러 프로젝트를 빌드합니다. 만약 빌드 중 에러가 발생하면, Issue Navigator에서 에러 내용을 확인하고 문제를 해결합니다.
+- 빌드 및 실행    
+    - Xcode 상단의 Build (Command + B) 버튼을 눌러 프로젝트를 빌드합니다. 만약 빌드 중 에러가 발생하면, Issue Navigator에서 에러 내용을 확인하고 문제를 해결합니다.
 
-    - 테스트
-        - 빌드가 성공적으로 완료되면, 앱을 실행하여 framework의 기능이 제대로 동작하는지 확인합니다. Xcode의 디버거와 로그를 활용해 문제가 발생했는지 여부를 파악할 수 있습니다.
+- 테스트
+    - 빌드가 성공적으로 완료되면, 앱을 실행하여 framework의 기능이 제대로 동작하는지 확인합니다. Xcode의 디버거와 로그를 활용해 문제가 발생했는지 여부를 파악할 수 있습니다.
 
-6. 문제 해결
-    - 만약 DIDWalletSDK framework가 제대로 로드되지 않거나 작동하지 않는 경우, 다음 사항들을 확인해보세요:
+### 문제 해결
+- 만약 DIDWalletSDK framework가 제대로 로드되지 않거나 작동하지 않는 경우, 다음 사항들을 확인해보세요:
 
-        - Correct Search Paths: 프레임워크 경로가 정확하게 설정되었는지 확인합니다.
-        - Signing & Capabilities: 코드 서명 및 인증서 설정이 올바르게 되어 있는지 확인합니다.
-        - Dependencies: DIDWalletSDK framework가 추가적으로 의존하는 다른 라이브러리가 있는지 확인합니다.
+    - Correct Search Paths: 프레임워크 경로가 정확하게 설정되었는지 확인합니다.
+    - Signing & Capabilities: 코드 서명 및 인증서 설정이 올바르게 되어 있는지 확인합니다.
+    - Dependencies: DIDWalletSDK framework가 추가적으로 의존하는 다른 라이브러리가 있는지 확인합니다.
 
 ## 수정내역
 

@@ -20,5 +20,5 @@ import UIKit
 
 struct ColorPalette
 {
-    static let primary : UIColor = UIColor(named: "PrimaryColor") ?? UIColor(hexCode: "FF8400")
+    static let primary : UIColor = UIColor(named: "AccentColor") ?? UIColor(hexCode: "FF8400")
 }

@@ -138,6 +138,10 @@ class StepViewController: UIViewController {
         }
     }
     
+    struct VoidResponse : Jsonable {
+        init(from jsonData: Data) throws {}
+    }
+    
     private func nextForStep3() {
         // PIN view
         let pinVC = UIStoryboard.init(name: "PIN", bundle: nil).instantiateViewController(withIdentifier: "PincodeViewController") as! PincodeViewController
@@ -154,9 +158,16 @@ class StepViewController: UIViewController {
                 print("holderDidDoc : \(try didDoc.toJson(isPretty: true))")
                 
                 // out of scope
-                let requestJsonData = try UpdatePushToken(id: SDKUtils.generateMessageID(), did: didDoc.id, appId: Properties.getCaAppId()!, pushToken: Properties.getPushToken() ?? "").toJsonData()
-                _ = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/update-push-token")!, requestJsonData: requestJsonData)
+                let requestJsonData = UpdatePushToken(
+                    id: SDKUtils.generateMessageID(),
+                    did: didDoc.id,
+                    appId: Properties.getCaAppId()!,
+                    pushToken: Properties.getPushToken() ?? ""
+                )
                 
+                let urlString = URLs.TAS_URL + "/tas/api/v1/update-push-token"
+                let _ : VoidResponse = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                                 requestJsonable: requestJsonData)
                 Properties.setRegDidDocCompleted(status: true)
                 
             } completeClosure: {
@@ -183,9 +194,9 @@ class StepViewController: UIViewController {
         pinVC.confirmButtonCompleteClosure = { passcode in
             
             ActivityUtil.show(vc: self){
-                try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), keyId: "keyagree", algType: AlgorithmType.secp256r1)
+                try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), keyId: KeyIds.keyagree, algType: AlgorithmType.secp256r1)
                 // register PIN
-                try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), passcode: passcode, keyId: "pin", algType: AlgorithmType.secp256r1)
+                try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), passcode: passcode, keyId: KeyIds.pin, algType: AlgorithmType.secp256r1)
             } completeClosure: {
                 self.doNext()
             } failureCloseClosure: { title, message in
@@ -234,7 +245,7 @@ class StepViewController: UIViewController {
         popupVC.confirmButtonCompleteClosure = { [self] in
             ActivityUtil.show(vc: self){
                 // register BIO
-                _ = try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), keyId: "bio", algType: AlgorithmType.secp256r1, promptMsg: "Authenticate to access your private key")
+                _ = try WalletAPI.shared.generateKeyPair(hWalletToken: RegUserProtocol.shared.getWalletToken(), keyId: KeyIds.bio, algType: AlgorithmType.secp256r1, promptMsg: "Authenticate to access your private key")
                 try WalletAPI.shared.createHolderDIDDocument(hWalletToken: RegUserProtocol.shared.getWalletToken())
             } completeClosure: {
                 self.presentSubmitViewController()

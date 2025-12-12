@@ -30,28 +30,34 @@ class IssueVcProtocol : CommonProtocol {
     }()
     
     @discardableResult
-    private func proposeIssueVc(vcPlanId: String, issuer: String, offerId: String? = nil) async throws -> _ProposeIssueVc? {
+    private func proposeIssueVc(vcPlanId: String, issuer: String, offerId: String? = nil) async throws -> _ProposeIssueVc
+    {
         
-        let parameter = try ProposeIssueVc(id: SDKUtils.generateMessageID(), vcPlanId: vcPlanId, issuer: issuer, offerId: offerId).toJsonData()
-        if let responseData = try? await CommunicationClient.doPost(url: URL(string:URLs.TAS_URL+"/tas/api/v1/propose-issue-vc")!, requestJsonData: parameter) {
-            
-            let decodedResponse = try _ProposeIssueVc.init(from: responseData)
+        let parameter = ProposeIssueVc(id: SDKUtils.generateMessageID(),
+                                       vcPlanId: vcPlanId,
+                                       issuer: issuer,
+                                       offerId: offerId)
+        
+        let urlString = URLs.TAS_URL+"/tas/api/v1/propose-issue-vc"
+        
+        let response : _ProposeIssueVc = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                                   requestJsonable: parameter)
+        super.txId = response.txId
+        self.refId = response.refId
 
-            super.txId = decodedResponse.txId
-            self.refId = decodedResponse.refId
-
-            return decodedResponse
-        }
-        throw NSError(domain: "proposeIssueVc error", code: 1)
+        return response
     }
     
     
-    private func requestIssueProfile() async throws {
+    private func requestIssueProfile() async throws
+    {
+        let parameter = RequestIssueProfile(id: SDKUtils.generateMessageID(),
+                                            txId: txId,
+                                            serverToken: hServerToken)
+        let urlString = URLs.TAS_URL + "/tas/api/v1/request-issue-profile"
         
-        let parameter = try RequestIssueProfile(id: SDKUtils.generateMessageID(), txId: txId, serverToken: hServerToken).toJsonData()
-        let responseData = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/request-issue-profile")!, requestJsonData: parameter)
-        
-        self.issueProfile = try _RequestIssueProfile.init(from: responseData)
+        self.issueProfile = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                      requestJsonable: parameter)
         print("issue profile: \(try issueProfile!.toJson())")
         super.txId = issueProfile!.txId
     }
@@ -59,9 +65,7 @@ class IssueVcProtocol : CommonProtocol {
     @discardableResult
     private func requestIssueVc(passcode: String? = nil) async throws -> String {
         
-        guard let didAuth = try WalletAPI.shared.getSignedDidAuth(authNonce: issueProfile!.authNonce, passcode: passcode) else {
-            throw NSError(domain: "getDidAuth error", code: 1)
-        }
+        let didAuth = try WalletAPI.shared.getSignedDidAuth(authNonce: issueProfile!.authNonce, passcode: passcode)
         
         var vcId: String? = nil
         var issueVc: _RequestIssueVc? = nil
@@ -81,16 +85,19 @@ class IssueVcProtocol : CommonProtocol {
     @discardableResult
     private func confirmIssueVc(vcId: String) async throws -> _ConfirmIssueVc {
         
-        let parameter = try ConfirmIssueVc(id: SDKUtils.generateMessageID(), txId: super.txId, serverToken: hServerToken, vcId: vcId).toJsonData()
+        let parameter = ConfirmIssueVc(id: SDKUtils.generateMessageID(),
+                                       txId: super.txId,
+                                       serverToken: hServerToken,
+                                       vcId: vcId)
                 
-        let responseData = try await CommunicationClient.doPost(url: URL(string: URLs.TAS_URL + "/tas/api/v1/confirm-issue-vc")!, requestJsonData: parameter)
+        let urlString = URLs.TAS_URL + "/tas/api/v1/confirm-issue-vc"
         
-        let decodedResponse = try _ConfirmIssueVc.init(from: responseData)
-            
-        super.txId = decodedResponse.txId
+        let response : _ConfirmIssueVc = try await CommunicationClient.sendRequest(urlString: urlString,
+                                                                                   requestJsonable: parameter)
+        super.txId = response.txId
         
         
-        return decodedResponse
+        return response
     }
     
     public func process(passcode: String? = nil) async throws -> _ConfirmIssueVc {
@@ -106,7 +113,7 @@ class IssueVcProtocol : CommonProtocol {
         
         try await proposeIssueVc(vcPlanId: vcPlanId, issuer: issuer, offerId: offerId)
                 
-        let ecdh = try await super.requestEcdh(type: 1)
+        let ecdh = try await super.requestEcdh(type: .HolderDidDocumnet)
                 
         let attestedAppInfo: AttestedAppInfo = try await super.requestAttestedAppInfo()
                     

@@ -1,4 +1,0 @@
-framework module DIDWalletSDK {
-  header "DIDWalletSDK-Swift.h"
-  requires objc
-}

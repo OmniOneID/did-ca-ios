@@ -1,0 +1,14 @@
+{
+  "images" : [
+    {
+      "filename" : "OpenDID_Logo_1024_white_background.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

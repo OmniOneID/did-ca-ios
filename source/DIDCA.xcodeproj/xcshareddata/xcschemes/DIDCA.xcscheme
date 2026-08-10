@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1530"
+   LastUpgradeVersion = "2620"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -15,7 +15,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "7C985EA72BC9292A00AF788F"
+               BlueprintIdentifier = "C96B28C52FB16D3B00DC718D"
                BuildableName = "DIDCA.app"
                BlueprintName = "DIDCA"
                ReferencedContainer = "container:DIDCA.xcodeproj">
@@ -29,30 +29,6 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
       shouldAutocreateTestPlan = "YES">
-      <Testables>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "7CA9825A2C85CCE600EDF367"
-               BuildableName = "DIDCATests.xctest"
-               BlueprintName = "DIDCATests"
-               ReferencedContainer = "container:DIDCA.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "7CA982672C85CD1E00EDF367"
-               BuildableName = "DIDCAUITests.xctest"
-               BlueprintName = "DIDCAUITests"
-               ReferencedContainer = "container:DIDCA.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -68,7 +44,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "7C985EA72BC9292A00AF788F"
+            BlueprintIdentifier = "C96B28C52FB16D3B00DC718D"
             BuildableName = "DIDCA.app"
             BlueprintName = "DIDCA"
             ReferencedContainer = "container:DIDCA.xcodeproj">
@@ -85,7 +61,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "7C985EA72BC9292A00AF788F"
+            BlueprintIdentifier = "C96B28C52FB16D3B00DC718D"
             BuildableName = "DIDCA.app"
             BlueprintName = "DIDCA"
             ReferencedContainer = "container:DIDCA.xcodeproj">

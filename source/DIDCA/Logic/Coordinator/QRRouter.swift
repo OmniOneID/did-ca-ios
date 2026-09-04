@@ -127,6 +127,8 @@ enum QRRouter {
             // 실패(noMatchedCredentials 등)면 제시 자체가 불가하므로 try 로 전파해 오류 팝업.
             coordinator.oid4vpSummary = try await OID4VPPresenter.presentationSummary(authRequest: authRequest)
             coordinator.push(.oid4vpRequest)
+        } catch is NoSubmittableCredentialError {
+            Self.showNoSubmittableCredential(on: coordinator)
         } catch {
             OverlayManager.shared.showErrorPopup(title: "Failed to load presentation", error: error)
         }
@@ -144,6 +146,8 @@ enum QRRouter {
     private static func handleOID4VCI(_ qrString: String,
                                       expecting: OID4VciExpectation? = nil,
                                       on coordinator: AppCoordinator) async {
+        // tx_code 를 입력받았는지 — 실패 문구를 TXC-E-01 로 바꿀지 판단하는 데만 쓴다(아래 catch).
+        var enteredTxCode = false
         do {
             OverlayManager.shared.showLoading()
             let issue = try await IssueOID4VcProtocol.begin(rawPayload: qrString)
@@ -185,6 +189,7 @@ enum QRRouter {
                     description: txCode.description ?? ""
                 ) else { return }
                 pinCode = entered
+                enteredTxCode = true
             } else {
                 pinCode = nil
             }
@@ -203,7 +208,15 @@ enum QRRouter {
             // loadCredentials 가 둘을 합쳐 읽으므로 새 카드가 그대로 반영된다.
             let credentialId = try await issue.process(txCode: pinCode, passcode: auth.passcode)
             await coordinator.completeIssuance(vcId: credentialId)
+        } catch IssueOID4VcError.tokenRequestFailed(let underlying) {
+            // TXC-E-01 — tx_code 판정은 **token 요청 단계에만** 걸린다. 응답에 오류 메시지가 있으면
+            // 그것을 띄우고(COM-04), 메시지가 없을 때만 "Wrong code." 로 대신한다.
+            // TX Code 화면은 코드를 넘기는 시점에 이미 닫혔으므로 다이얼로그는 호출 화면(Certs) 위에
+            // 뜬다 — 입력 화면에 인라인 오류를 남기지 않는다.
+            coordinator.failIssuance(underlying, fallback: enteredTxCode ? "Wrong code." : nil)
         } catch {
+            // 그 밖의 단계(metadata 조회·지갑 토큰·credential 요청) 실패는 코드와 무관하다.
+            // 여기에 "Wrong code." 를 붙이면 맞게 입력한 사용자에게 틀렸다고 말하게 된다.
             coordinator.failIssuance(error)
         }
     }
@@ -317,8 +330,21 @@ enum QRRouter {
                 coordinator.zkpSelfRaws = [:]
                 coordinator.push(.vpRequestZkp)
             }
+        } catch is NoSubmittableCredentialError {
+            Self.showNoSubmittableCredential(on: coordinator)
         } catch {
             OverlayManager.shared.showErrorPopup(title: "Failed to load presentation", error: error)
         }
+    }
+
+    /// PRES-E-04 — 제출 가능한 크리덴셜이 없다. 미보유와 ACTIVE 0건을 문구로 구분하지 않는다.
+    /// OK 로 닫으면 Certs(메인)로 돌아간다 — 스캔 화면에 남겨 두면 낼 수 없는 요청을 다시 보게 된다.
+    private static func showNoSubmittableCredential(on coordinator: AppCoordinator) {
+        OverlayManager.shared.showPopup(
+            title: NoSubmittableCredentialError.title,
+            message: NoSubmittableCredentialError.message,
+            primaryButtonTitle: "OK",
+            primaryAction: { coordinator.popToMain() }
+        )
     }
 }

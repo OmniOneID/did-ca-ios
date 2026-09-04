@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		C994EAD92FB6B29D00687132 /* DIDWalletSDK in Frameworks */ = {isa = PBXBuildFile; productRef = C994EAD82FB6B29D00687132 /* DIDWalletSDK */; };
-		C994EADC2FB6B2D100687132 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = C994EADB2FB6B2D100687132 /* OrderedCollections */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,7 +40,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C994EADC2FB6B2D100687132 /* OrderedCollections in Frameworks */,
 				C994EAD92FB6B29D00687132 /* DIDWalletSDK in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -86,7 +84,6 @@
 			name = DIDCA;
 			packageProductDependencies = (
 				C994EAD82FB6B29D00687132 /* DIDWalletSDK */,
-				C994EADB2FB6B2D100687132 /* OrderedCollections */,
 			);
 			productName = DIDCA;
 			productReference = C96B28C62FB16D3B00DC718D /* DIDCA.app */;
@@ -119,7 +116,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				C994EAD72FB6B29D00687132 /* XCRemoteSwiftPackageReference "did-client-sdk-ios" */,
-				C994EADA2FB6B2D100687132 /* XCRemoteSwiftPackageReference "swift-collections" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C96B28C72FB16D3B00DC718D /* Products */;
@@ -385,14 +381,6 @@
 				kind = branch;
 			};
 		};
-		C994EADA2FB6B2D100687132 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-collections.git";
-			requirement = {
-				kind = exactVersion;
-				version = 1.1.4;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -400,11 +388,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C994EAD72FB6B29D00687132 /* XCRemoteSwiftPackageReference "did-client-sdk-ios" */;
 			productName = DIDWalletSDK;
-		};
-		C994EADB2FB6B2D100687132 /* OrderedCollections */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C994EADA2FB6B2D100687132 /* XCRemoteSwiftPackageReference "swift-collections" */;
-			productName = OrderedCollections;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

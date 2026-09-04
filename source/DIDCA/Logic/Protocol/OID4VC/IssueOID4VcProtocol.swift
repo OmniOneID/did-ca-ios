@@ -30,6 +30,11 @@ enum IssueOID4VcError: Error {
     case issuerMismatch
     /// 오퍼의 credential_configuration_ids 에 사용자가 고른 configuration 이 없음 (WebView 발급 전용 검증).
     case configurationMismatch
+    /// **token 요청** 단계의 실패 — 원인 오류를 그대로 안고 있다.
+    ///
+    /// 설계서 TXC-E-01 이 `"Wrong code."` 폴백을 **이 단계에만** 걸기 때문에 따로 표시한다.
+    /// 이 표시가 없으면 metadata 조회·지갑 토큰·credential 요청 실패까지 "코드가 틀렸다"로 읽힌다.
+    case tokenRequestFailed(Error)
 }
 
 // MARK: - OID4VCI 발급 흐름
@@ -125,6 +130,9 @@ nonisolated final class IssueOID4VcProtocol {
         let metadata = try await Self.getMetadata(issuerURL: offer.credentialIssuer)
         self.metadata = metadata
 
+        // tx_code 판정은 token POST 응답에만 걸린다(TXC-E-01) — 그 한 호출만
+        // `tokenRequestFailed` 로 올라오도록 `requestTokenByPreAuthorizedCode` 안에서 감싼다.
+        // 준비 단계 실패는 여기서 그대로 통과해 일반 발급 실패로 처리된다.
         let token = try await Self.requestTokenByPreAuthorizedCode(
             metadata: metadata,
             offer: offer,
@@ -228,12 +236,19 @@ extension IssueOID4VcProtocol {
             authorizationDetails: authDetailsArray
         )
 
-        let response: TokenResponse = try await CommunicationClient.sendPostUrlencoded(
-            urlString: tokenEndpoint,
-            requestJsonable: tokenRequest
-        )
-
-        return response
+        // TXC-E-01 — tx_code 판정이 걸리는 지점은 **이 POST 의 응답뿐**이다. 위의 준비 단계
+        // (grant type 확인·endpoint 검증·authorization server 메타데이터 조회·발급 대상 확인)는
+        // 코드와 무관하므로 `tokenRequestFailed` 로 감싸지 않는다 — 감싸면 코드를 맞게 입력한
+        // 사용자에게 "Wrong code." 를 보여주게 된다.
+        do {
+            let response: TokenResponse = try await CommunicationClient.sendPostUrlencoded(
+                urlString: tokenEndpoint,
+                requestJsonable: tokenRequest
+            )
+            return response
+        } catch {
+            throw IssueOID4VcError.tokenRequestFailed(error)
+        }
     }
 
     static func requestCredential(

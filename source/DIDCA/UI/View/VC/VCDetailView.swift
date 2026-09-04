@@ -192,7 +192,8 @@ struct ClaimRow: View {
         }
     }
 
-    // 이미지 클레임은 원본 비율을 유지(scaledToFit)한 채 폭에 맞춰 표시한다.
+    // 이미지 클레임은 값 텍스트를 대신한다 — 둘을 함께 노출하지 않는다(VC-B-01).
+    // 크기 규칙(원본 크기·확대 금지·높이 상한 없음)은 `ClaimImageView` 가 갖는다.
     @ViewBuilder
     private var valueView: some View {
         switch value {
@@ -201,16 +202,8 @@ struct ClaimRow: View {
                 .font(.pretendard(size: 14, weight: .semibold))
                 .foregroundStyle(.black)
         case .image(let data):
-            if let uiImage = UIImage(data: data) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity, maxHeight: 180, alignment: .leading)
-            } else {
-                Text("—")
-                    .font(.pretendard(size: 14, weight: .semibold))
-                    .foregroundStyle(.customGray)
-            }
+            ClaimImageView(data: data)
+                .padding(.top, 4)
         }
     }
 }

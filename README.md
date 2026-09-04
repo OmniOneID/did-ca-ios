@@ -7,21 +7,26 @@
 ## Overview
 This document is a guide for using the OpenDID authentication client, and provides users with the ability to create, store, and manage the WalletToken, Lock/Unlock, Key, DID Document, and Verifiable Credential (hereinafter referred to as VC) information required for OpenDID.
 
+In addition to the OpenDID protocol, the app supports the OpenID for Verifiable Credentials family — credential issuance over OpenID4VCI (pre-authorized code flow, including `tx_code`) and presentation over OpenID4VP — as well as SD-JWT VC credentials and Token Status List based revocation/suspension checks.
+
 
 ## S/W Specifications
-| Category         | Details                     |
-|------------------|-----------------------------|
-| OS               | iOS 15                      |
-| Language         | Swift 5.8                   |
-| IDE              | Xcode 26.0.1                |
-| Build System     | Xcode Basic build system    |
-| Compatibility    | iOS 15 or higher            |
-| Test Environment | iPhone 15 (17.5) Simulator  |
+| Category         | Details                                         |
+|------------------|-------------------------------------------------|
+| OS               | iOS 17                                          |
+| Language         | Swift 5                                         |
+| UI Framework     | SwiftUI                                         |
+| IDE              | Xcode 26.2                                      |
+| Build System     | Xcode Basic build system                        |
+| Compatibility    | iOS 17 or higher                                |
+| Test Environment | iPhone Simulator (iOS 17.5) and physical device |
 
 ## Clone and checkout the DIDCA project
 ```git
 git clone https://github.com/OmniOneID/did-ca-ios.git
 ```
+
+The Xcode project lives under the `source` directory — open `source/DIDCA.xcodeproj`.
 
 ## Build Method
 How to compile and test your app using Xcode's default build system.
@@ -56,6 +61,19 @@ Please refer to the respective links for their own licenses for third-party libr
 
 ## How to apply DIDWalletSDK framework to DIDCA project in Xcode
 
+### Apply Framework via SPM (recommended)
+
+This is how the DIDCA project itself resolves the SDK — the dependency is already declared in `source/DIDCA.xcodeproj`, so a fresh clone needs no manual step. To wire it into another project:
+
+- In the app project’s `Package Dependencies`, click the `+` to add the following items.
+```text
+https://github.com/OmniOneID/did-client-sdk-ios.git
+```
+- Select **Version ≥ 3.0.0** (or choose a version rule such as “Up to Next Major”).
+- Add the package to your target.
+- `OrderedCollections` (Swift Collections) is pulled in transitively, so it does not need to be added by hand.
+<br>
+
 ### Using the framework’s own application method.
 
 1. Preparing DIDWalletSDK framework files
@@ -84,37 +102,21 @@ Please refer to the respective links for their own licenses for third-party libr
 
 4. Add dependencies to SPM
 
-- DIDWalletSDK has a dependency on Swift Collections.
-- If the framework is added via SPM, the dependency is included automatically, so this does not apply.
-- In the app project’s `Package Dependencies`, click the `+` to add the following items.
-```text
-https://github.com/apple/swift-collections.git
-Exact Version 1.1.4
-```
-- In the **Choose Package Products** screen, select **OrderedCollections** and set **Add to Target** to your app target.
-
-### Apply Framework via SPM
-
-- In the app project’s `Package Dependencies`, click the `+` to add the following items.
-```text
-https://github.com/OmniOneID/did-client-sdk-ios.git
-```
-- Select **Version ≥ 2.0.1** (or choose a version rule such as “Up to Next Major”).
-- Add the package to your target.
-<br>
+- No additional package is required. Swift Collections is linked statically into the xcframework and no longer appears in the SDK’s public interface, so it does not have to be declared by the app.
+- Earlier releases exposed `OrderedCollections` through the public API and asked you to add `https://github.com/apple/swift-collections.git` at `Exact Version 1.1.4`. From v3.0.0 that declaration can be removed; keep it only if your app uses Swift Collections directly.
 
 ### Import and Use
 
-First, modify the URL information for each business in the URLs.swift file.
+First, modify the URL information for each business in `source/DIDCA/Logic/Constants/URLs.swift`. The values below point at a development LAN and must be replaced with your own deployment — onboarding, issuance and presentation all fail until these hosts are reachable.
 ```swift
 struct URLs
 {
-    public static let TAS_URL       : String = "http://192.168.3.130:18090"
-    public static let VERIFIER_URL  : String = "http://192.168.3.130:18092"
-    public static let CAS_URL       : String = "http://192.168.3.130:18094"
-    public static let WALLET_URL    : String = "http://192.168.3.130:18095"
-    public static let API_URL       : String = "http://192.168.3.130:18093"
-    public static let DEMO_URL      : String = "http://192.168.3.130:18099"
+    static let TAS_URL       : String = "http://192.168.3.110:8090"
+    static let VERIFIER_URL  : String = "http://192.168.3.110:8092"
+    static let CAS_URL       : String = "http://192.168.3.110:8094"
+    static let WALLET_URL    : String = "http://192.168.3.110:8095"
+    static let API_URL       : String = "http://192.168.3.110:8093"
+    static let DEMO_URL      : String = "http://192.168.3.110:8099"
 }
 ```
 
@@ -122,17 +124,17 @@ And you need to use the DIDWalletSDK module in your project's source files. Impo
 ```swift
 import DIDWalletSDK
 ```
-The functionality provided by DIDWalletSDK is now available in source code.
+The functionality provided by DIDWalletSDK is now available in source code. Most SDK calls need a wallet token; DIDCA issues one through `TokenGenerator.requestWalletToken(purpose:)`, which performs the CAS handshake for the stored user id.
 ```swift
 Task { @MainActor in
     do {
-        let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.LIST_VC, userId: Properties.getUserId()!)
+        let hWalletToken = try await TokenGenerator.requestWalletToken(purpose: .LIST_VC)
 
-        guard let credentials = try WalletAPI.shared.getAllCredentials(hWalletToken: hWalletToken) else {    
+        guard let credentials = try WalletAPI.shared.getAllCredentials(hWalletToken: hWalletToken) else {
             return
         }
-        for credential in self.credentials {
-            print("vc: \(try! credential.toJson())")
+        for credential in credentials {
+            print("vc: \(try credential.toJson())")
         }
     } catch let error as WalletSDKError {
         print("error code: \(error.code), message: \(error.message)")
@@ -145,6 +147,7 @@ Task { @MainActor in
     }
 }
 ```
+SD-JWT VC credentials issued over OpenID4VCI are stored separately from W3C VCs and are read with `WalletAPI.shared.getAllOID4VCs(hWalletToken:)`.
 
 ### Build and Test
 

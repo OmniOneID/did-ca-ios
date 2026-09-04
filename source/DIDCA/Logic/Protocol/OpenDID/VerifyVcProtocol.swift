@@ -160,14 +160,15 @@ extension VerifyVcProtocol {
         // 제출 = requiredCodes ∪ 체크. 코드 순서는 의미가 없다 — SDK `VCManager.makePresentation` 이
         // VC 의 claim 순서를 돌며 이 목록을 포함 여부로만 쓴다.
         let claimInfos: [ClaimInfo] = summary.documents.compactMap { doc in
-            let checked = selectedCodes[doc.credentialId] ?? []
-            // 체크가 하나도 안 남은 카드는 제출에서 뺀다. 숨은 required 만 내보내면
-            // 사용자가 "이 카드는 안 내겠다"고 표시한 것이 그대로 나가 버린다.
-            guard !checked.isEmpty else { return nil }
-            return ClaimInfo(credentialId: doc.credentialId,
-                             claimCodes: Array(doc.requiredCodes.union(checked)))
+            // 화면은 **선택된 후보 1건만** 담아 보낸다 — 키가 없으면 고르지 않은 후보다(PRES-B-05).
+            guard let checked = selectedCodes[doc.credentialId] else { return nil }
+            // 체크 0건이어도 REQUIRED 가 있으면 제출한다 — OPTIONAL 기본값이 해제이므로
+            // "체크 0건"을 "안 내겠다"로 읽을 수 없다(REQUIRED 만 있는 구성이 정상 경로다).
+            let codes = doc.requiredCodes.union(checked)
+            guard !codes.isEmpty else { return nil }
+            return ClaimInfo(credentialId: doc.credentialId, claimCodes: Array(codes))
         }
-        guard !claimInfos.isEmpty else { throw VerifyVcError.noMatchingCredential }
+        guard !claimInfos.isEmpty else { throw NoSubmittableCredentialError() }
 
         let proto = VerifyVcProtocol()
         // preProcess 결과(profile)는 호출자가 이미 갖고 있으므로 [1] 은 건너뛰고
@@ -195,9 +196,9 @@ extension VerifyVcProtocol {
     ///    노출 = VC claim 전체, 전부 잠금 + 전부 제출
     /// 4. `presentAll ≠ true` → 후보 중 `requiredClaims ∪ displayClaims` 를 **전부 보유한** 첫 VC 선택.
     ///    그런 VC 가 없으면 `profileClaimMismatch` — 카드는 있는데 프로파일이 없는 claim 을 요구한 것
-    /// 5. 노출 = `displayClaims`(nil·빈 배열이면 VC claim 전체), VC claim 순서 유지
-    /// 6. 잠금 = 노출 ∩ `requiredClaims`. 나머지 노출분은 해제 가능
-    /// 7. 제출은 `submit` 에서 `requiredCodes ∪ 체크` — required 는 노출 밖에 숨을 수 있어 따로 싣는다
+    /// 5. 노출 = `displayClaims ∪ requiredClaims`(둘 다 미지정이면 VC claim 전체), VC claim 순서 유지
+    /// 6. REQUIRED = 노출 ∩ `requiredClaims`. 나머지 노출분은 OPTIONAL(해제 상태로 시작)
+    /// 7. 제출은 `submit` 에서 `requiredCodes ∪ 체크`
     static func presentationSummary(profile: _RequestProfile) async throws -> VpPresentationSummary {
         let verifierName = profile.profile.profile.verifier.name
         let hWalletToken = try await TokenGenerator.requestWalletToken(purpose: .LIST_VC_AND_PRESENT_VP)
@@ -212,13 +213,24 @@ extension VerifyVcProtocol {
             }
             guard !candidates.isEmpty else { continue }
 
+            // [2-1] ACTIVE 만 후보로 올린다(PRES-B-06) — Inactive·Expired 는 제출 대상이 아니다.
+            // 판정 사다리(새 조회 → 마지막 조회 상태 → 만료일)는 `CredentialStore.submittableIds` 참조.
+            // 조회처가 서버 `vc-meta`(VC 단위 API)라 SD-JWT·mDoc 처럼 묶을 수단이 없다 — 한 건씩 묻는다.
+            var active: [VerifiableCredential] = []
+            for candidate in candidates {
+                if await CredentialStore.shared.isSubmittable(w3c: candidate) {
+                    active.append(candidate)
+                }
+            }
+            guard !active.isEmpty else { continue }
+
             let vc: VerifiableCredential
             let shownCodes: [String]
             let requiredCodes: Set<String>
 
             if schema.presentAll ?? false {
                 // [3] 전체 공개. claim 목록을 읽지 않으므로 프로파일 불일치가 성립하지 않는다.
-                vc = candidates[0]
+                vc = active[0]
                 shownCodes = vc.credentialSubject.claims.map(\.code)
                 requiredCodes = Set(shownCodes)
             } else {
@@ -227,28 +239,33 @@ extension VerifyVcProtocol {
                 let display: Set<String>? = schema.displayClaims.flatMap { $0.isEmpty ? nil : Set($0) }
                 // [4] 프로파일이 지목한 claim 을 전부 가진 후보를 고른다.
                 let needed = required.union(display ?? [])
-                guard let matched = candidates.first(where: { candidate in
+                guard let matched = active.first(where: { candidate in
                     needed.isSubset(of: Set(candidate.credentialSubject.claims.map(\.code)))
                 }) else {
                     throw VerifyVcError.profileClaimMismatch
                 }
                 vc = matched
-                // [5] 노출 = displayClaims, VC claim 순서 유지. 미지정이면 전체.
+                // [5] 노출 = displayClaims ∪ requiredClaims, VC claim 순서 유지. 미지정이면 전체.
+                // 필수를 합치는 이유는 PRES-B-06 — 사용자가 뺄 수 없는 항목이라도 무엇이 제출되는지
+                // 화면에서 확인할 수 있어야 한다. [4] 가 필수를 전부 가진 VC 만 통과시키므로
+                // caption·값은 여기서 그대로 나온다.
                 let allCodes = vc.credentialSubject.claims.map(\.code)
-                shownCodes = display.map { display in allCodes.filter(display.contains) } ?? allCodes
+                let visible = display.map { $0.union(required) }
+                shownCodes = visible.map { visible in allCodes.filter(visible.contains) } ?? allCodes
                 requiredCodes = required
             }
 
             let claimsByCode = Dictionary(vc.credentialSubject.claims.map { ($0.code, $0) },
                                           uniquingKeysWith: { first, _ in first })
-            // [6] 잠금 = 노출 ∩ required. 화면 밖 required 는 여기 안 나타나고 requiredCodes 로만 실린다.
+            // [6] REQUIRED = 노출 ∩ required. [5] 에서 노출이 required 를 포함하므로 화면 밖 필수는 없다.
             let claims: [VpPresentationClaim] = shownCodes.compactMap { code in
                 guard let claim = claimsByCode[code] else { return nil }
                 return VpPresentationClaim(
                     code: code,
                     label: claim.caption,
-                    value: claim.value,
-                    locked: requiredCodes.contains(code)
+                    // 이미지 클레임(portrait 등)은 값 텍스트 대신 이미지로 그린다 — PRES-B-04.
+                    value: ImageClaim.claimValue(type: claim.type, encoded: claim.value),
+                    required: requiredCodes.contains(code)
                 )
             }
             let title = (try? await CredentialStore.shared.schema(id: schema.id))?.title ?? "Credential"
@@ -257,8 +274,8 @@ extension VerifyVcProtocol {
                 requiredCodes: requiredCodes,
                 bindingKeyId: nil))   // 일반 VP 는 W3C 전용 — 서명키는 passcode 유무로 갈린다.
         }
-        // [2] 어느 스키마에도 후보가 없었음.
-        guard !documents.isEmpty else { throw VerifyVcError.noMatchingCredential }
+        // [2] 어느 스키마에도 후보가 없었음 — 미보유와 ACTIVE 0건을 구분하지 않는다(PRES-E-04).
+        guard !documents.isEmpty else { throw NoSubmittableCredentialError() }
         return VpPresentationSummary(verifierName: verifierName, documents: documents)
     }
 }

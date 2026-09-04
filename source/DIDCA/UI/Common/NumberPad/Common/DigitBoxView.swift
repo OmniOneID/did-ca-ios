@@ -19,10 +19,11 @@
 import SwiftUI
 
 struct DigitBoxView: View {
+    /// true 면 채워진 칸을 점으로 가린다(PIN). false 면 입력한 숫자를 그대로 보여 준다(TX Code).
     var maskDigits: Bool = false
     @Binding var digits: String
     var maxDigits: Int = 6
-    
+
     var isErrored: Bool = false
 
     var body: some View {
@@ -30,6 +31,9 @@ struct DigitBoxView: View {
             ForEach(0..<maxDigits, id: \.self) { index in
                 let isFilled = index < digits.count
                 let isFocused = index == digits.count
+                let digit = isFilled
+                    ? String(digits[digits.index(digits.startIndex, offsetBy: index)])
+                    : ""
 
                 RoundedRectangle(cornerRadius: 8)
                     .fill((isErrored) ? Color.paleRed : Color.white)
@@ -41,9 +45,15 @@ struct DigitBoxView: View {
                     .frame(width: 44, height: 52)
                     .overlay {
                         if isFilled {
-                            Circle()
-                                .fill(isErrored ? Color.customRed : Color.black)
-                                .frame(width: 12, height: 12)
+                            if maskDigits {
+                                Circle()
+                                    .fill(isErrored ? Color.customRed : Color.black)
+                                    .frame(width: 12, height: 12)
+                            } else {
+                                Text(digit)
+                                    .font(.pretendard(size: 22, weight: .semibold))
+                                    .foregroundStyle(isErrored ? Color.customRed : Color.black)
+                            }
                         }
                     }
                     .animation(.easeInOut(duration: 0.15), value: isErrored)

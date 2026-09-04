@@ -18,17 +18,26 @@
 import SwiftUI
 
 struct NoCertificateView : View {
+
+    /// 중앙 아이콘 탭 — 상단 `+` 와 같은 동작(Add certificate 시트)을 호출한다.
+    /// 시트 상태는 `MainView` 가 들고 있어 여기서는 클로저로만 받는다.
+    var onAdd: () -> Void
+
     var body: some View {
         VStack(alignment: .center, spacing: 24) {
-            Circle()
-                .frame(width: 120, height: 120)
-                .foregroundStyle(.white)
-                .shadow(color: .primaryShadow.opacity(0.12), radius: 10, x: 0, y: 6)
-                .shadow(color: .black.opacity(0.04), radius: 1, x: 0, y: 1)
-                .overlay {
-                    Image(.icDocsEmpty)
-                        .frame(width: 72, height: 72)
-                }
+            Button(action: onAdd) {
+                Circle()
+                    .frame(width: 120, height: 120)
+                    .foregroundStyle(.white)
+                    .shadow(color: .primaryShadow.opacity(0.12), radius: 10, x: 0, y: 6)
+                    .shadow(color: .black.opacity(0.04), radius: 1, x: 0, y: 1)
+                    .overlay {
+                        Image(.icDocsEmpty)
+                            .frame(width: 72, height: 72)
+                    }
+            }
+            .buttonStyle(.plain)
+            .contentShape(Circle())
 
             VStack(alignment: .center, spacing: 8) {
                 Text("No Certificates yet")
@@ -59,5 +68,5 @@ struct NoCertificateView : View {
 
 
 #Preview {
-    NoCertificateView()
+    NoCertificateView(onAdd: {})
 }

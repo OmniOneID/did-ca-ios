@@ -500,10 +500,11 @@ final class AppCoordinator {
     /// 띄우고, 소프트웨어 키(#pin)만 passcode 를 요구한다. 즉 **#pin 이 하나라도 있으면 PIN 만
     /// 받아 넘기면 둘 다 충족된다.**
     ///
-    /// - parameter bindingKeyIds: 제출 대상 SD-JWT 의 `bindingKeyId` 목록. W3C 만이면 비어 있다.
+    /// - parameter bindingKeyIds: 제출 대상 OID4VC 발급분(SD-JWT·mDoc)의 `bindingKeyId` 목록.
+    ///   W3C 만이면 비어 있다.
     /// - returns: `.pin(passcode)` / `.bio`(앱 인증 없음 — SDK 가 처리) / 취소 시 nil.
     func presentAuth(forBindingKeyIds bindingKeyIds: [String]) async -> AuthChoice? {
-        // SD-JWT 가 없으면(W3C 전용) 기존 정책 — bio 키가 있으면 선택 시트, 없으면 PIN 직행.
+        // 바인딩 키가 없으면(W3C 전용) 기존 정책 — bio 키가 있으면 선택 시트, 없으면 PIN 직행.
         guard !bindingKeyIds.isEmpty else { return await presentAuth() }
 
         if bindingKeyIds.contains(KeyIdName.pin) {

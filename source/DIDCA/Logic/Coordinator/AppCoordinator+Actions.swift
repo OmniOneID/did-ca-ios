@@ -29,15 +29,15 @@ extension AppCoordinator {
     /// → 목록 갱신 → docs 복귀. 성공 시에만 docs 로 이동(목록에서 카드 사라짐), 실패 시 카드 유지
     /// + 오류 팝업 (설계 VC-E-01).
     ///
-    /// SD-JWT(OID4VCI 발급분)는 서버 폐기 흐름이 없어 `IssuedCredentialManager` 에서 로컬 삭제만 한다
+    /// OID4VCI 발급분(SD-JWT·mDoc)은 서버 폐기 흐름이 없어 `deleteOID4VCs` 로 로컬 삭제만 한다
     /// (저장소가 W3C `WalletAPI` 와 분리돼 있어 `RevokeVcProtocol` 경로로는 못 지운다). 로컬 삭제는
     /// 서버 서명이 없어 인증 게이트(presentAuth)를 건너뛴다 — W3C 폐기만 PIN/BIO 가 필요하다.
     func revokeCredential(_ cred: Credential) async {
-        let isSDJWT = cred.badge == .sdJwt
+        let isOID4VC = cred.badge == .sdJwt || cred.badge == .mDoc
 
-        // W3C 폐기는 서버 서명용 인증이 필요. SD-JWT 로컬 삭제는 인증 없이 진행한다.
+        // W3C 폐기는 서버 서명용 인증이 필요. OID4VC 로컬 삭제는 인증 없이 진행한다.
         var passcode: String?
-        if !isSDJWT {
+        if !isOID4VC {
             guard let auth = await presentAuth() else { return }
             passcode = auth.passcode
         }
@@ -45,7 +45,7 @@ extension AppCoordinator {
         OverlayManager.shared.showLoading()
         defer { OverlayManager.shared.hideLoading() }
         do {
-            if isSDJWT {
+            if isOID4VC {
                 let hWalletToken = try await TokenGenerator.requestWalletToken(purpose: .REMOVE_VC)
                 try WalletAPI.shared.deleteOID4VCs(hWalletToken: hWalletToken, ids: [cred.id])
             } else {
@@ -104,15 +104,12 @@ extension AppCoordinator {
     func submitOID4VP(selectedCodes: [String: Set<String>] = [:]) async {
         guard let authRequest = oid4vpRequest else { return }
 
-        // 인증수단 판정은 **실제로 제출되는** 문서만 본다. 매칭 전체를 보면, 사용자가 화면에서
-        // 전부 해제해 빠질 문서의 바인딩까지 세어 엉뚱한 인증을 요구한다 (bio 만 제출하는데
-        // PIN 패드가 뜨는 증상). 포함 규칙은 `OID4VPPresenter.applyConsent` 와 같다 —
-        // 빈 집합이면 그 문서는 제출에서 빠지고, 키가 없으면 화면 밖 문서라 제출 대상으로 둔다.
+        // 인증수단 판정은 **실제로 제출되는** 문서만 본다. 후보 전체를 보면 사용자가 고르지 않은
+        // 카드의 바인딩까지 세어 엉뚱한 인증을 요구한다 (bio 만 제출하는데 PIN 패드가 뜨는 증상).
+        // 포함 규칙은 `OID4VPPresenter.applyConsent` 와 같다 — 화면이 담아 보낸 **선택된 1건**이
+        // 곧 제출 대상이므로, 키가 있는 문서만 센다.
         let submittedKeyIds = (oid4vpSummary?.documents ?? [])
-            .filter { doc in
-                guard let consented = selectedCodes[doc.credentialId] else { return true }
-                return !consented.isEmpty
-            }
+            .filter { selectedCodes[$0.credentialId] != nil }
             .compactMap(\.bindingKeyId)
 
         guard let auth = await presentAuth(forBindingKeyIds: submittedKeyIds) else { return }
@@ -190,10 +187,14 @@ extension AppCoordinator {
 
     /// 발급 실패 꼬리 — ISS-E-01~03. OK 를 누르면 Certs(Docs)로 복귀한다.
     /// 로딩은 따로 내리지 않는다 — `showErrorPopup` → `showPopup` 이 이미 `hideLoading()` 한다.
-    func failIssuance(_ error: Error) {
+    ///
+    /// - parameter fallback: 응답에 메시지가 없는 오류(`.other`)일 때 대신 띄울 문구.
+    ///   TXC-E-01 의 "Wrong code." 가 이 경로다 — 서버·네트워크 메시지가 있으면 그쪽이 우선한다.
+    func failIssuance(_ error: Error, fallback: String? = nil) {
         OverlayManager.shared.showErrorPopup(
             title: "Failed to issue",
             error: error,
+            fallback: fallback,
             primaryAction: { [weak self] in self?.popToMain() }
         )
     }

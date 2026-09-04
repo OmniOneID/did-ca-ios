@@ -6,22 +6,27 @@
 ## 개요
 본 문서는 OpenDID 인증 클라이언트를 사용하기 위한 가이드이며, 사용자에게 OpenDID에 필요한 WalletToken, Lock/Unlock, Key, DID Document(DID 문서), Verifiable Credential(이하 VC) 정보를 생성, 저장, 관리하는 기능을 제공합니다.
 
+OpenDID 프로토콜과 더불어 OpenID for Verifiable Credentials 계열도 지원합니다. OpenID4VCI(pre-authorized code 방식, `tx_code` 포함)를 통한 발급, OpenID4VP를 통한 제출, SD-JWT VC 크레덴셜, Token Status List 기반 폐기·정지 상태 확인을 제공합니다.
+
 
 ## S/W 사양
-| 구분              | 내용                            |
-|-------------------|-------------------------------|
-| OS                | iOS 15                        |
-| Language          | Swift 5.8                     |
-| IDE               | Xcode 26.0.1                  |
-| Build System      | Xcode 기본 빌드 시스템            |
-| Compatibility     | iOS 15 or higher              |
-| Test Environment  | iPhone 15 (17.5) 시뮬레이터      |
+| 구분              | 내용                                    |
+|-------------------|---------------------------------------|
+| OS                | iOS 17                                |
+| Language          | Swift 5                               |
+| UI Framework      | SwiftUI                               |
+| IDE               | Xcode 26.2                            |
+| Build System      | Xcode 기본 빌드 시스템                    |
+| Compatibility     | iOS 17 or higher                      |
+| Test Environment  | iPhone 시뮬레이터(iOS 17.5) 및 실제 기기    |
 
 
 ## DIDCA 프로젝트 클론 및 체크아웃
 ```git
 git clone https://github.com/OmniOneID/did-ca-ios.git
 ```
+
+Xcode 프로젝트는 `source` 디렉토리 아래에 있습니다. `source/DIDCA.xcodeproj`를 여세요.
 
 ## 빌드 방법
 Xcode의 기본 빌드 시스템을 사용하여 앱을 컴파일하고 테스트하는 방법이다.
@@ -56,6 +61,18 @@ SDK가 사용하는 타사 라이브러리에 대한 자체 라이선스는 해�
 
 ## Xcode에서 DIDWalletSDK framework를 DIDCA 프로젝트에 적용하는 방법
 
+### SPM을 통한 Framework 추가 (권장)
+
+DIDCA 프로젝트 자체가 이 방식으로 SDK를 참조합니다. 의존성이 `source/DIDCA.xcodeproj`에 이미 선언되어 있어 클론 직후 별도 작업이 필요 없습니다. 다른 프로젝트에 적용하려면 다음과 같이 합니다.
+
+- 앱 프로젝트의 `Package Dependencies`에서 `+`를 눌러 다음 항목을 추가합니다.
+```text
+https://github.com/OmniOneID/did-client-sdk-ios.git
+```
+- **Version ≥ 3.0.0**을 선택하거나, “Up to Next Major” 규칙을 선택합니다.
+- 패키지를 타겟에 추가합니다.
+- `OrderedCollections`(Swift Collections)는 전이 의존성으로 함께 받아지므로 따로 추가하지 않아도 됩니다.
+
 ### 기존 적용 방식 사용  
 
 1. DIDWalletSDK framework 파일 준비
@@ -84,37 +101,22 @@ SDK가 사용하는 타사 라이브러리에 대한 자체 라이선스는 해�
 
 4. SPM에 의존성 추가하기
 
-    - DIDWalletSDK는 Swift-collections의 의존성을 갖습니다.
-    - Framework를 SPM으로 추가한 경우에는 자동으로 추가되기 때문에 해당되지 않습니다.
-    - 앱 프로젝트의 `Package Dependencies`에서 `+`를 눌러 다음 항목을 추가합니다.
-    ```text
-    https://github.com/apple/swift-collections.git
-    Exact Version 1.1.4
-    ```
-    - **Choose Package Products** 화면에서 **OrderedCollections** 항목을 선택한 후, **Add to Target**을 앱 타겟으로 설정합니다.
+    - 추가할 패키지가 없습니다. Swift Collections는 xcframework에 정적으로 포함되고 SDK 공개 인터페이스에도 더 이상 노출되지 않으므로, 앱이 따로 선언하지 않아도 됩니다.
+    - 이전 버전은 `OrderedCollections`를 공개 API로 노출해 `https://github.com/apple/swift-collections.git`을 `Exact Version 1.1.4`로 추가하도록 안내했습니다. v3.0.0부터는 그 선언을 지워도 되며, 앱이 Swift Collections를 직접 사용하는 경우에만 남겨 두십시오.
 
-
-### SPM을 통한 Framework 추가
-
-- 앱 프로젝트의 `Package Dependencies`에서 `+`를 눌러 다음 항목을 추가합니다.
-```text
-https://github.com/OmniOneID/did-client-sdk-ios.git
-```
-- **Version ≥ 2.0.1**을 선택하거나, “Up to Next Major” 규칙을 선택합니다.
-- 패키지를 타겟에 추가합니다.
 
 ### Import 및 사용
 
-먼저 URLs.swift 파일에서 각 사업자의 URL정보를 수정합니다.
+먼저 `source/DIDCA/Logic/Constants/URLs.swift` 파일에서 각 사업자의 URL정보를 수정합니다. 아래 값은 개발망 주소이므로 실제 운영 환경 주소로 교체해야 합니다. 이 주소에 접근되지 않으면 온보딩·발급·제출이 모두 실패합니다.
 ```swift
 struct URLs
 {
-    public static let TAS_URL       : String = "http://192.168.3.130:18090"
-    public static let VERIFIER_URL  : String = "http://192.168.3.130:18092"
-    public static let CAS_URL       : String = "http://192.168.3.130:18094"
-    public static let WALLET_URL    : String = "http://192.168.3.130:18095"
-    public static let API_URL       : String = "http://192.168.3.130:18093"
-    public static let DEMO_URL      : String = "http://192.168.3.130:18099"
+    static let TAS_URL       : String = "http://192.168.3.110:8090"
+    static let VERIFIER_URL  : String = "http://192.168.3.110:8092"
+    static let CAS_URL       : String = "http://192.168.3.110:8094"
+    static let WALLET_URL    : String = "http://192.168.3.110:8095"
+    static let API_URL       : String = "http://192.168.3.110:8093"
+    static let DEMO_URL      : String = "http://192.168.3.110:8099"
 }
 ```
 
@@ -122,17 +124,17 @@ struct URLs
 ```swift
 import DIDWalletSDK
 ```
-이제 DIDWalletSDK에서 제공하는 기능을 소스 코드에서 사용할 수 있습니다. 
+이제 DIDWalletSDK에서 제공하는 기능을 소스 코드에서 사용할 수 있습니다. 대부분의 SDK 호출에는 wallet token이 필요하며, DIDCA는 `TokenGenerator.requestWalletToken(purpose:)`로 저장된 사용자 ID에 대한 CAS 핸드셰이크를 수행해 토큰을 발급받습니다.
 ```swift
 Task { @MainActor in
     do {
-        let hWalletToken = try await SDKUtils.createWalletToken(purpose: WalletTokenPurposeEnum.LIST_VC, userId: Properties.getUserId()!)
+        let hWalletToken = try await TokenGenerator.requestWalletToken(purpose: .LIST_VC)
 
-        guard let credentials = try WalletAPI.shared.getAllCredentials(hWalletToken: hWalletToken) else {    
+        guard let credentials = try WalletAPI.shared.getAllCredentials(hWalletToken: hWalletToken) else {
             return
         }
-        for credential in self.credentials {
-            print("vc: \(try! credential.toJson())")
+        for credential in credentials {
+            print("vc: \(try credential.toJson())")
         }
     } catch let error as WalletSDKError {
         print("error code: \(error.code), message: \(error.message)")
@@ -145,6 +147,7 @@ Task { @MainActor in
     }
 }
 ```
+OpenID4VCI로 발급받은 SD-JWT VC 크레덴셜은 W3C VC와 별도로 저장되며 `WalletAPI.shared.getAllOID4VCs(hWalletToken:)`로 읽습니다.
 
 ### 빌드 및 테스트
 

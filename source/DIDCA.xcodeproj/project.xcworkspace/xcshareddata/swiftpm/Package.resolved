@@ -1,5 +1,5 @@
 {
-  "originHash" : "5d48c0719e880513481e251bdde427d70206f6911d589d1d449af0cc1a9b9be2",
+  "originHash" : "d57572d35980c07a3145d194f27bb621b30c35b45c6fc28bb8e47bce0c52eedd",
   "pins" : [
     {
       "identity" : "did-client-sdk-ios",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/OmniOneID/did-client-sdk-ios",
       "state" : {
         "branch" : "jhpark/feature/oid4vc",
-        "revision" : "ae262242ddf4c2014f165d98f8a968a0e2d00aa8"
+        "revision" : "c8fda55aba5b2f1cec586f285fc8efb600631ac4"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "671108c96644956dddcd89dd59c203dcdb36cec7",
-        "version" : "1.1.4"
+        "revision" : "a0cb0954ecb21e4e31b0070e6ed5674e8556685a",
+        "version" : "1.6.0"
       }
     }
   ],

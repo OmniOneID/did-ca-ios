@@ -69,17 +69,14 @@ struct TxCodeView: View {
             VStack(alignment: .center, spacing: 12) {
                 Spacer()
 
-                DigitBoxView(maskDigits: true,
+                // 오류 상태가 없다 — 코드가 틀리면 이 화면은 그냥 닫히고 호출 화면 위에
+                // 다이얼로그가 뜬다(TXC-E-01).
+                // tx_code 는 PIN 과 달리 비밀값이 아니라 issuer 가 알려 준 거래 코드다 —
+                // 설계서 22/22a 는 입력한 숫자를 가리지 않고 그대로 보여 준다.
+                DigitBoxView(maskDigits: false,
                              digits: $viewModel.code,
                              maxDigits: viewModel.length,
-                             isErrored: viewModel.errorMessage != nil)
-
-                if let error = viewModel.errorMessage {
-                    Text(error)
-                        .font(.pretendard(size: 13, weight: .medium))
-                        .foregroundStyle(.customRed)
-                        .multilineTextAlignment(.leading)
-                }
+                             isErrored: false)
 
                 Spacer()
             }

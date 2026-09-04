@@ -67,16 +67,18 @@ enum OID4VPPresenterError: Error {
 // 매칭에 쓰지 않고 오직 카드에 값을 그리는 렌더링에만 쓴다(MatchedCredential 은 값을 담지 않으므로).
 // 따라서 화면에 뜬 카드 = 제출 대상이 항상 일치하며, 매칭 실패는 카드 누락이 아니라 표시 실패로 전파된다.
 //
-// 공개 범위 — 두 포맷이 같은 규칙을 쓴다:
-//  - 노출은 항상 **크리덴셜 전체** (W3C=claim 전체 / SD-JWT=보유 disclosure 전체).
+// 공개 범위 — 세 포맷이 같은 규칙을 쓴다:
+//  - 노출은 항상 **크리덴셜 전체** (W3C=claim 전체 / SD-JWT·mDoc=SDK consentItems 전체).
 //    DCQL 에는 OpenDID 제출 프로파일의 `displayClaims` 같은 "보여줄 것" 축이 없기 때문이다.
 //  - 잠금(필수)은 SDK 가 돌려준 `MatchedCredential.claimCodes` 그대로다. verifier 가 `claims` 를
 //    지정하지 않아도 SDK 가 전 claim 을 채워 주므로(협의된 계약), 앱이 DCQL 을 들여다볼 일이 없다.
 //    쿼리 미지정 = 전 항목 잠금 = 전체 강제 공개가 된다.
 //  - 잠금은 해제할 수 없고 진입 시부터 체크 상태다. `claimCodes` 가 비어 오지 않는다는 계약과
 //    합쳐지면 **카드는 UI 로 비울 수 없다** — 잠금이 항상 1개 이상이기 때문이다.
-//  - 제출은 쿼리별로 `claimCodes ∪ 체크` 다. 위 이유로 이 합집합은 실제로는 체크 집합과 같지만,
-//    화면이 그리지 못한 필수 code 가 있어도 빠지지 않도록 합집합으로 둔다(SD-JWT 이름공간 참고).
+//  - 제출은 쿼리별로 `claimCodes ∪ 체크` 다. 합집합은 SDK 계약이기도 하다 — 선택은 매칭이 준
+//    claimCodes 를 **좁힐 수 없고**(좁히면 SDK 가 invalidSelectedCredentials 로 거부한다), 넘어서는
+//    code 는 그대로 통과해 그 claim 까지 공개된다. 화면에서 뺀 필수 code(평문 claim)도 이 합집합으로
+//    제출에 남는다.
 nonisolated enum OID4VPPresenter {
 
     /// VP 요청 화면 표시용 데이터 — 지갑 토큰 발급 → **submit 과 동일한 SDK 진입점으로 매칭** →
@@ -92,37 +94,123 @@ nonisolated enum OID4VPPresenter {
 
         // [정본] 제출 대상 매칭 — submit 과 동일 진입점. 요청 format 을 보고 SDK 가 저장소를 골라
         // 매칭하며(요청은 단일 포맷; mixed/missing 이면 throw), 빈 매칭이면 noMatchedCredentials.
-        let matched = try WalletAPI.shared.matchCredentials(
-            hWalletToken: hWalletToken,
-            authRequest: authRequest
-        )
-
-        // 요청 포맷(단일) — SDK 진입점이 이미 mixed/missing 을 걸렀으므로 첫 format 하나로 판정한다.
-        let format = (authRequest.dcqlQuery.credentials ?? []).compactMap { $0.format }.first ?? ""
+        //
+        // "요청한 크리덴셜을 아예 보유하지 않음"은 오류가 아니라 **안내 대상**이다(PRES-E-04) —
+        // ACTIVE 0건과 문구로 구분하지 않기로 했으므로 여기서 같은 것으로 바꿔 던진다.
+        let matched: [MatchedCredential]
+        do {
+            matched = try WalletAPI.shared.matchCredentials(
+                hWalletToken: hWalletToken,
+                authRequest: authRequest
+            )
+        } catch let error as WalletCoreError where Self.meansNothingToSubmit(error) {
+            throw NoSubmittableCredentialError()
+        }
 
         // 카드는 크리덴셜 단위 — 쿼리 단위가 아니다. 매칭을 크리덴셜로 합쳐 놓고 렌더링한다.
         let merged = mergeByCredential(matched)
 
-        // 매칭 결과를 카드로 렌더링 — 요청 포맷에 해당하는 저장소 한쪽만 읽어 값을 채운다.
-        let documents: [VpPresentationDocument]
-        switch format {
-        case VerifiableCredentialAdapter.format:   // "opendid_vc" (W3C VC)
-            documents = try await w3cDocuments(merged: merged, hWalletToken: hWalletToken)
-        case sdJwtFormat:                          // "dc+sd-jwt-did" (OID4VCI 발급분)
-            documents = try sdjwtDocuments(merged: merged, hWalletToken: hWalletToken)
-        default:
-            documents = []
-        }
+        // 매칭이 지목한 크리덴셜의 실물을 찾아 **타입으로** 렌더링 경로를 고른다.
+        //
+        // 요청의 `format` 문자열을 읽지 않는다. 포맷 토큰(`dc+sd-jwt-did` 등)을 앱이 들고 있으면
+        // SDK 가 토큰을 바꿨을 때 분기가 조용히 default 로 떨어져 **오류 없이 빈 화면**이 된다.
+        // 어느 저장소에서 나왔고 어떤 타입인지는 실물 자체가 말해 주므로 문자열이 필요 없다.
+        // (매칭 진입점이 이미 요청 포맷으로 저장소를 골랐다 — 여기 온 실물은 그 결과다.)
+        let documents = try await renderDocuments(merged: merged, hWalletToken: hWalletToken)
 
-        guard !documents.isEmpty else { throw OID4VPPresenterError.noEligibleCredentials }
+        // 매칭은 됐지만 ACTIVE 가 0건이거나 실물을 못 찾은 경우 — 미보유와 같은 안내로 묶는다.
+        guard !documents.isEmpty else { throw NoSubmittableCredentialError() }
+
+        // 카드가 남았어도 **쿼리 하나가 후보를 통째로 잃었으면** 그 요청은 채울 수 없다.
+        try Self.requireEveryQuerySurvives(
+            matched: matched,
+            surviving: Set(documents.map(\.credentialId)),
+            dcqlQuery: authRequest.dcqlQuery
+        )
 
         // OID4VP 에는 verifier 프로필이 없다 — client_metadata 의 표시명, 없으면 client_id.
         let verifierName = authRequest.clientMetadata["client_name"]?.asString ?? authRequest.clientId
         return VpPresentationSummary(verifierName: verifierName, documents: documents)
     }
 
-    /// SD-JWT 포맷 토큰 — SDK `SDJWTCredentialAdapter.supportedFormats` 와 같은 값(그쪽은 private).
-    private static let sdJwtFormat = "dc+sd-jwt-did"
+    /// 매칭 결과 → 카드. 두 저장소를 한 번씩 읽고, 크리덴셜마다 그 타입에 맞는 매퍼로 보낸다.
+    /// 어느 저장소에도 없는 credentialId 는 건너뛴다.
+    ///
+    /// **ACTIVE 만 후보로 올린다**(PRES-B-06) — Inactive·Expired 는 단일/복수 판정과 옵션 목록에서
+    /// 모두 빠진다. 판정 사다리는 `CredentialStore.submittableIds` 참조.
+    /// 카드가 하나도 안 남으면 호출측이 PRES-E-04 로 안내한다.
+    private static func renderDocuments(
+        merged: [(credentialId: String, requiredCodes: Set<String>)],
+        hWalletToken: String
+    ) async throws -> [VpPresentationDocument] {
+        // 비어 있는 저장소를 조회하지 않는다 — 요청은 단일 포맷이라 한쪽은 대개 비어 있다.
+        let w3c = WalletAPI.shared.isAnyCredentialsSaved
+            ? ((try WalletAPI.shared.getAllCredentials(hWalletToken: hWalletToken)) ?? [])
+            : []
+        let oid4vc = WalletAPI.shared.isAnyOID4VCSaved
+            ? try WalletAPI.shared.getAllOID4VCs(hWalletToken: hWalletToken)
+            : []
+
+        // ACTIVE 판정을 카드 생성보다 **먼저, 한 번에** 한다 — 후보들이 대개 같은 Status List 를
+        // 가리키므로 한 건씩 물으면 같은 토큰을 후보 수만큼 받고, 그중 일부만 실패하면 같은 리스트를
+        // 근거로 하는 후보끼리 판정이 갈린다(`CredentialStore.submittableIds` 참조).
+        let submittable = await CredentialStore.shared.submittableIds(
+            among: merged.compactMap { entry in oid4vc.first { $0.id == entry.credentialId } }
+        )
+
+        var documents: [VpPresentationDocument] = []
+        for entry in merged {
+            switch oid4vc.first(where: { $0.id == entry.credentialId }) {
+            case let cred as SdJwtCredentialItem:
+                guard submittable.contains(cred.id) else { continue }
+                documents.append(try sdjwtDocument(cred, requiredCodes: entry.requiredCodes))
+            case let cred as MdocCredentialItem:
+                guard submittable.contains(cred.id) else { continue }
+                documents.append(mdocDocument(cred, requiredCodes: entry.requiredCodes))
+            default:
+                // W3C 는 조회처가 서버 `vc-meta` 라 VC 단위 API 다 — 묶을 수단이 없어 한 건씩 묻는다.
+                guard let vc = w3c.first(where: { $0.id == entry.credentialId }) else { continue }
+                guard await CredentialStore.shared.isSubmittable(w3c: vc) else { continue }
+                documents.append(await w3cDocument(vc, requiredCodes: entry.requiredCodes))
+            }
+        }
+        return documents
+    }
+
+    /// ACTIVE 필터가 **쿼리 하나의 후보를 전부** 걷어냈는지 본다 — 그랬다면 표시 단계에서 끝낸다.
+    ///
+    /// `renderDocuments` 는 Inactive·Expired 를 카드에서 빼지만(PRES-B-06), 제출 단계의 매칭은 그
+    /// 필터를 모른다. 그래서 쿼리 A 는 활성 크리덴셜이 있고 쿼리 B 의 유일한 후보가 폐기된 경우
+    /// 카드가 남아 동의 화면이 열리고, 사용자가 인증까지 끝낸 뒤 SDK 가 제출을 거부한다
+    /// (`invalidSelectedCredentials` — 매칭된 쿼리 전부가 선택에 담겨야 한다). 채울 수 없는 요청은
+    /// 실패 팝업이 아니라 **미보유와 같은 안내**(PRES-E-04)로 보내는 것이 맞고, 인증 전에 끝나야 한다.
+    ///
+    /// `credential_sets` 가 있으면 쿼리 하나가 비어도 다른 조합으로 요청이 채워질 수 있다. 그 충족
+    /// 판정은 SDK 정본(`requireCredentialSetsSatisfied`)이 쥐고 있으므로 앱이 두 번째 구현을 두지
+    /// 않는다 — 그 경우엔 판정을 포기하고 기존 동작(남은 카드 표시)을 유지한다.
+    private static func requireEveryQuerySurvives(
+        matched: [MatchedCredential],
+        surviving: Set<String>,
+        dcqlQuery: DCQLQuery
+    ) throws {
+        guard dcqlQuery.credentialSets?.isEmpty ?? true else { return }
+        var survivedByQuery: [String: Bool] = [:]
+        for mc in matched {
+            survivedByQuery[mc.queryId, default: false] =
+                survivedByQuery[mc.queryId, default: false] || surviving.contains(mc.credentialId)
+        }
+        guard survivedByQuery.values.allSatisfy({ $0 }) else {
+            throw NoSubmittableCredentialError()
+        }
+    }
+
+    /// SDK 매칭 실패 중 **"낼 것이 없다"** 로 읽어야 하는 것 — 오류 팝업이 아니라 PRES-E-04 안내다.
+    ///   · 05502 `noMatchedCredentials`      — 요청에 맞는 크리덴셜을 보유하지 않음
+    ///   · 05503 `credentialSetsNotSatisfied` — 보유분으로 요청한 조합을 채우지 못함
+    /// 나머지 매칭 오류(포맷 미지원·DCQL 형식 오류 등)는 진짜 오류이므로 그대로 전파한다.
+    private static func meansNothingToSubmit(_ error: WalletCoreError) -> Bool {
+        error.code == "MSDKWLT05502" || error.code == "MSDKWLT05503"
+    }
 
     /// 매칭 결과를 크리덴셜 단위로 합친다 — 카드 하나 = 크리덴셜 한 장.
     ///
@@ -145,76 +233,160 @@ nonisolated enum OID4VPPresenter {
         return orderedIds.map { ($0, requiredByCredential[$0] ?? []) }
     }
 
-    /// W3C VC 카드 렌더링 — 매칭된 credentialId 의 실물을 `getAllCredentials` 에서 읽어 값을 채운다.
-    /// 노출은 VC claim 전체, 잠금은 매칭이 지목한 code 다.
-    private static func w3cDocuments(
-        merged: [(credentialId: String, requiredCodes: Set<String>)],
-        hWalletToken: String
-    ) async throws -> [VpPresentationDocument] {
-        let credentials = (try WalletAPI.shared.getAllCredentials(hWalletToken: hWalletToken)) ?? []
-        var documents: [VpPresentationDocument] = []
-        for entry in merged {
-            guard let vc = credentials.first(where: { $0.id == entry.credentialId }) else { continue }
-            let claims = vc.credentialSubject.claims.map { claim in
-                VpPresentationClaim(
-                    code: claim.code,
-                    label: claim.caption,
-                    value: claim.value,
-                    locked: entry.requiredCodes.contains(claim.code)
-                )
-            }
-            let title = (try? await CredentialStore.shared.schema(id: vc.credentialSchema.id))?.title ?? "Credential"
-            documents.append(VpPresentationDocument(
-                credentialId: vc.id,
-                title: title,
-                claims: claims,
-                requiredCodes: entry.requiredCodes,
-                bindingKeyId: nil           // W3C 는 서명키가 고정이 아니라 passcode 유무로 갈린다.
-            ))
+    /// W3C VC 카드 한 장 — 노출은 VC claim 전체, REQUIRED 는 매칭이 지목한 code 다.
+    private static func w3cDocument(
+        _ vc: VerifiableCredential,
+        requiredCodes: Set<String>
+    ) async -> VpPresentationDocument {
+        let claims = vc.credentialSubject.claims.map { claim in
+            VpPresentationClaim(
+                code: claim.code,
+                label: claim.caption,
+                // 이미지 클레임(portrait 등)은 값 텍스트 대신 이미지로 그린다 — PRES-B-04.
+                value: ImageClaim.claimValue(type: claim.type, encoded: claim.value),
+                required: requiredCodes.contains(claim.code)
+            )
         }
-        return documents
+        let title = (try? await CredentialStore.shared.schema(id: vc.credentialSchema.id))?.title ?? "Credential"
+        return VpPresentationDocument(
+            credentialId: vc.id,
+            title: title,
+            claims: claims,
+            requiredCodes: requiredCodes,
+            bindingKeyId: nil           // W3C 는 서명키가 고정이 아니라 passcode 유무로 갈린다.
+        )
     }
 
-    /// SD-JWT 카드 렌더링 — 매칭된 credentialId 의 실물을 `getAllOID4VCs` 에서 읽어 disclosure 를 그린다.
+    /// SD-JWT 카드 한 장.
     ///
-    /// 노출은 **보유 disclosure 전체**다. 매칭이 지목한 것만 그리면 verifier 가 요구하지 않은 항목을
+    /// 행의 근거는 SDK `consentItems` 다. **claim code 를 앱이 만들지 않는다** — code 를 만드는 쪽과
+    /// 제출에서 해석하는 쪽이 SDK 안에서 하나로 묶여 있어, 앱이 disclosure 를 직접 걸어 이름을
+    /// 합성하면 같은 규칙의 두 번째 구현이 되고 어긋나는 지점이 곧 제출 실패가 된다. 중첩·평문 여부와
+    /// 한 code 가 두 claim 을 가리키는지도 그 걷기가 정한다(SDK 문서 4절).
+    ///
+    /// 노출은 **보유 claim 전체**다. 매칭이 지목한 것만 그리면 verifier 가 요구하지 않은 항목을
     /// 사용자가 자발적으로 낼 길이 없어지고, 화면이 요청 범위를 그대로 따라가 버린다.
     /// 잠금은 매칭이 지목한 code — 그 판정에 DCQL 을 다시 읽지 않는다.
+    private static func sdjwtDocument(
+        _ cred: SdJwtCredentialItem,
+        requiredCodes: Set<String>
+    ) throws -> VpPresentationDocument {
+        // consentItems 는 issuer JWT payload 를 그 자리에서 파싱한다 — 못 읽으면 05102 로 던진다.
+        // 삼키지 않는다: 카드를 못 그린 채 제출하면 동의 없는 공개가 된다.
+        let claims = Self.sdjwtClaims(try cred.consentItems, requiredCodes: requiredCodes)
+        return VpPresentationDocument(
+            credentialId: cred.id,
+            // 제목 규칙은 목록·상세와 공유 — SdJwtClaimDisplay 참조.
+            title: SdJwtClaimDisplay.title(of: cred),
+            claims: claims,
+            // 상위가 REQUIRED 면 하위 code 도 함께 나가야 한다 — 트리에서 다시 거둬 하위까지 담는다.
+            requiredCodes: Self.requiredCodes(in: claims),
+            // 발급 시 바인딩된 키 — 제출 인증수단은 이 값이 정한다 (사용자 선택 불가).
+            bindingKeyId: cred.kid
+        )
+    }
+
+    /// `consentItems` → 화면 행. 걸러낼 항목·중첩 판정·순서는 상세화면과 **같은 규칙**을 쓴다
+    /// (`SdJwtClaimDisplay.consentRows`). 여기서는 그 결과에 REQUIRED 여부만 얹는다.
     ///
-    /// 평문 claim(`iss`/`exp`/`vct` 등 페이로드에 그대로 실린 값)은 감출 수단이 없고 화면에도 띄우지
-    /// 않는다. 현재 발급물에서는 평문이 전부 SDK `reservedClaims` 라 사용자에게 보일 정보가 빠지지 않는다.
-    private static func sdjwtDocuments(
-        merged: [(credentialId: String, requiredCodes: Set<String>)],
-        hWalletToken: String
-    ) throws -> [VpPresentationDocument] {
-        let issued = try WalletAPI.shared.getAllOID4VCs(hWalletToken: hWalletToken)
-        var documents: [VpPresentationDocument] = []
-        for entry in merged {
-            guard let cred = issued.first(where: { $0.id == entry.credentialId }) else { continue }
-            let claims = cred.sdjwt.disclosures.map { disclosure -> VpPresentationClaim in
-                let code = disclosure.claimName ?? ""
-                // 복합값(object/array)이면 하위 항목을 채워 접이식 그룹으로, 스칼라면 단일 행.
-                // SD-JWT disclosure 는 원자 단위라 토글은 상위(disclosure) 기준 — 하위는 표시 전용.
-                let children = Self.childClaims(of: disclosure.claimValue, parentCode: code)
-                return VpPresentationClaim(
-                    code: code,
-                    label: code,
-                    value: children.isEmpty ? SdJwtClaimDisplay.scalarString(disclosure.claimValue) : "",
-                    locked: entry.requiredCodes.contains(code),
-                    children: children
-                )
+    /// **중첩은 통째로 움직인다**(PRES-B-03) — 상위 체크박스 하나가 서브트리 전체를 토글하고 하위는
+    /// 개별 체크박스를 갖지 않는다. 하위의 `code` 는 제출 집합을 만들 때만 쓴다.
+    ///
+    /// 필수는 **상위에서만 내려오고 하위로 전파된다** — 상위가 REQUIRED 면 그 서브트리 전체가
+    /// REQUIRED 다. (하위만 REQUIRED 인 조합은 서버가 내리지 않는다.)
+    private static func sdjwtClaims(_ items: [SdJwtConsentItem],
+                                    requiredCodes: Set<String>) -> [VpPresentationClaim] {
+        SdJwtClaimDisplay.consentRows(items).map { row in
+            let required = requiredCodes.contains(row.item.code)
+            let nested = row.nested.map { child in
+                VpPresentationClaim(code: child.code,
+                                    label: child.claimName,
+                                    value: SdJwtClaimDisplay.value(of: child),
+                                    required: required || requiredCodes.contains(child.code))
             }
-            documents.append(VpPresentationDocument(
-                credentialId: cred.id,
-                // 제목 규칙은 목록·상세와 공유 — SdJwtClaimDisplay 참조.
-                title: SdJwtClaimDisplay.title(of: cred),
-                claims: claims,
-                requiredCodes: entry.requiredCodes,
-                // 발급 시 바인딩된 키 — 제출 인증수단은 이 값이 정한다 (사용자 선택 불가).
-                bindingKeyId: cred.kid
-            ))
+            let rideAlong = row.rideAlong.map {
+                VpPresentationClaim(code: nil,
+                                    label: $0.label,
+                                    value: ImageClaim.claimValue(name: $0.label, text: $0.value),
+                                    required: required)
+            }
+            let children = nested + rideAlong
+            return VpPresentationClaim(
+                code: row.item.code,
+                label: row.item.claimName,
+                // 그룹(복합값)은 값 자리가 비어 있다 — 값은 하위 행이 그린다.
+                value: children.isEmpty ? SdJwtClaimDisplay.value(of: row.item) : .text(""),
+                required: required,
+                children: children
+            )
         }
-        return documents
+    }
+
+    /// mDoc 카드 한 장 — SD-JWT 와 같은 근거(`consentItems`)를 쓴다. code 는 SDK 가 만든 값이고
+    /// 앱은 `네임스페이스`·`원소이름` 을 화면에 그리는 데만 쓴다(그 둘로 code 를 조립하지 않는다).
+    ///
+    /// 노출은 보유 원소 전체, REQUIRED 는 매칭이 지목한 code. 값이 비어 있는 원소도 거르지 않는다
+    /// (결정 2026-08-11) — 발급 서버가 빈 값을 실어 보내는 동안에도 무엇이 나가는지는 그대로 보인다.
+    private static func mdocDocument(
+        _ cred: MdocCredentialItem,
+        requiredCodes: Set<String>
+    ) -> VpPresentationDocument {
+        let claims = Self.mdocClaims(cred.consentItems, requiredCodes: requiredCodes)
+        return VpPresentationDocument(
+            credentialId: cred.id,
+            // 제목 규칙은 목록·상세와 공유 — MdocClaimDisplay 참조.
+            title: MdocClaimDisplay.title(of: cred),
+            claims: claims,
+            requiredCodes: Self.requiredCodes(in: claims),
+            // 발급 시 바인딩된 키 — SD-JWT 와 같이 제출 인증수단을 이 값이 정한다.
+            bindingKeyId: cred.kid
+        )
+    }
+
+    /// mDoc `consentItems` → 화면 행.
+    ///
+    /// `isAmbiguous` 는 걷어낸다 — 한 code 가 원소 두 개를 가리켜 제출 시 SDK 가 실패시키므로
+    /// 지킬 수 없는 동의를 받지 않는다. 순서는 `consentItems` 가 정한 발급자 서명 순서를 그대로 쓴다
+    /// (`Mdoc.namespaces` 를 직접 순회하면 화면을 열 때마다 항목이 재배열된다).
+    ///
+    /// **네임스페이스로 묶지 않고 평면으로 그린다.** 네임스페이스는 쪼갤 수 없는 묶음이 아니라
+    /// 이름공간일 뿐이고(선택 공개의 단위는 원소 하나 = 다이제스트 하나), REQUIRED/OPTIONAL 섹션이
+    /// 그 묶음을 가로지르기 때문이다. 라벨은 `elementIdentifier` 원문 그대로 쓴다 — 발급자가 실어
+    /// 보내는 원소 이름에 네임스페이스가 이미 들어 있어, 접두하면 두 번 나온다.
+    private static func mdocClaims(_ items: [MdocConsentItem],
+                                   requiredCodes: Set<String>) -> [VpPresentationClaim] {
+        items.filter { !$0.isAmbiguous }
+            .map { Self.mdocClaim($0, requiredCodes: requiredCodes) }
+    }
+
+    /// 한 원소 — 복합값(array/map)은 접이식 그룹으로 펼친다. 하위는 원소 하나의 값 안쪽이라
+    /// 따로 뺄 수 없다(다이제스트가 원소 단위) → 표시 전용(`code == nil`).
+    private static func mdocClaim(_ item: MdocConsentItem,
+                                  requiredCodes: Set<String>) -> VpPresentationClaim {
+        let required = requiredCodes.contains(item.code)
+        let children = MdocClaimDisplay.childRows(item.value).map {
+            VpPresentationClaim(code: nil, label: $0.label, value: $0.value, required: required)
+        }
+        return VpPresentationClaim(
+            code: item.code,
+            label: item.elementIdentifier,
+            value: children.isEmpty
+                ? MdocClaimDisplay.claimValue(name: item.elementIdentifier, value: item.value)
+                : .text(""),
+            required: required,
+            children: children
+        )
+    }
+
+    /// 노출 트리에서 **항상 제출되는 code** 를 거둔다 — REQUIRED 행과 그 하위 전부.
+    /// 상위가 REQUIRED 면 하위도 REQUIRED 로 내려오므로(전파), 이 순회 하나로 하위 code 까지 모인다.
+    private static func requiredCodes(in claims: [VpPresentationClaim]) -> Set<String> {
+        var codes: Set<String> = []
+        for claim in claims {
+            if claim.required, let code = claim.code { codes.insert(code) }
+            codes.formUnion(requiredCodes(in: claim.children))
+        }
+        return codes
     }
 
     /// VP 생성 + 제출. 매칭·조립·전송 모두 SDK 한 경로다 — 앱은 포맷을 알지 않는다.
@@ -269,9 +441,9 @@ nonisolated enum OID4VPPresenter {
     /// 사용자 체크를 매칭 결과에 반영한다 — **제출 = 쿼리별 필수 ∪ 체크**.
     ///
     /// 노출이 크리덴셜 전체이고 잠금은 해제할 수 없으므로 체크 집합은 이미 필수를 품고 있다. 그래도
-    /// 합집합으로 두는 건, 화면이 그리지 못한 필수 code 가 있어도 제출에서 빠지지 않게 하기 위해서다
-    /// (SD-JWT 는 표시 식별자와 SDK code 의 이름공간이 원리상 다르다 — 현재 발급물에선 같은 값이지만
-    /// 발급 형태가 바뀌면 갈릴 수 있다). 필수는 verifier 가 요구한 것이므로 넘치는 공개도 아니다.
+    /// 합집합으로 두는 건 SDK 계약이다 — 매칭이 준 claimCodes 를 하나라도 빠뜨리면 제출이 거부된다
+    /// (`invalidSelectedCredentials`). 화면에서 뺀 평문 claim 처럼 그리지 못한 필수 code 가 여기서
+    /// 되살아난다. 필수는 verifier 가 요구한 것이므로 넘치는 공개도 아니다.
     ///
     /// - 체크가 하나라도 있음: `claimCodes ∪ 체크` — DCQL 경로는 항상 이 갈래로 온다.
     /// - 체크가 빈 집합: 그 크리덴셜을 드롭한다. **현재 UI 로는 도달할 수 없는 갈래다** — 잠금이
@@ -285,24 +457,17 @@ nonisolated enum OID4VPPresenter {
         selectedCodes: [String: Set<String>]
     ) -> [MatchedCredential] {
         matched.compactMap { mc in
-            guard let checked = selectedCodes[mc.credentialId] else {
-                return mc   // 화면에 없던 크리덴셜 — 매칭 결과 유지.
-            }
-            guard !checked.isEmpty else { return nil }   // 전부 해제 → 미제출
+            // 화면은 **선택된 후보 1건만** 담아 보낸다 — 키가 없으면 사용자가 고르지 않은 후보다.
+            // (예전엔 "화면에 없던 것"으로 보고 통과시켰는데, 후보가 여럿인 화면이 생기면서
+            //  고르지 않은 카드까지 함께 나가게 된다.)
+            guard let checked = selectedCodes[mc.credentialId] else { return nil }
+            // 체크 0건이어도 REQUIRED(`claimCodes`)가 있으면 제출한다 — OPTIONAL 기본값이 해제라
+            // "체크 0건"이 곧 "안 내겠다"가 아니다.
+            let codes = checked.union(mc.claimCodes)
+            guard !codes.isEmpty else { return nil }
             return MatchedCredential(queryId: mc.queryId,
                                      credentialId: mc.credentialId,
-                                     claimCodes: Array(checked.union(mc.claimCodes)))
-        }
-    }
-
-    /// SD-JWT 복합값(object/array) → 접이식 그룹의 하위 VpPresentationClaim 목록. 스칼라면 빈 배열.
-    /// 하위 code 는 `parent.field` / `parent[i]` 로 합성한다 — disclosure 는 원자 단위라 하위를 따로
-    /// 공개·비공개할 수 없어 토글에는 쓰이지 않고 표시 전용이다. 그래서 locked(true) 로 둔다.
-    /// 펼침 규칙은 `SdJwtClaimDisplay` 공유.
-    private static func childClaims(of json: JSON, parentCode: String) -> [VpPresentationClaim] {
-        SdJwtClaimDisplay.childRows(json).map {
-            VpPresentationClaim(code: parentCode + $0.keySuffix, label: $0.label,
-                                value: $0.value, locked: true)
+                                     claimCodes: Array(codes))
         }
     }
 
@@ -314,8 +479,9 @@ nonisolated enum OID4VPPresenter {
 // (인가요청 URI / 조립 끝난 form body)로 HTTP 를 한 번 치고 결과를 검증하는 얇은 계층이라
 // SDK 표면에 묶어 둘 이유가 없다. 발급·서명·봉인 같은 본체는 그대로 SDK 몫이다.
 //
-// JWS 파싱·ES256 검증은 SDK `JWS` 정본을 그대로 쓴다(SD-JWT 처리와 같은 코드). 검증 키는 헤더에
-// 실린 JWK 라 서명·페이로드 일치만 보증하며, verifier 신원 자체는 확인하지 않는다(SDK 문서 명시).
+// JWS 파싱·ES256 검증은 SDK `JWS` 정본을 그대로 쓴다(SD-JWT 처리와 같은 코드). 검증 키는 헤더
+// `kid` 가 가리키는 verifier DID Document 에서 받으므로 서명 무결성뿐 아니라 **서명자 신원**까지
+// 확인된다 — 근거가 요청 바깥(DID 레지스트리)에 있어야 신원이 성립한다(`JWSSignerVerifier`).
 extension OID4VPPresenter {
 
     /// 인가요청 수신·파싱 — `request_uri` GET → JWS 서명 검증 → `AuthorizationRequest`.
@@ -342,9 +508,16 @@ extension OID4VPPresenter {
         }
 
         let jws = try JWS(from: compact)
-        guard try jws.verify() else {
-            throw OID4VPPresenterError.failedToVerifyJWS
+
+        // 서명 키는 **헤더의 `jwk` 가 아니라** `kid` 가 가리키는 verifier DID Document 에서 받는다.
+        // `jwk` 는 요청자가 스스로 넣은 키라 "변조되지 않았다"까지만 말해 준다 — 그 키로 검증하면
+        // 아무나 자기 키로 서명하고 `client_id`·`client_name` 에 원하는 기관명을 적어 동의를 받아낼 수
+        // 있다. 그 값들은 그대로 제시 화면의 "Requesting Institution" 에 뜬다.
+        // Status List 토큰과 같은 검증 경로다(`JWSSignerVerifier`).
+        guard let kid = try jws.protectedHeader.kid else {
+            throw OID4VPPresenterError.malformedJWS
         }
+        try await JWSSignerVerifier.verify(jws: jws, kid: kid)
 
         // payload 는 snake_case — Jsonable 기본 디코더가 FromSnake 를 보고 변환해 준다.
         // (SDK `getPayload()` 는 internal 이라 payloadData 를 직접 디코딩한다.)
@@ -354,7 +527,8 @@ extension OID4VPPresenter {
     /// `createVpToken` 이 만들어 준 authorization response body 를 verifier 의 `response_uri` 로
     /// `application/x-www-form-urlencoded` POST 한다. body 조립·서명·JWE 봉인은 이미 끝난 상태다.
     /// - Returns: verifier 응답 본문과 HTTP 상태 코드.
-    /// - Throws: 비-2xx 면 `OID4VPPresenterError.failedToSubmit`.
+    /// - Throws: 비-2xx 면 verifier 가 준 실패 이유를 담은 `AppError.server`, 그 형식을 못 읽으면
+    ///   `OID4VPPresenterError.failedToSubmit`.
     @discardableResult
     static func submitVpToken(
         authRequest: AuthorizationRequest,
@@ -366,6 +540,11 @@ extension OID4VPPresenter {
         )
 
         guard (200...299).contains(statusCode) else {
+            // 상태코드만으로는 무엇이 거절됐는지 알 수 없다 — verifier 가 body 에 적어 준 실패 이유를
+            // 살려서 던진다(`{error, errorDescription}`). 형식을 못 읽으면 상태코드로 폴백.
+            if let serverError = AppError.server(from: data) {
+                throw serverError
+            }
             throw OID4VPPresenterError.failedToSubmit(statusCode)
         }
         return (data, statusCode)

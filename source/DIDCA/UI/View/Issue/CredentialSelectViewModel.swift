@@ -38,10 +38,14 @@ final class CredentialSelectViewModel {
         let id: String
         let format: IssuerMetadataResponse.SupportedFormat
 
-        /// SD-JWT 만 발급·저장이 가능하다 — mDoc 은 SDK 가 저장 단계에서 거부한다.
+        /// SD-JWT 와 mDoc 은 발급·저장이 가능하다. 발급 경로 자체는 포맷을 모르고(SDK 가 저장까지
+        /// 처리한다), 앱이 아는 것은 화면에 그릴 줄 아느냐뿐이다 — 그래서 이 판정은 표시 지원 여부다.
+        /// (SDK 3.0.0 전에는 mDoc 저장이 거부돼 SD-JWT 만 열려 있었다.)
         var isIssuable: Bool {
-            if case .sdjwt = format { return true }
-            return false
+            switch format {
+            case .sdjwt, .mdoc: return true
+            case .unknown:      return false
+            }
         }
 
         var badge: CredentialFormat? {

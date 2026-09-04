@@ -22,8 +22,8 @@ import DIDWalletSDK
 /// 목록사업자가 내려준 Issuer 를 **섹션 헤더(`credentialIssuer`)로 구분해 한 화면에** 펼친다.
 ///
 /// 크리덴셜 이름은 configuration id 를 그대로 쓴다(현재 서버 metadata 에 `display.name` 없음).
-/// mDoc(`mso-mdoc-did`)은 SDK 가 발급분을 저장하지 못해 선택 불가로 둔다 — 끝까지 진행시키면
-/// 클레임을 다 입력한 뒤 마지막 단계에서 실패한다.
+/// SD-JWT 와 mDoc 은 둘 다 선택·발급 가능하다(`isIssuable`). 앱이 표시할 줄 모르는 포맷만
+/// 선택 불가로 둔다 — 끝까지 진행시키면 클레임을 다 입력한 뒤 마지막 단계에서 실패한다.
 struct CredentialSelectView: View {
 
     @Environment(AppCoordinator.self) private var coordinator

@@ -32,7 +32,7 @@ struct MainView: View {
                 header
 
                 if isEmpty {
-                    NoCertificateView()
+                    NoCertificateView(onAdd: { isPresentedAdding = true })
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView(.vertical) {

@@ -38,12 +38,8 @@ enum StatusListError: Error {
     case fetchFailed(Int)
     /// 응답이 compact JWS 가 아니거나 헤더가 규격과 다름 (typ ≠ statuslist+jwt / alg ≠ ES256 / kid 없음).
     case invalidToken
-    /// kid 가 `did?versionId=N#fragment` 규약을 어김 (셋 중 하나라도 없음).
-    /// 버전을 특정할 수 없으면 검증할 문서를 고를 수 없으므로 최신본으로 대체하지 않고 실패시킨다.
-    case invalidKeyIdentifier
-    /// kid 가 가리키는 서명 키를 issuer DID Document 에서 찾지 못함.
-    case unknownSigningKey
-    case signatureVerificationFailed
+    // 서명자 신원 확인 실패는 `JWSSignerError` 로 그대로 전파된다 — kid 규약 위반·서명 키 미발견·
+    // 서명 불일치. 이 흐름 전용 오류가 아니라 JWS 를 kid 로 검증하는 모든 곳이 같은 것을 던진다.
     /// payload 의 sub 가 크리덴셜이 가리키는 uri 와 다름.
     case subjectMismatch
     /// 토큰이 만료됐거나 발급 시각이 미래.
@@ -57,40 +53,27 @@ enum StatusListError: Error {
 // MARK: - Status List Token 검증 (IETF Token Status List)
 //
 // 연동 가이드("Status List 클라이언트 연동 가이드", draft-ietf-oauth-status-list-21 기준) §3·§4.
-// SD-JWT 의 issuer-signed JWT payload 에 실린 `status.status_list.{uri, idx}` 로 공개 Status List
-// Token 을 받아 서명을 검증하고, 해당 인덱스의 상태 비트만 읽어 돌려준다.
+// 크리덴셜이 가리키는 `status.status_list.{uri, idx}` 로 공개 Status List Token 을 받아 서명을
+// 검증하고, 해당 인덱스의 상태 비트만 읽어 돌려준다. SD-JWT·mDoc 둘 다 같은 규격이라 이 한 경로를
+// 공유한다 — 참조는 SDK 가 포맷별로 읽어 `StatusListReference` 로 준다.
 //
-//   [1] reference(from:)   payload → uri·idx (selective disclosure 대상이 아니라 payload 에 항상 있다)
-//   [2] status(for:)       GET uri → JWS 검증 → sub/exp/iat 확인 → lst 해제 → idx 비트 추출
+//   [1] status(for:)       GET uri → JWS 검증 → sub/exp/iat 확인 → lst 해제 → idx 비트 추출
+//   [2] statuses(for:)     같은 uri 를 가리키는 여러 건은 토큰을 한 번만 받아 인덱스별로 읽는다
 //
 // **결과는 상태 enum 한 개만 돌려준다** — 토큰 원문도, 압축 해제한 상태 배열도 보관하지 않는다.
 // 조회 실패·검증 실패는 삼키지 않고 throw 한다. 호출측(CredentialStore)이 "유효"로 대체하지 않고
 // 만료일 기준 표시 + 안내로 처리한다 (가이드 §5 — 실패를 VALID 로 처리 금지).
 nonisolated enum StatusListVerifier {
 
-    /// 크리덴셜이 가리키는 Status List 위치.
-    struct Reference: Hashable {
-        let uri: String
-        let index: Int
-    }
-
-    /// SD-JWT issuer-signed JWT payload 에서 status 참조를 읽는다. 없으면 nil (Status List 미적용분).
-    static func reference(from payload: [String: Any]) -> Reference? {
-        guard let status = payload["status"] as? [String: Any],
-              let statusList = status["status_list"] as? [String: Any],
-              let uri = statusList["uri"] as? String, !uri.isEmpty,
-              let index = (statusList["idx"] as? NSNumber)?.intValue, index >= 0
-        else {
-            return nil
-        }
-        return Reference(uri: uri, index: index)
-    }
+    /// 크리덴셜이 가리키는 Status List 위치 — SDK 가 SD-JWT·mDoc 양쪽에서 같은 타입으로 준다.
+    /// 앱이 payload·MSO 를 직접 뒤져 만들지 않는다(`SdJwtCredentialItem.status` / `MdocCredentialItem.status`).
+    typealias Reference = StatusListReference
 
     /// 상태 조회 — 토큰을 받아 검증하고 해당 인덱스의 상태를 돌려준다.
     /// 조회는 항상 서버까지 간다 (HTTP 캐시를 쓰지 않는다).
     static func status(for reference: Reference) async throws -> StatusListStatus {
         let list = try await verifiedList(uri: reference.uri)
-        return try Self.status(in: list, index: reference.index)
+        return try Self.status(in: list, index: reference.idx)
     }
 
     /// 여러 크리덴셜의 상태를 한 번에 판정한다 — **같은 uri 를 가리키는 항목은 토큰을 한 번만**
@@ -105,7 +88,7 @@ nonisolated enum StatusListVerifier {
             do {
                 let list = try await verifiedList(uri: uri)
                 for (id, reference) in entries {
-                    result[id] = Result { try Self.status(in: list, index: reference.index) }
+                    result[id] = Result { try Self.status(in: list, index: reference.idx) }
                 }
             } catch {
                 for (id, _) in entries {
@@ -165,7 +148,8 @@ nonisolated enum StatusListVerifier {
             throw StatusListError.invalidToken
         }
 
-        try await verifySignature(jws: jws, kid: kid)
+        // 발급자 신원 확인 — 토큰 헤더의 kid 가 가리키는 DID Document 의 키로 검증한다.
+        try await JWSSignerVerifier.verify(jws: jws, kid: kid)
 
         // sub 는 크리덴셜이 가리키는 uri 와 정확히 일치해야 한다 — 다른 리스트의 토큰을 붙여
         // 넣는 것을 막는다.
@@ -187,78 +171,6 @@ nonisolated enum StatusListVerifier {
             throw StatusListError.reservedStatus
         }
         return status
-    }
-
-    // MARK: - 서명 검증
-
-    /// `kid` → issuer DID Document → 공개키로 ES256 검증.
-    ///
-    /// SDK `JWS.verify()` 는 헤더에 실린 `jwk` 로만 검증하는데 Status List Token 은 `kid` 만 싣는다.
-    /// `WalletAPI.verify` 도 쓸 수 없다 — 그쪽은 OpenDID proof 서명(다이제스트 + multibase 서명)용이라
-    /// JWS 의 r‖s 64바이트 서명과 형식이 다르다. 그래서 여기서만 CryptoKit 으로 직접 검증한다.
-    private static func verifySignature(jws: JWS, kid: String) async throws {
-        guard let identifier = parseKeyIdentifier(kid) else {
-            throw StatusListError.invalidKeyIdentifier
-        }
-
-        // 반드시 kid 가 지정한 버전으로 받는다 — 최신본은 같은 fragment 라도 다른 키일 수 있다.
-        // 버전이 특정된 문서는 불변이라 resolver 가 무기한 캐시한다.
-        let didDocument = try await DIDDocumentResolver.shared.resolve(did: identifier.did,
-                                                                      versionId: identifier.versionId)
-        guard let method = didDocument.verificationMethod.first(where: { $0.id == identifier.keyId }),
-              let publicKeyData = try? MultibaseUtils.decode(encoded: method.publicKeyMultibase),
-              let publicKey = p256PublicKey(from: publicKeyData)
-        else {
-            throw StatusListError.unknownSigningKey
-        }
-
-        guard let signatureData = base64URLDecoded(jws.signature),
-              let signature = try? P256.Signing.ECDSASignature(rawRepresentation: signatureData),
-              let message = (jws.header + "." + jws.payload).data(using: .utf8)
-        else {
-            throw StatusListError.invalidToken
-        }
-
-        guard publicKey.isValidSignature(signature, for: SHA256.hash(data: message)) else {
-            throw StatusListError.signatureVerificationFailed
-        }
-    }
-
-    /// 서명 키를 가리키는 식별자 — `did:omn:issuer?versionId=1#assert` 의 세 조각.
-    /// DID Document 의 verificationMethod.id 는 fragment 만(`assert`) 담고 있다.
-    private struct KeyIdentifier {
-        let did: String
-        let versionId: String
-        let keyId: String
-    }
-
-    /// kid 파싱. **versionId 는 필수** — 없으면 검증할 문서 버전을 특정할 수 없어 nil 을 돌려주고,
-    /// 호출측이 최신본으로 물러나지 않고 실패시킨다. SDK `DIDUtility.parseDIDKeyIdentifier` 와 같은
-    /// 규약이지만 그쪽이 internal 이라 여기에 같은 해석을 둔다.
-    private static func parseKeyIdentifier(_ kid: String) -> KeyIdentifier? {
-        let fragmentParts = kid.split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false)
-        guard fragmentParts.count == 2 else { return nil }
-
-        let versionParts = fragmentParts[0].components(separatedBy: "?versionId=")
-        guard versionParts.count == 2 else { return nil }
-
-        let identifier = KeyIdentifier(did: versionParts[0],
-                                       versionId: versionParts[1],
-                                       keyId: String(fragmentParts[1]))
-        guard !identifier.did.isEmpty, !identifier.versionId.isEmpty, !identifier.keyId.isEmpty else {
-            return nil
-        }
-        return identifier
-    }
-
-    /// multibase 로 디코드한 공개키 바이트 → P-256 공개키. 압축(33) / 비압축 X9.63(65) / raw(64) 를 받는다.
-    private static func p256PublicKey(from data: Data) -> P256.Signing.PublicKey? {
-        switch data.count {
-        case 33: return try? P256.Signing.PublicKey(compressedRepresentation: data)
-        case 65: return try? P256.Signing.PublicKey(x963Representation: data)
-        case 64: return try? P256.Signing.PublicKey(rawRepresentation: data)
-        default: return nil
-        }
     }
 
     // MARK: - payload 검증 · 비트 추출

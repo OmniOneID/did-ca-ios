@@ -19,34 +19,40 @@ import SwiftUI
 import Observation
 import DIDWalletSDK
 
-/// 최상위 단계 — 스택에 쌓이지 않고 통째로 교체된다. 셋 사이엔 "뒤로" 개념이 없다.
+/// Top-level stage — swapped whole, never stacked. There is no notion of "back" between the three.
 enum Root: Hashable {
     case splash
     case onboarding(step: StepEnum)
     case main
 }
 
-/// 메인 위에 push 되는 화면 — `NavigationStack` 의 path 요소다.
-/// 여기 있는 화면은 전부 상단이 `←` 다. `X` 로 닫는 화면은 스택이 아니라 `AppModal` 로 간다.
+/// A screen pushed on top of main — an element of the `NavigationStack` path.
+/// Every screen here has `←` at the top. Screens closed with `X` go to `AppModal`, not the stack.
 enum Screen: Hashable {
-    /// 발급 프로토콜 선택 (화면설계서 18a) — "From list" 진입 시 Open DID / OID4VCI 를 고른다.
-    /// Open DID → addCertificate(현행 플랜 리스트), OID4VCI → oid4vciIssuerList.
+    /// Issuance protocol selection (screen design spec 18a) — picks Open DID / OID4VCI when entering via "From list".
+    /// Open DID → addCertificate (current plan list), OID4VCI → oid4vciIssuerList.
     case protocolSelect
     case addCertificate
-    /// OID4VCI 발급 — 목록사업자의 Issuer 를 섹션으로 펼친 credential 선택 화면.
-    /// Issuer 선택 단계는 따로 두지 않는다(화면 자체가 Issuer 별 섹션).
+    /// OID4VCI issuance — credential selection screen with the listed providers' Issuers expanded as sections.
+    /// There is no separate Issuer selection step (the screen itself is sectioned per Issuer).
     case oid4vciCredentialSelect
     case issueSuccess
     case proximity
+    /// Proximity presentation consent — same screen (VPRequestView); only the summary source and submit path differ.
+    case proximityRequest
     case vpRequest
-    /// OID4VP 제시 — 일반 VP 와 화면(VPRequestView)은 같고 제출 경로만 다르다.
+    /// OID4VP presentation — same screen (VPRequestView) as regular VP; only the submit path differs.
     case oid4vpRequest
     case vpRequestZkp
     case citizenshipSelect
-    /// ZKP attribute picker — referent key 인자로 받아 해당 속성의 후보 값 리스트를 보여줌.
+    /// ZKP attribute picker — takes a referent key and shows the candidate value list for that attribute.
     case zkpAttrSelect(key: String)
     case vcDetail(Credential)
     case menu
+    /// Settings · Server URL (design spec 29a). Pushed not only from Settings but also from the
+    /// server-unreachable popups in Splash/Onboarding (ONB-E-01 · ONB-E-04) — there is one stack whatever the root.
+    /// Server URL — when coming from the first-launch Splash server-settings popup (SPL-03), the AppBar has no back button (29d).
+    case serverUrl(fromSplash: Bool = false)
 }
 
 enum AppModal: Hashable {
@@ -56,18 +62,20 @@ enum AppModal: Hashable {
     case pinAuth(isLockAuth: Bool = false)
     case biometric(fromSettings: Bool)
     case authSelection
-    // 발급 추가정보 입력 웹 폼 (DEMO_URL/addVcInfo). 연결 URL 을 동봉.
+    // Issuance additional-info web form (DEMO_URL/addVcInfo). Carries the connection URL.
     case issueWebForm(URL)
-    // OID4VCI 사용자 클레임 입력 WebView (Issuer user initiation). 시작 URL 과 허용 host 를 동봉.
+    // OID4VCI user claim input WebView (Issuer user initiation). Carries the start URL and allowed hosts.
     case oid4vciWebView(url: URL, allowedHost: String)
-    // QR 스캔 모달 — 발급/제시 공용.
+    // Onboarding Step 1 user registration WebView (design spec 02a · ONB-01, `DEMO_URL/addUserInfo`). Carries the connection URL.
+    case userInfoWebView(URL)
+    // QR scan modal — shared by issuance/presentation.
     case qrScan
-    // OID4VCI tx_code 입력 모달 — pre-authorized_code 발급에서 offer 가 tx_code 를 요구할 때 표시.
-    // length/description 은 offer 의 tx_code 메타에서 주입. PIN 인증(pinAuth)과 무관한 별개 입력.
+    // OID4VCI tx_code input modal — shown when the offer requires a tx_code in pre-authorized_code issuance.
+    // length/description are injected from the offer's tx_code metadata. A separate input unrelated to PIN auth (pinAuth).
     case txCode(length: Int, description: String)
-    // Unlock PIN 인증 모달 — Splash 직후 / scenePhase background→active 진입 시 isLock()==true 면 표시.
-    // X 버튼·시스템 백·swipe-down 모두 exit(0) (UNLK-A-E-02). pinAuth(isLockAuth:true) 와는
-    // X 동작이 다르므로 별도 케이스로 분리.
+    // Unlock PIN auth modal — shown right after Splash / on scenePhase background→active when isLock()==true.
+    // X button, system back and swipe-down all exit(0) (UNLK-A-E-02). Split into its own case because
+    // its X behavior differs from pinAuth(isLockAuth:true).
     case lockAuth
 }
 
@@ -79,86 +87,101 @@ enum BiometricResult {
 @Observable
 final class AppCoordinator {
     var root: Root = .splash
-    /// 메인 위에 쌓인 화면 스택. `NavigationStack(path:)` 에 그대로 바인딩되므로,
-    /// 시스템 뒤로가기(엣지 스와이프)로 사용자가 직접 줄일 수도 있다.
+    /// Screen stack on top of main. Bound directly to `NavigationStack(path:)`, so the user
+    /// can also shrink it themselves via system back (edge swipe).
     var path: [Screen] = []
     var modal: AppModal? = nil
-    /// 위에 한 겹 더 얹는 모달 — 현재 모달을 **살려 둔 채** 그 위에 띄워야 할 때만 쓴다
-    /// (설정의 Add Biometrics: 바이오 화면 위로 PIN 이 올라오고, PIN 을 닫으면 바이오로 돌아간다).
-    /// 잠금(lockAuth)은 항상 최상위여야 하므로 이 슬롯을 먼저 비우고 표시한다.
+    /// A modal layered one more level on top — used only when it must appear while **keeping** the current modal
+    /// (Settings' Add Biometrics: PIN comes up over the biometric screen, and closing PIN returns to biometrics).
+    /// Lock (lockAuth) must always be topmost, so this slot is cleared first before showing it.
     var stackedModal: AppModal? = nil
     var credentials: [Credential] = []
     var pickedCred: Credential? = nil
-    // 발급 완료 화면(IssueSuccessView)에 띄울 발급된 VC 의 title 목록.
+    // Titles of the issued VCs to show on the issuance complete screen (IssueSuccessView).
     var issuedTitles: [String] = []
     var selectedCitizenship: CitizenshipOption? = nil
-    // 일반 VP 제출 — QR 제시 스캔 시 requestProfile 로 받은 verifier 프로필.
+    // Regular VP submit — verifier profile received via requestProfile when scanning a presentation QR.
     var verifyProfile: _RequestProfile? = nil
-    // VPRequestView 표시용 데이터 (검증자명·제출 클레임). presentFromQR 에서 채움.
+    // Data for VPRequestView (verifier name, claims to submit). Filled in presentFromQR.
     var verifySummary: VpPresentationSummary? = nil
-    // OID4VP 제출 — getAuthorizationRequest 로 파싱한 인가요청. handleOID4VP 에서 채우고
-    // submitOID4VP 가 재사용 (createVp 의 nonce/challenge/responseUri 소스).
+    // OID4VP submit — authorization request parsed by getAuthorizationRequest. Filled in handleOID4VP and
+    // reused by submitOID4VP (source of createVp's nonce/challenge/responseUri).
     var oid4vpRequest: AuthorizationRequest? = nil
-    // OID4VP VPRequestView 표시용 데이터 (일반 VP 의 verifySummary 와 동일 타입 재사용).
+    // Data for the OID4VP VPRequestView (reuses the same type as regular VP's verifySummary).
     var oid4vpSummary: VpPresentationSummary? = nil
-    // ZKP VP 제출 — `.VerifyProofOffer` 스캔 시 preProcess 까지 마친 protocol 인스턴스.
-    // 화면 표시(presentationSummary) 와 submit 모두 같은 인스턴스를 재사용 (did-ca-ios
-    // `VerifyZKProofProtocol.shared` 와 동등 — 단일 ZKP VP 세션의 상태 컨테이너).
+    // Proximity presentation — the session is opened on entering ProximityView (startProximity) and cleared when the flow ends (endProximity).
+    // There is one session per process, so this reference is effectively "the proximity presentation in progress".
+    var proximity: ProximityPresenter? = nil
+    // Data for the proximity VPRequestView (reuses the same type as regular VP's verifySummary).
+    var proximitySummary: VpPresentationSummary? = nil
+    // ZKP VP submit — protocol instance that has completed preProcess on scanning `.VerifyProofOffer`.
+    // Both screen display (presentationSummary) and submit reuse the same instance (equivalent to did-ca-ios
+    // `VerifyZKProofProtocol.shared` — the state container for a single ZKP VP session).
     var zkpProto: VerifyZKProofProtocol? = nil
-    // ZKP attribute / predicate picker 결과 — referent key → 선택된 sub-referent index.
-    // did-ca-ios `ZKPSubmissionViewController.selectedIndexMap` 와 등가 (단, IndexPath 대신
-    // 안정 키인 referent.key 사용). attribute 와 predicate 모두 같은 dictionary 에 보관 —
-    // referent.key 가 두 섹션을 가로질러 고유.
+    // ZKP attribute / predicate picker result — referent key → selected sub-referent index.
+    // Equivalent to did-ca-ios `ZKPSubmissionViewController.selectedIndexMap` (but uses the stable key
+    // referent.key instead of IndexPath). Both attributes and predicates are kept in the same dictionary —
+    // referent.key is unique across the two sections.
     var zkpAttrSelections: [String: Int] = [:]
-    // ZKP attribute reveal 토글 — eye-on 으로 선택된 attribute referent key 집합.
-    // 화면 떠나면 사라지지 않도록 coordinator 에 보관 (did-ca-ios `attrHiddenState` 등가).
+    // ZKP attribute reveal toggle — set of attribute referent keys selected with eye-on.
+    // Kept in the coordinator so it does not vanish when leaving the screen (equivalent to did-ca-ios `attrHiddenState`).
     var zkpReveals: Set<String> = []
-    // ZKP self-attribute 사용자 입력 — referent key → 텍스트 입력값.
-    // did-ca-ios `ZKPSubmissionViewController.selfRawMap` 등가 (Int 키 → String 키).
+    // ZKP self-attribute user input — referent key → text input value.
+    // Equivalent to did-ca-ios `ZKPSubmissionViewController.selfRawMap` (Int keys → String keys).
     var zkpSelfRaws: [String: String] = [:]
 
-    // 값을 반환해야 하는 PIN 모달용 continuation (pinRegister / pinLockRegister 공용).
-    // 호출 측에서 present...() await → AppRoot 의 PINView 콜백이 completePin 호출.
-    @ObservationIgnored private var pinContinuation: CheckedContinuation<String?, Never>?
+    // What to run when leaving the Server URL screen via Back — decided by the caller.
+    // Nothing for Settings (just pop), Splash retries initialization, Onboarding re-shows the error popup
+    // (ONB-E-04 "Back returns to that step and the popup is shown again").
+    @ObservationIgnored private var serverURLReturn: ((_ saved: Bool) -> Void)?
 
-    // Biometric 모달 결과 (.enabled / .skipped) 를 호출 측에 전달.
+    // Continuation for PIN modals that must return a value (shared by pinRegister / pinLockRegister).
+    // Caller awaits present...() → AppRoot's PINView callback calls completePin.
+    @ObservationIgnored private var pinContinuation: CheckedContinuation<String?, Never>?
+    // If true, the PIN modal is not closed even after PIN entry completes — the caller closes it after finishing follow-up work.
+    @ObservationIgnored private var holdsPinModal = false
+
+    // Delivers the Biometric modal result (.enabled / .skipped) to the caller.
     @ObservationIgnored private var biometricContinuation: CheckedContinuation<BiometricResult, Never>?
 
-    // Auth 선택 시트 (PIN / BIO) 결과 — presentAuthSelection 의 내부 신호.
-    // 사용자가 PIN 택하면 후속 presentPinAuth 로 체이닝, BIO 택하면 그대로 .bio 반환.
+    // Auth selection sheet (PIN / BIO) result — internal signal of presentAuthSelection.
+    // If the user picks PIN it chains into presentPinAuth; if BIO, .bio is returned as is.
     @ObservationIgnored private var authSelectionContinuation: CheckedContinuation<AuthSelectionPick?, Never>?
 
-    // 발급 웹 폼 결과 — true 면 업로드 완료(발급 진행), false 면 실패·취소(발급 중단).
+    // Issuance web form result — true means upload complete (issuance proceeds), false means failure/cancel (issuance aborted).
     @ObservationIgnored private var issueWebFormContinuation: CheckedContinuation<Bool, Never>?
 
-    // QR 스캔 결과 — 인식된 페이로드 문자열, 취소·닫기 시 nil.
+    // QR scan result — the recognized payload string, nil on cancel/close.
     @ObservationIgnored private var qrScanContinuation: CheckedContinuation<String?, Never>?
 
-    // OID4VCI tx_code 입력 결과 — 입력 완료 시 코드 문자열, 취소·닫기 시 nil.
+    // OID4VCI tx_code input result — the code string on completion, nil on cancel/close.
     @ObservationIgnored private var txCodeContinuation: CheckedContinuation<String?, Never>?
 
-    // OID4VCI 클레임 입력 WebView 결과 — 완료 redirect URL 문자열, 취소·닫기 시 nil.
+    // User registration WebView result — the user on registration complete (ONB-03), nil on close/load failure.
+    @ObservationIgnored private var userInfoWebViewContinuation: CheckedContinuation<RegisteredUser?, Never>?
+
+    // OID4VCI claim input WebView result — the completion redirect URL string, nil on cancel/close.
     @ObservationIgnored private var oid4vciWebViewContinuation: CheckedContinuation<String?, Never>?
 
-    // 완료 redirect 를 한 번만 처리하기 위한 가드 (가이드 §10 — 중복 redirect·빠른 연속 탭·
-    // 화면 재생성 후 재처리 방지). 검증 실패로 WebView 를 유지할 때만 다시 열린다.
+    // Guard to process the completion redirect only once (guide §10 — prevents reprocessing from duplicate redirects,
+    // rapid repeated taps, or screen re-creation). Reopened only when the WebView is kept after a validation failure.
     @ObservationIgnored private var oid4vciOfferHandling = false
 
-    // 이미 소비한 Credential Offer URI — 같은 오퍼로 두 번 발급을 태우지 않는다 (가이드 §8).
+    // Already-consumed Credential Offer URIs — never run issuance twice with the same offer (guide §8).
     @ObservationIgnored private var consumedOfferURIs: Set<String> = []
 
-    // Unlock PIN 인증 완료 — 인증 성공 시 resume, X 버튼은 exit(0) 라 nil/cancel 케이스 없음.
+    // Unlock PIN auth completion — resumed on auth success; the X button does exit(0), so there is no nil/cancel case.
     @ObservationIgnored private var lockAuthContinuation: CheckedContinuation<Void, Never>?
 
-    // MARK: - 크리덴셜 목록 스냅샷
+    // MARK: - Credential list snapshot
 
-    /// 지갑 목록을 다시 읽어 화면에 반영. 상태 캐시를 비운 뒤 부르면 폐기·정지가 뱃지에 반영된다.
+    /// Re-reads the wallet list and reflects it on screen. Called after clearing the status cache, revocation/suspension shows on the badges.
     func reloadCredentials() async {
         credentials = await CredentialStore.shared.loadCredentials()
     }
 
-    /// 상세에서 새로 조회한 상태를 목록 스냅샷에도 반영 — 지갑을 다시 읽지 않고 그 카드만 갱신한다.
-    /// (목록은 `loadCredentials()` 시점의 값 스냅샷이라, 저장소 캐시만 갱신해선 뱃지가 안 바뀐다.)
+    /// Reflects a status newly fetched on the detail screen into the list snapshot too — updates only that card without re-reading the wallet.
+    /// (The list is a value snapshot taken at `loadCredentials()` time, so updating only the store cache won't change the badge.)
     func applyRefreshedStatus(_ status: CredentialStatus, for credentialId: String) {
         guard let index = credentials.firstIndex(where: { $0.id == credentialId }),
               credentials[index].status != status
@@ -168,13 +191,13 @@ final class AppCoordinator {
         credentials[index] = credentials[index].with(status: status)
     }
 
-    // MARK: - 화면 이동
+    // MARK: - Navigation
     //
-    // 최상위 단계 교체(setRoot)와 스택 조작(push/pop)을 분리한다. 이전 구조는 화면 하나를
-    // 통째로 갈아끼웠기 때문에 "뒤로"가 실은 다른 화면으로의 점프였고, 그래서 전환 방향도
-    // 시스템이 알 수 없었다. 이제 뒤로가기는 pop 이고, 엣지 스와이프도 그대로 동작한다.
+    // Separates top-level stage swaps (setRoot) from stack operations (push/pop). The previous structure
+    // swapped out a whole screen, so "back" was really a jump to another screen, and therefore the system
+    // could not know the transition direction either. Now back is a pop, and edge swipe works as is.
 
-    /// 최상위 단계 교체 — 스택은 비운다 (splash·온보딩·메인 사이엔 "뒤로"가 없다).
+    /// Swaps the top-level stage — clears the stack (there is no "back" between splash, onboarding and main).
     func setRoot(_ newRoot: Root) {
         path.removeAll()
         root = newRoot
@@ -184,13 +207,13 @@ final class AppCoordinator {
         path.append(screen)
     }
 
-    /// 한 단계 뒤로. 스택이 비어 있으면(메인) 아무 일도 하지 않는다.
+    /// One step back. Does nothing if the stack is empty (main).
     func pop() {
         guard !path.isEmpty else { return }
         path.removeLast()
     }
 
-    /// 메인까지 되돌아간다 — 오류 팝업 확인 후 복귀처럼 "홈으로" 에 해당한다.
+    /// Goes all the way back to main — the equivalent of "home", e.g. returning after confirming an error popup.
     func popToMain() {
         path.removeAll()
         if root != .main {
@@ -198,7 +221,23 @@ final class AppCoordinator {
         }
     }
 
-    /// 스택을 통째로 교체 — 발급 완료처럼 되돌아갈 이전 화면이 의미 없을 때 쓴다.
+    /// Sends to the Server URL screen. `onReturn` runs exactly once after that screen closes via Cancel/Back/Save,
+    /// and receives whether it was closed via Save.
+    /// - parameter fromSplash: the first-launch server-settings popup (SPL-03) path — the screen gets no back button.
+    func presentServerURL(fromSplash: Bool = false, onReturn: ((_ saved: Bool) -> Void)? = nil) {
+        serverURLReturn = onReturn
+        push(.serverUrl(fromSplash: fromSplash))
+    }
+
+    /// Server URL screen closed (common to Cancel/Back/Save) — pops, then runs what the caller handed over.
+    func dismissServerURL(saved: Bool) {
+        pop()
+        let onReturn = serverURLReturn
+        serverURLReturn = nil
+        onReturn?(saved)
+    }
+
+    /// Replaces the stack whole — used when the previous screen has no meaning to return to, e.g. after issuance completes.
     func setStack(_ screens: [Screen]) {
         if root != .main {
             root = .main
@@ -206,101 +245,109 @@ final class AppCoordinator {
         path = screens
     }
 
-    // MARK: - 딥링크 (openid4vp:// / openid-credential-offer://)
+    // MARK: - Deep links (openid4vp:// / openid-credential-offer://)
 
-    // onOpenURL 로 들어온 딥링크를 ready 가 될 때까지 보관. 콜드런치(splash)·잠금 중에는
-    // 처리를 미루고, 메인+모달없음 상태로 전이하면 drain 한다. 스캔 진입과 같은 게이팅.
+    // Holds deep links arriving via onOpenURL until ready. Processing is deferred during cold launch (splash)
+    // and lock, and drained on transitioning to main + no modal. Same gating as scan entry.
     @ObservationIgnored private var pendingDeepLink: String?
 
-    /// 스캔/딥링크 플로우를 시작해도 되는 상태 — 메인(스택 비어 있음) + 모달 없음.
-    /// (QR 스캔이 원래 메인에서만 가능한 것과 동일한 게이팅.)
+    /// State in which a scan/deep-link flow may start — main (empty stack) + no modal.
+    /// (Same gating as QR scanning originally being possible only from main.)
     var isReadyForScannedFlow: Bool {
         root == .main && path.isEmpty && modal == nil
     }
 
-    /// onOpenURL 진입점 — 딥링크 URL 을 버퍼에 넣고, 이미 ready 면 즉시 처리.
+    /// onOpenURL entry point — puts the deep link URL in the buffer and processes it immediately if already ready.
     func handleDeepLink(_ url: URL) {
         pendingDeepLink = url.absoluteString
         drainPendingDeepLink()
     }
 
-    /// 보관된 딥링크를 ready 일 때만 꺼내 스캔 디스패치로 흘린다.
-    /// AppRoot 가 ready 전이 시(콜드런치 후 docs 도달·잠금 해제) 호출.
+    /// Takes held deep links out only when ready and feeds them into scan dispatch.
+    /// Called by AppRoot on transitioning to ready (reaching docs after cold launch, unlock).
     func drainPendingDeepLink() {
         guard isReadyForScannedFlow, let link = pendingDeepLink else { return }
         pendingDeepLink = nil
         Task { await handleScannedQR(link) }
     }
 
-    // MARK: - Holder DID 캐시
+    // MARK: - Holder DID cache
 
-    // holder DID 캐시 — getDidDocument 는 CoreData fetch+JSON decode 라, 매 body 평가마다
-    // 동기 호출하면 설정 진입에 딜레이가 생긴다. 온보딩 후 DID 는 불변이므로 한 번만 읽어 캐시.
+    // Holder DID cache — getDidDocument is a CoreData fetch + JSON decode, so calling it synchronously on every
+    // body evaluation delays entering Settings. The DID is immutable after onboarding, so read it once and cache.
     @ObservationIgnored private var holderDIDCache: String?
 
-    /// 현재 holder DID 문자열 (설정화면 표시용). 미생성 시 빈 문자열.
+    /// Current holder DID string (for display in Settings). Empty string if not yet created.
     var holderDID: String {
         if let holderDIDCache { return holderDIDCache }
         guard let did = WalletState.holderDID else {
-            return ""   // 아직 DID 미생성 — 캐시하지 않고 다음 호출에 재시도.
+            return ""   // DID not created yet — don't cache, retry on the next call.
         }
         holderDIDCache = did
         return did
     }
 
-    // MARK: - 모달
+    // MARK: - Modals
     //
-    // 아래는 전부 같은 골격이다: present…() 가 모달을 세우고 continuation 에 매달려 await 하면,
-    // AppRoot 에 뜬 화면의 콜백이 complete…() 를 불러 그 continuation 을 resume한다. 그래서
-    // 호출 측은 모달을 "값을 돌려주는 함수"처럼 쓸 수 있다 (`await presentPinAuth()`).
-    // 짝(present/complete)이 항상 붙어 다니므로 모달 종류별로 묶어 둔다.
+    // Everything below has the same skeleton: present…() raises the modal and awaits on a continuation,
+    // then the callback of the screen shown in AppRoot calls complete…() to resume that continuation. So
+    // the caller can use a modal like "a function that returns a value" (`await presentPinAuth()`).
+    // The pairs (present/complete) always go together, so they are grouped by modal kind.
 
     func present(_ m: AppModal) {
         modal = m
     }
 
-    // MARK: 모달 — PIN 입력·변경
+    // MARK: Modal — PIN entry/change
 
-    /// PIN Lock 등록 모달. 사용자가 X 로 취소하면 nil.
+    /// PIN Lock registration modal. nil if the user cancels with X.
     func presentPinLockRegister() async -> String? {
         await presentPinModal(.pinLockRegister)
     }
 
-    /// PIN 등록 모달 (서명키 등록용). 사용자가 X 로 취소하면 nil.
+    /// PIN registration modal (for signing key registration). nil if the user cancels with X.
     func presentPinRegister() async -> String? {
         await presentPinModal(.pinRegister)
     }
 
-    /// PIN 인증 모달 (서명 등 입력값 필요한 경우 PIN 반환). 사용자가 X 로 취소하면 nil.
-    /// `stacked: true` 면 현재 모달을 닫지 않고 그 위에 얹는다 — 취소 시 아래 화면으로 돌아간다.
+    /// PIN auth modal (returns the PIN when an input value is needed, e.g. for signing). nil if the user cancels with X.
+    /// With `stacked: true`, it is layered on top without closing the current modal — cancelling returns to the screen below.
     func presentPinAuth(isLockAuth: Bool = false, stacked: Bool = false) async -> String? {
         await presentPinModal(.pinAuth(isLockAuth: isLockAuth), stacked: stacked)
     }
 
-    // 잠금 표시 직전의 모달 상태 — 인증 후 그대로 되돌린다. 잠금은 진행 중이던 흐름을
-    // "끝내는" 게 아니라 "가리는" 것이기 때문이다.
+    /// PIN auth modal — does not close when input ends; only returns the PIN. The caller closes it with
+    /// `dismissModal()` after finishing follow-up work. Used when a task failure must be reported over the auth screen (ONB-E-08).
+    func presentHeldPinAuth() async -> String? {
+        let pin = await presentPinModal(.pinAuth(), holdsOnComplete: true)
+        if pin == nil { holdsPinModal = false }
+        return pin
+    }
+
+    // Modal state right before the lock is shown — restored as is after auth. The lock does not "end"
+    // the flow in progress; it "covers" it.
     @ObservationIgnored private var modalBeforeLock: (modal: AppModal?, stacked: AppModal?)?
 
-    /// Unlock PIN 인증 모달 — 인증 성공할 때만 반환. X 버튼/swipe-down 은 PINView 측에서 exit(0).
+    /// Unlock PIN auth modal — returns only on auth success. X button/swipe-down do exit(0) on the PINView side.
     ///
-    /// 진행 중이던 모달 흐름은 **취소하지 않고 보류**한다. continuation 을 깨우지 않으면
-    /// 대기 중인 태스크는 그 자리에 멈춰 있을 뿐이고, 인증 후 모달을 되돌리면 사용자가
-    /// 있던 자리에서 그대로 이어진다. 예전처럼 취소로 깨우면 흐름이 "사용자가 선택했다"고
-    /// 오해하고 계속 진행한다 — 온보딩 step2 라면 생체를 Skip 으로 보고 잠금화면 뒤에서
-    /// 키 생성과 DID 문서 발행까지 마친 뒤 step3 로 넘어가 버린다.
+    /// An in-progress modal flow is **put on hold, not cancelled**. If the continuation is not woken,
+    /// the waiting task simply stays where it is, and when the modal is restored after auth the user
+    /// continues right where they were. Waking it with a cancel, as before, makes the flow misread it as
+    /// "the user chose" and carry on — in onboarding step2, it treats biometrics as Skip and, behind the lock
+    /// screen, finishes key generation and DID document publishing before moving on to step3.
     func presentLockAuth() async {
         if let prev = lockAuthContinuation {
             lockAuthContinuation = nil
             prev.resume()
         }
-        // 이미 잠금이 떠 있는데 다시 불린 경우엔 보관값을 덮지 않는다 (원래 화면을 잃는다).
+        // If called again while the lock is already up, don't overwrite the saved value (the original screen would be lost).
         if modalBeforeLock == nil {
             modalBeforeLock = (modal, stackedModal)
         }
-        // 잠금화면은 보안상 즉시 콘텐츠를 덮어야 한다 — fullScreenCover 의 기본 슬라이드업
-        // 모션을 억제해 모달 애니메이션 없이 바로 표시한다. 모달 슬롯은 nil 을 거치지 않고
-        // 바로 잠금으로 교체한다 (중간 nil → present-while-dismissing 재표시 위험 회피).
-        // 얹어 띄운 겹은 걷어낸다 — 안 그러면 잠금이 그 아래에 깔린다. 복원 때 다시 세운다.
+        // For security the lock screen must cover the content immediately — suppress the fullScreenCover default slide-up
+        // motion so it shows right away without a modal animation. The modal slot is replaced directly with the lock
+        // without passing through nil (avoids the intermediate nil → present-while-dismissing re-show risk).
+        // Remove any layered modal — otherwise the lock ends up beneath it. It is raised again on restore.
         withTransaction(Self.noAnimation) {
             stackedModal = nil
             modal = .lockAuth
@@ -310,8 +357,8 @@ final class AppCoordinator {
         }
     }
 
-    /// Unlock 인증 성공 — PINView onSuccess 콜백에서 호출.
-    /// 잠금 직전에 떠 있던 모달을 되돌린다 (없었으면 nil 로 닫는 것과 같다).
+    /// Unlock auth success — called from the PINView onSuccess callback.
+    /// Restores the modal that was up right before the lock (same as closing with nil if there was none).
     func completeLockAuth() {
         if let cont = lockAuthContinuation {
             lockAuthContinuation = nil
@@ -319,25 +366,26 @@ final class AppCoordinator {
         }
         let restored = modalBeforeLock
         modalBeforeLock = nil
-        // present 와 대칭으로 dismiss 모션도 억제 (슬라이드다운으로 콘텐츠가 잠깐 비치지 않게).
+        // Suppress the dismiss motion too, symmetric with present (so content doesn't briefly show through the slide-down).
         withTransaction(Self.noAnimation) {
             modal = restored?.modal
             stackedModal = restored?.stacked
         }
     }
 
-    /// fullScreenCover present/dismiss 모션을 끄기 위한 transaction (잠금화면 전용).
+    /// Transaction to turn off fullScreenCover present/dismiss motion (lock screen only).
     private static var noAnimation: Transaction {
         var txn = Transaction()
         txn.disablesAnimations = true
         return txn
     }
 
-    private func presentPinModal(_ m: AppModal, stacked: Bool = false) async -> String? {
+    private func presentPinModal(_ m: AppModal, stacked: Bool = false, holdsOnComplete: Bool = false) async -> String? {
         if let prev = pinContinuation {
             pinContinuation = nil
             prev.resume(returning: nil)
         }
+        holdsPinModal = holdsOnComplete
         if stacked {
             stackedModal = m
         } else {
@@ -348,15 +396,17 @@ final class AppCoordinator {
         }
     }
 
-    /// PIN 입력 완료 — continuation resume + 모달 닫기.
-    /// resume 과 modal=nil 이 같은 프레임에 일어나 dismiss 시작과 동시에 호출 측이
-    /// 재개된다 → 호출 측 로딩이 모달 슬라이드와 함께 노출 (목록이 노출되는 텀 없음).
-    /// 얹어 띄운 PIN 이면 그 겹만 걷어낸다 — 아래 화면은 그대로 남는다.
+    /// PIN entry complete — continuation resume + close the modal.
+    /// resume and modal=nil happen in the same frame, so the caller resumes as the dismiss starts →
+    /// the caller's loading appears along with the modal slide (no gap where the list is exposed).
+    /// If it is a layered PIN, only that layer is removed — the screen below stays.
     func completePin(_ pin: String) {
         if let cont = pinContinuation {
             pinContinuation = nil
             cont.resume(returning: pin)
         }
+        // presentHeldPinAuth — the caller does the closing.
+        if holdsPinModal { return }
         if stackedModal != nil {
             stackedModal = nil
         } else {
@@ -364,18 +414,19 @@ final class AppCoordinator {
         }
     }
 
-    /// PIN 변경 모달 완료 처리. isLockAuth 면 Unlock PIN 변경(changeLock),
-    /// 아니면 서명 PIN 변경(changePin). 성공 시 모달 닫기, 실패 시 에러 팝업.
-    /// (이전엔 AppRoot 의 PINView 콜백 안에서 SDK 를 직접 호출했음 — View 에서 분리.)
+    /// Handles PIN change modal completion. If isLockAuth, changes the Unlock PIN (changeLock);
+    /// otherwise changes the signing PIN (changePin). Closes the modal on success, error popup on failure.
+    /// (Previously the SDK was called directly inside AppRoot's PINView callback — separated from the View.)
     func completePinChange(isLockAuth: Bool, currentPIN: String, newPIN: String) async {
         if isLockAuth {
             do {
-                // 변경 정본 API. 기존 CEK 를 old passcode 로 복구해 new passcode 로 다시 감싼다.
-                // registerLock 재호출로도 되지만 그건 CEK 를 새로 만들고 wallet token(CONFIGLOCK)
-                // 발급이 필요해 서버에 의존하며, 전역 잠금 상태(isLock)까지 건드린다.
-                // changeLock 은 로컬 연산만 하고 잠금 상태를 그대로 둔다.
+                // The canonical change API. Recovers the existing CEK with the old passcode and rewraps it with the new passcode.
+                // Calling registerLock again would also work, but that creates a new CEK and requires issuing a wallet token
+                // (CONFIGLOCK), so it depends on the server and also touches the global lock state (isLock).
+                // changeLock does only local operations and leaves the lock state as is.
                 try WalletAPI.shared.changeLock(oldPasscode: currentPIN, newPasscode: newPIN)
-                dismissModal()
+                showPinChanged(title: "Unlock PIN changed",
+                               message: "Your Unlock PIN has been changed successfully.")
             } catch {
                 OverlayManager.shared.showErrorPopup(
                     title: "Failed to change wallet lock",
@@ -389,7 +440,8 @@ final class AppCoordinator {
                     oldPIN: currentPIN,
                     newPIN: newPIN
                 )
-                dismissModal()
+                showPinChanged(title: "PIN changed",
+                               message: "Your PIN has been changed successfully.")
             } catch {
                 OverlayManager.shared.showErrorPopup(
                     title: "Failed to change PIN",
@@ -399,15 +451,26 @@ final class AppCoordinator {
         }
     }
 
-    // MARK: 모달 — 인증 게이트 (PIN / BIO 선택)
+    /// Change success notice (PIN-C-B-01 / UNLK-C-B-01) — shown over the last PIN screen; OK closes the modal and
+    /// returns to Settings. It never happens that only the popup closes and you're left on the finished PIN screen.
+    private func showPinChanged(title: String, message: String) {
+        OverlayManager.shared.showPopup(
+            title: title,
+            message: message,
+            primaryButtonTitle: "OK",
+            primaryAction: { [weak self] in self?.dismissModal() }
+        )
+    }
 
-    /// 발급 흐름 등에서 서명 직전 인증 단계.
-    /// 바이오 키가 등록되어 있고 LAContext 가 사용 가능하면 PIN/BIO 선택 시트를 띄우고,
-    /// 그 외에는 곧장 PIN 인증 모달로 직행한다.
-    /// - 사용자가 BIO 를 고른 경우 passcode 없이 `.bio` 만 돌아오며, 실제 생체 prompt 는
-    ///   호출 측이 `WalletAPI.shared.getSignedDidAuth(passcode: nil)` 를 호출하는 시점에 SDK 가 트리거.
-    /// - 사용자가 PIN 을 고르면 PIN 입력 모달을 거쳐 `.pin(passcode)` 가 돌아옴.
-    /// - 어느 단계에서든 사용자가 취소하면 nil.
+    // MARK: Modal — Auth gate (PIN / BIO selection)
+
+    /// Auth step right before signing, e.g. in the issuance flow.
+    /// If a biometric key is registered and LAContext is available, shows the PIN/BIO selection sheet;
+    /// otherwise goes straight to the PIN auth modal.
+    /// - If the user picks BIO, only `.bio` comes back without a passcode; the actual biometric prompt is
+    ///   triggered by the SDK when the caller calls `WalletAPI.shared.getSignedDidAuth(passcode: nil)`.
+    /// - If the user picks PIN, `.pin(passcode)` comes back after the PIN input modal.
+    /// - nil if the user cancels at any step.
     func presentAuth() async -> AuthChoice? {
         let canUseBio = Biometrics.hasBioKey && Biometrics.canEvaluate()
 
@@ -420,31 +483,31 @@ final class AppCoordinator {
         guard let pick = await presentAuthSelection() else { return nil }
         switch pick {
         case .bio:
-            // BIO 선택 → 후속 모달 없음. 선택 시트를 닫고 로딩으로 전환.
+            // BIO chosen → no follow-up modal. Close the selection sheet and switch to loading.
             modal = nil
             beginAuthLoading()
             return .bio
         case .pin:
-            // PIN 선택 → 선택 시트를 nil 로 닫지 않고 곧바로 PIN 모달로 교체(content swap).
-            // completeAuthSelection 이 modal 을 nil 로 만들지 않으므로 .authSelection→.pinAuth
-            // 직접 전환이 되어 present-while-dismissing 없이 PIN 패드가 뜬다.
+            // PIN chosen → instead of closing the selection sheet with nil, replace it directly with the PIN modal (content swap).
+            // completeAuthSelection doesn't set modal to nil, so .authSelection→.pinAuth is a direct
+            // transition and the PIN pad appears without present-while-dismissing.
             guard let pin = await presentPinAuth() else { return nil }
             beginAuthLoading()
             return .pin(pin)
         }
     }
 
-    /// 인증(PIN/bio) 성공 직후 — 모달 dismiss 와 같은 프레임에 로딩을 페이드 없이 즉시 띄워,
-    /// 슬라이드다운(약 0.35s) 중 맨 화면이 노출되는 갭을 없앤다. 호출 측(issue/submit/revoke)의
-    /// showLoading 은 이미 표시 중이라 no-op, defer hideLoading 이 정리 → 누수 없음.
+    /// Right after auth (PIN/bio) success — shows loading instantly without fade in the same frame as the modal dismiss,
+    /// removing the gap where the bare screen shows during the slide-down (~0.35s). The caller's (issue/submit/revoke)
+    /// showLoading is then a no-op since it's already showing, and defer hideLoading cleans up → no leak.
     private func beginAuthLoading() {
         OverlayManager.shared.showLoading(animated: false)
     }
 
-    /// VP 제출용 — verifier 가 요구한 VerifyAuthType 에 따라 인증수단을 강제 분기 (VAUTH-01~04).
-    /// authType nil/그 외 → verifier 요구 없음으로 보고 기존 로컬 가용성 기반 presentAuth().
-    /// 발급/폐기 등 verifier 무관 인증은 기존 presentAuth() 를 그대로 쓴다.
-    /// VAUTH-04(PIN_AND_BIO)는 레퍼런스가 없어 "PIN 서명 + 생체 로컬 게이트"로 구현 — 서버 계약 확인 필요(best-guess).
+    /// For VP submit — forces the auth method branch according to the VerifyAuthType the verifier requires (VAUTH-01~04).
+    /// authType nil/other → treated as no verifier requirement, uses the existing local-availability-based presentAuth().
+    /// Auth unrelated to a verifier, such as issuance/revocation, keeps using the existing presentAuth().
+    /// VAUTH-04 (PIN_AND_BIO) has no reference, so it is implemented as "PIN signature + local biometric gate" — server contract needs confirmation (best-guess).
     func presentAuth(for authType: VerifyAuthType?) async -> AuthChoice? {
         guard let authType else { return await presentAuth() }
 
@@ -452,7 +515,7 @@ final class AppCoordinator {
         let needBio = authType.contains(.bio)
         let needBoth = authType.contains(.and)
 
-        // VAUTH-04 PIN_AND_BIO: PIN 인증 후 생체 게이트, 서명은 #pin.
+        // VAUTH-04 PIN_AND_BIO: biometric gate after PIN auth, signing uses #pin.
         if needPin && needBio && needBoth {
             if let bioErr = Biometrics.signingReadiness() {
                 OverlayManager.shared.showPopup(title: "Notification", message: bioErr.message, primaryButtonTitle: "OK")
@@ -464,13 +527,13 @@ final class AppCoordinator {
             return .pin(pin)
         }
 
-        // VAUTH-03 PIN_OR_BIO: 둘 다 허용 → 로컬 가용성 정책과 동일.
-        // bio 사용 가능 시 선택 시트, 미등록/불가 시 PIN 직행 (에러 팝업 없이 조용히 fallback).
+        // VAUTH-03 PIN_OR_BIO: both allowed → same as the local availability policy.
+        // Selection sheet if bio is available; PIN directly if unregistered/unavailable (quiet fallback without an error popup).
         if needPin && needBio {
             return await presentAuth()
         }
 
-        // VAUTH-02 BIO: 시트 없이 생체 직행. 생체 필수인데 미등록/불가면 중단.
+        // VAUTH-02 BIO: biometrics directly without a sheet. Abort if biometrics are required but unregistered/unavailable.
         if needBio {
             if let bioErr = Biometrics.signingReadiness() {
                 OverlayManager.shared.showPopup(title: "Notification", message: bioErr.message, primaryButtonTitle: "OK")
@@ -480,31 +543,31 @@ final class AppCoordinator {
             return .bio
         }
 
-        // VAUTH-01 PIN: 시트 없이 PIN 직행.
+        // VAUTH-01 PIN: PIN directly without a sheet.
         if needPin {
             guard let pin = await presentPinAuth() else { return nil }
             beginAuthLoading()
             return .pin(pin)
         }
 
-        // .free 등 특정 요구 없음 → 기존 동작.
+        // .free etc. with no specific requirement → existing behavior.
         return await presentAuth()
     }
 
-    /// OID4VP 제출용 — 제출 대상의 **발급 시 바인딩 키**로 인증수단을 정한다.
+    /// For OID4VP submit — decides the auth method by the **binding key set at issuance** of the items being submitted.
     ///
-    /// SD-JWT 는 사용자가 인증수단을 고를 수 없다. SDK 가 크리덴셜마다
-    /// `walletCore.sign(keyId: item.kid, pin:)` 로 서명하는데 `kid` 는 발급 때 고정되기 때문이다.
-    /// 그래서 선택 시트를 띄우면 안 되고(고를 게 없다), 바인딩이 섞여 있어도 문제되지 않는다 —
-    /// Secure Enclave 키(#bio)는 넘어온 passcode 를 무시하고 서명 시점에 OS 가 생체 프롬프트를
-    /// 띄우고, 소프트웨어 키(#pin)만 passcode 를 요구한다. 즉 **#pin 이 하나라도 있으면 PIN 만
-    /// 받아 넘기면 둘 다 충족된다.**
+    /// For SD-JWT the user cannot choose the auth method. The SDK signs each credential with
+    /// `walletCore.sign(keyId: item.kid, pin:)`, and `kid` is fixed at issuance.
+    /// So no selection sheet must be shown (there is nothing to choose), and mixed bindings are no problem —
+    /// Secure Enclave keys (#bio) ignore the passed passcode and the OS shows a biometric prompt at signing
+    /// time, while only software keys (#pin) require the passcode. That is, **if there is even one #pin, passing just
+    /// the PIN satisfies both.**
     ///
-    /// - parameter bindingKeyIds: 제출 대상 OID4VC 발급분(SD-JWT·mDoc)의 `bindingKeyId` 목록.
-    ///   W3C 만이면 비어 있다.
-    /// - returns: `.pin(passcode)` / `.bio`(앱 인증 없음 — SDK 가 처리) / 취소 시 nil.
+    /// - parameter bindingKeyIds: `bindingKeyId` list of the OID4VC-issued items (SD-JWT·mDoc) being submitted.
+    ///   Empty if W3C only.
+    /// - returns: `.pin(passcode)` / `.bio` (no app auth — handled by the SDK) / nil on cancel.
     func presentAuth(forBindingKeyIds bindingKeyIds: [String]) async -> AuthChoice? {
-        // 바인딩 키가 없으면(W3C 전용) 기존 정책 — bio 키가 있으면 선택 시트, 없으면 PIN 직행.
+        // No binding keys (W3C only) → existing policy — selection sheet if there is a bio key, otherwise PIN directly.
         guard !bindingKeyIds.isEmpty else { return await presentAuth() }
 
         if bindingKeyIds.contains(KeyIdName.pin) {
@@ -513,7 +576,7 @@ final class AppCoordinator {
             return .pin(pin)
         }
 
-        // 전부 #bio 바인딩 — 앱은 아무 화면도 띄우지 않는다. 서명 시점에 SDK 가 생체를 요구한다.
+        // All bound to #bio — the app shows no screen at all. The SDK requires biometrics at signing time.
         beginAuthLoading()
         return .bio
     }
@@ -529,9 +592,9 @@ final class AppCoordinator {
         }
     }
 
-    /// 선택 시트의 버튼 액션에서 호출 — continuation 만 resume한다.
-    /// 모달 닫기/교체는 재개된 presentAuth 가 담당한다(.bio → modal=nil, .pin → modal=.pinAuth swap).
-    /// 여기서 modal=nil 을 하면 .pin 선택 시 nil→.pinAuth 재표시가 되어 PIN 패드가 안 뜰 수 있다.
+    /// Called from the selection sheet's button action — only resumes the continuation.
+    /// Closing/replacing the modal is handled by the resumed presentAuth (.bio → modal=nil, .pin → modal=.pinAuth swap).
+    /// Setting modal=nil here would cause a nil→.pinAuth re-show when .pin is chosen, and the PIN pad might not appear.
     func completeAuthSelection(_ pick: AuthSelectionPick) {
         if let cont = authSelectionContinuation {
             authSelectionContinuation = nil
@@ -539,7 +602,7 @@ final class AppCoordinator {
         }
     }
 
-    /// AuthMethodView 의 back 액션 — 인증 흐름 취소 (continuation 에 nil resume + 모달 닫기).
+    /// AuthMethodView back action — cancels the auth flow (resume the continuation with nil + close the modal).
     func cancelAuthSelection() {
         if let cont = authSelectionContinuation {
             authSelectionContinuation = nil
@@ -548,9 +611,9 @@ final class AppCoordinator {
         modal = nil
     }
 
-    // MARK: 모달 — 발급 추가정보 웹 폼
+    // MARK: Modal — Issuance additional-info web form
 
-    /// 발급 추가정보 입력 웹 폼 모달. 폼 완료(true) / 실패·취소(false) 를 비동기로 반환.
+    /// Issuance additional-info web form modal. Returns form completion (true) / failure·cancel (false) asynchronously.
     func presentIssueWebForm(url: URL) async -> Bool {
         if let prev = issueWebFormContinuation {
             issueWebFormContinuation = nil
@@ -562,7 +625,7 @@ final class AppCoordinator {
         }
     }
 
-    /// 웹 폼 결과 확정 (JS 콜백 또는 X 버튼) — continuation resume + 모달 닫기.
+    /// Finalizes the web form result (JS callback or X button) — continuation resume + close the modal.
     func completeIssueWebForm(success: Bool) {
         if let cont = issueWebFormContinuation {
             issueWebFormContinuation = nil
@@ -571,9 +634,32 @@ final class AppCoordinator {
         modal = nil
     }
 
-    // MARK: 모달 — QR 스캔
+    // MARK: Modal — User registration WebView (onboarding Step 1)
 
-    /// QR 스캔 모달. 인식된 페이로드 / 취소·닫기 시 nil 을 비동기로 반환.
+    /// User registration WebView modal. The user on registration complete (ONB-03), nil on X/load failure (ONB-E-07 · ONB-E-05).
+    func presentUserInfoWebView(url: URL) async -> RegisteredUser? {
+        if let prev = userInfoWebViewContinuation {
+            userInfoWebViewContinuation = nil
+            prev.resume(returning: nil)
+        }
+        modal = .userInfoWebView(url)
+        return await withCheckedContinuation { cont in
+            userInfoWebViewContinuation = cont
+        }
+    }
+
+    /// Finalizes the registration WebView result — continuation resume + close the modal.
+    func completeUserInfoWebView(_ user: RegisteredUser?) {
+        if let cont = userInfoWebViewContinuation {
+            userInfoWebViewContinuation = nil
+            cont.resume(returning: user)
+        }
+        modal = nil
+    }
+
+    // MARK: Modal — QR scan
+
+    /// QR scan modal. Returns the recognized payload / nil on cancel·close asynchronously.
     func presentQrScan() async -> String? {
         if let prev = qrScanContinuation {
             qrScanContinuation = nil
@@ -585,7 +671,7 @@ final class AppCoordinator {
         }
     }
 
-    /// QR 스캔 결과 확정 (인식 payload / 닫기·취소 nil) — continuation resume + 모달 닫기.
+    /// Finalizes the QR scan result (recognized payload / nil on close·cancel) — continuation resume + close the modal.
     func completeQrScan(_ payload: String?) {
         if let cont = qrScanContinuation {
             qrScanContinuation = nil
@@ -594,9 +680,9 @@ final class AppCoordinator {
         modal = nil
     }
 
-    // MARK: 모달 — OID4VCI tx_code 입력
+    // MARK: Modal — OID4VCI tx_code input
 
-    /// OID4VCI tx_code 입력 모달. 입력 완료 코드 / 취소·닫기 시 nil 을 비동기로 반환.
+    /// OID4VCI tx_code input modal. Returns the entered code / nil on cancel·close asynchronously.
     func presentTxCode(length: Int, description: String) async -> String? {
         if let prev = txCodeContinuation {
             txCodeContinuation = nil
@@ -608,7 +694,7 @@ final class AppCoordinator {
         }
     }
 
-    /// tx_code 입력 결과 확정 (입력 코드 / 닫기·취소 nil) — continuation resume + 모달 닫기.
+    /// Finalizes the tx_code input result (entered code / nil on close·cancel) — continuation resume + close the modal.
     func completeTxCode(_ code: String?) {
         if let cont = txCodeContinuation {
             txCodeContinuation = nil
@@ -617,9 +703,9 @@ final class AppCoordinator {
         modal = nil
     }
 
-    // MARK: 모달 — OID4VCI 클레임 입력 WebView
+    // MARK: Modal — OID4VCI claim input WebView
 
-    /// OID4VCI 클레임 입력 WebView 모달. 완료 redirect URL 문자열 / 취소·닫기 시 nil 을 반환.
+    /// OID4VCI claim input WebView modal. Returns the completion redirect URL string / nil on cancel·close.
     func presentOID4VciWebView(url: URL, allowedHost: String) async -> String? {
         if let prev = oid4vciWebViewContinuation {
             oid4vciWebViewContinuation = nil
@@ -632,11 +718,11 @@ final class AppCoordinator {
         }
     }
 
-    /// WebView 가 `openid-credential-offer://` navigation 을 가로챘을 때 호출 (가이드 §7·§10).
+    /// Called when the WebView intercepts an `openid-credential-offer://` navigation (guide §7·§10).
     ///
-    /// navigation 중단은 `WebView` 가 이미 했다. 여기서는 중복 처리 차단 → 오퍼 URI 추출·검증 →
-    /// 1회 소비 확인 → 모달 종료 순으로 진행한다. **검증에 실패하면 WebView 를 닫지 않는다** —
-    /// 오류만 알리고 사용자가 화면에서 다시 시도하거나 X 로 닫게 둔다.
+    /// `WebView` has already stopped the navigation. Here it proceeds: block duplicate handling → extract/validate the
+    /// offer URI → check single consumption → end the modal. **If validation fails, the WebView is not closed** —
+    /// it only reports the error and lets the user retry on the screen or close with X.
     func handleOID4VciCompletion(_ url: URL) {
         guard !oid4vciOfferHandling else { return }
         oid4vciOfferHandling = true
@@ -653,7 +739,7 @@ final class AppCoordinator {
         }
     }
 
-    /// WebView 결과 확정 (완료 redirect URL / 닫기·취소 nil) — continuation resume + 모달 닫기.
+    /// Finalizes the WebView result (completion redirect URL / nil on close·cancel) — continuation resume + close the modal.
     func completeOID4VciWebView(_ payload: String?) {
         if let cont = oid4vciWebViewContinuation {
             oid4vciWebViewContinuation = nil
@@ -662,9 +748,9 @@ final class AppCoordinator {
         modal = nil
     }
 
-    // MARK: 모달 — 생체인증
+    // MARK: Modal — Biometric auth
 
-    /// Biometric 모달. 결과를 비동기로 반환.
+    /// Biometric modal. Returns the result asynchronously.
     func presentBiometric(fromSettings: Bool = false) async -> BiometricResult {
         if let prev = biometricContinuation {
             biometricContinuation = nil
@@ -676,13 +762,13 @@ final class AppCoordinator {
         }
     }
 
-    /// 설정 > Add Biometrics — PIN 인증 → 확인 화면 → bio 키 추가 + holder DID 문서 갱신.
-    /// 온보딩과 달리 문서가 이미 발행돼 있어, generateKeyPair 만으론 서버 문서에 #bio 가
-    /// 반영되지 않는다. UpdateUserProtocol 로 updateHolderDIDDocument → request/confirm-update-diddoc
-    /// 까지 태워 발행 문서에 #bio 를 추가한다. PIN 은 문서 갱신 서명(#pin)에 필요해 먼저 받는다.
+    /// Settings > Add Biometrics — PIN auth → confirmation screen → add bio key + update holder DID document.
+    /// Unlike onboarding, the document is already published, so generateKeyPair alone does not put #bio into
+    /// the server document. UpdateUserProtocol runs updateHolderDIDDocument → request/confirm-update-diddoc
+    /// to add #bio to the published document. The PIN is needed to sign the document update (#pin), so it's taken first.
     func addBiometricsFromSettings() async {
-        // 이미 등록됨(SET-E-03) / 미등록·미지원·잠김(BIO-E-01/02/03) 사전 점검 —
-        // PIN 입력 전에 막는다 (campusID 동일 위치).
+        // Pre-check for already registered (SET-E-03) / unregistered·unsupported·locked (BIO-E-01/02/03) —
+        // blocked before PIN entry (same place as campusID).
         if let blocked = Biometrics.enrollmentBlock() {
             OverlayManager.shared.showPopup(
                 title: "Notification",
@@ -692,11 +778,11 @@ final class AppCoordinator {
             return
         }
 
-        // BIO 확인 화면 먼저 (Enable=enabled / Cancel=skipped). Enable 을 누르면 그 화면을 닫지 않고
-        // **위에** PIN 을 얹는다 — 문서 갱신을 #pin 키로 서명해야 서버가 수락하기 때문.
-        // PIN 을 닫으면 바이오 화면으로 돌아오므로 거기서 다시 대기해야 한다. 안 그러면 화면은 떠
-        // 있는데 기다리는 쪽이 없어 Enable 버튼이 죽는다.
-        // 온보딩(step2)은 PIN "등록"이 그 단계의 본작업이라 순서가 반대다 — StepViewModel 이 그대로 유지한다.
+        // BIO confirmation screen first (Enable=enabled / Cancel=skipped). Pressing Enable does not close that screen but
+        // layers PIN **on top** — because the server accepts the document update only if signed with the #pin key.
+        // Closing PIN returns to the biometric screen, so we must wait there again. Otherwise the screen is up
+        // but nobody is waiting, and the Enable button goes dead.
+        // Onboarding (step2) is the reverse order since PIN "registration" is the main work of that step — StepViewModel keeps it as is.
         var passcode: String?
         repeat {
             guard await presentBiometric(fromSettings: true) == .enabled else {
@@ -707,36 +793,39 @@ final class AppCoordinator {
         } while passcode == nil
 
         guard let pin = passcode else { return }
-        // 두 겹 다 걷어낸다 (PIN 겹은 completePin 이 이미 정리). 여기까지 오기 전에 만들어진 키는
-        // 없으므로(bio 키는 addBioKey 안에서 생성) 중간에 취소해도 롤백할 게 없다.
-        dismissModal()
-
+        // The PIN layer was already cleaned up by completePin. The biometric screen stays until registration finishes,
+        // since the success notice (BIO-B-01) must appear over it; on failure it is closed and then the notice shown. No key
+        // has been created before reaching here (the bio key is created inside addBioKey), so there is nothing to roll back on a mid-way cancel.
         OverlayManager.shared.showLoading()
         defer { OverlayManager.shared.hideLoading() }
         do {
             try await UpdateUserProtocol.addBioKey(passcode: pin)
+            // BIO-B-01 — shown over the Biometric screen; OK closes the screen and returns to Settings.
             OverlayManager.shared.showPopup(
-                title: "Notification",
-                message: "Biometric authentication is set up.",
-                primaryButtonTitle: "OK"
+                title: "Biometrics registered",
+                message: "Biometric authentication has been set up successfully.",
+                primaryButtonTitle: "OK",
+                primaryAction: { [weak self] in self?.dismissModal() }
             )
         } catch let bioErr as BiometricError {
-            // BIO-E-04/05: 생체 prompt 취소·실패·기타 — 설계서 문구로 안내.
+            dismissModal()
+            // BIO-E-04/05: biometric prompt cancelled/failed/other — notify with the design spec wording.
             OverlayManager.shared.showPopup(
                 title: "Notification",
                 message: bioErr.message,
                 primaryButtonTitle: "OK"
             )
         } catch {
-            // 서버/SDK 에러 — 백엔드 code/description 보존.
+            dismissModal()
+            // Server/SDK error — preserve the backend code/description.
             OverlayManager.shared.showErrorPopup(title: "Failed to enable biometrics", error: error)
         }
     }
 
-    /// Biometric 결과 확정 (Enable/Skip 버튼) — continuation 만 resume한다.
-    /// 모달 닫기/교체는 재개된 호출 측이 담당한다 (설정 흐름은 .enabled → modal=.pinAuth 로 swap,
-    /// 그 외에는 dismissModal()). `completeAuthSelection` 과 같은 이유 — 여기서 modal=nil 을 하면
-    /// 바이오 화면이 내려간 뒤 PIN 을 다시 띄우는 꼴이라 present-while-dismissing 이 된다.
+    /// Finalizes the Biometric result (Enable/Skip button) — only resumes the continuation.
+    /// Closing/replacing the modal is handled by the resumed caller (the Settings flow swaps .enabled → modal=.pinAuth,
+    /// otherwise dismissModal()). Same reason as `completeAuthSelection` — setting modal=nil here would
+    /// re-raise PIN after the biometric screen goes down, causing present-while-dismissing.
     func completeBiometric(_ result: BiometricResult) {
         if let cont = biometricContinuation {
             biometricContinuation = nil
@@ -744,22 +833,23 @@ final class AppCoordinator {
         }
     }
 
-    // MARK: 모달 — 닫기 / continuation 정리
+    // MARK: Modal — Close / continuation cleanup
 
-    /// 잠금이 떠 있으면 아무것도 하지 않는다. `presentLockAuth` 는 대기 중이던 continuation 을
-    /// 먼저 취소로 깨우고 잠금을 세우는데, 깨어난 흐름들(StepViewModel.handleStep2Next,
-    /// addBiometricsFromSettings)이 그 다음 턴에 이 메서드를 부른다 — 여기서 modal 을 비우면
-    /// 방금 세운 잠금화면이 걷혀 인증 없이 지갑이 열린다. 잠금은 completeLockAuth(인증 성공)
-    /// 또는 exit(0) 로만 끝난다 (표시 쪽 "잠금은 항상 최상위" 규칙의 해제 쪽 짝).
+    /// Does nothing while the lock is up. `presentLockAuth` first wakes waiting continuations with a cancel
+    /// and then raises the lock, and the woken flows (StepViewModel.handleStep2Next,
+    /// addBiometricsFromSettings) call this method on the next turn — clearing modal here would
+    /// remove the lock screen just raised and open the wallet without auth. The lock ends only via completeLockAuth (auth success)
+    /// or exit(0) (the release-side counterpart of the display-side "lock is always topmost" rule).
     func dismissModal() {
         guard modal != .lockAuth else { return }
+        holdsPinModal = false
         stackedModal = nil
         modal = nil
         cancelPendingModalContinuations()
     }
 
-    /// 얹은 겹만 닫는다 — 아래 모달과 그 continuation 은 살려 둔다.
-    /// (설정 Add Biometrics 에서 PIN 을 X 로 닫으면 바이오 화면으로 돌아오는 경로.)
+    /// Closes only the layered modal — the modal below and its continuation are kept alive.
+    /// (The path where closing PIN with X in Settings Add Biometrics returns to the biometric screen.)
     func dismissStackedModal() {
         stackedModal = nil
         if let cont = pinContinuation {
@@ -768,8 +858,8 @@ final class AppCoordinator {
         }
     }
 
-    /// 대기 중인 모달 continuation 을 모두 취소값으로 resume한다 — 모달 상태(`modal`)는 건드리지 않는다.
-    /// `lockAuthContinuation` 은 제외 — 잠금은 성공(complete) 또는 exit(0) 로만 종료한다.
+    /// Resumes all waiting modal continuations with a cancel value — does not touch the modal state (`modal`).
+    /// Except `lockAuthContinuation` — the lock ends only via success (complete) or exit(0).
     private func cancelPendingModalContinuations() {
         if let cont = pinContinuation {
             pinContinuation = nil
@@ -799,21 +889,25 @@ final class AppCoordinator {
             oid4vciWebViewContinuation = nil
             cont.resume(returning: nil)
         }
+        if let cont = userInfoWebViewContinuation {
+            userInfoWebViewContinuation = nil
+            cont.resume(returning: nil)
+        }
     }
 
-    // MARK: - 스캔·딥링크 진입점
+    // MARK: - Scan / deep-link entry points
     //
-    // 실제 분기와 흐름은 QRRouter 가 담당한다 — 화면이 코디네이터 하나만 알면 되도록
-    // 진입점만 여기 남긴다.
+    // The actual branching and flows are handled by QRRouter — only the entry points remain here
+    // so screens need to know only the coordinator.
 
-    /// 스캔된 QR / 딥링크 처리 — scheme 으로 OID4VP / OID4VCI / OpenDID 를 가른다.
-    /// - parameter intent: 스캔을 시작한 진입점이 기대하는 흐름. 딥링크는 진입 버튼이 없어
-    ///   기본값 `.any` 로 제한하지 않는다.
+    /// Handles a scanned QR / deep link — splits OID4VP / OID4VCI / OpenDID by scheme.
+    /// - parameter intent: the flow expected by the entry point that started the scan. Deep links have no entry
+    ///   button, so the default `.any` does not restrict.
     func handleScannedQR(_ qrString: String, intent: ScanIntent = .any) async {
         await QRRouter.handle(qrString, intent: intent, on: self)
     }
 
-    /// OID4VCI 목록 기반(user-initiated) 발급 시작 — 클레임 입력 WebView 를 거쳐 오퍼를 받아온다.
+    /// Starts list-based (user-initiated) OID4VCI issuance — receives the offer via the claim input WebView.
     func startOID4VciWebIssuance(issuer: OID4VCIIssuerItem,
                                  metadata: IssuerMetadataResponse,
                                  configurationId: String) async {
@@ -825,19 +919,19 @@ final class AppCoordinator {
         )
     }
 
-    // MARK: - 앱 초기화
+    // MARK: - App reset
 
     func resetAll() {
-        // SDK 지갑(키·CoreData·user binding·lock) 전체 삭제 + 앱 Preference 초기화.
-        // 이 둘을 안 하면 splash bootstrap 이 isExistWallet()/isUserRegistered() 를 true 로
-        // 보고 곧장 main 으로 복귀해 실제 초기화가 일어나지 않는다.
-        // (did-ca-ios SplashViewController 의 deleteWallet(deleteAll: true) 와 동일.)
-        // 삭제 후 splash 의 bootstrap 이 isExistWallet()==false → createWallet 재생성하고
-        // userId 없음 → onboarding step1 로 라우팅한다 (백엔드 도달 필요).
+        // Deletes the whole SDK wallet (keys, CoreData, user binding, lock) + resets the app Preference.
+        // Without both, the splash bootstrap sees isExistWallet()/isUserRegistered() as true and
+        // returns straight to main, so no actual reset happens.
+        // (Same as deleteWallet(deleteAll: true) in did-ca-ios SplashViewController.)
+        // After deletion, the splash bootstrap sees isExistWallet()==false → recreates via createWallet, and
+        // with no userId routes to onboarding step1 (backend must be reachable).
         do {
             try WalletAPI.shared.deleteWallet(deleteAll: true)
         } catch {
-            // SET-E-02: 삭제 실패 → 안내(일부 데이터 잔존 가능), 초기화 중단(Settings 유지).
+            // SET-E-02: deletion failed → notify (some data may remain), abort the reset (stay in Settings).
             OverlayManager.shared.showPopup(
                 title: "Notification",
                 message: "Failed to reset. Try again.",
@@ -853,18 +947,19 @@ final class AppCoordinator {
         issuedTitles = []
         modal = nil
         stackedModal = nil
-        // 초기화 시점에 보관해 둔 잠금 이전 모달이 남아 있으면 이후 잠금 해제에서 되살아난다.
+        // If the pre-lock modal saved at reset time remains, it would be revived by the next unlock.
         modalBeforeLock = nil
         selectedCitizenship = nil
         verifyProfile = nil
         verifySummary = nil
         oid4vpRequest = nil
         oid4vpSummary = nil
+        proximitySummary = nil
         zkpProto = nil
         zkpAttrSelections = [:]
         zkpReveals = []
         zkpSelfRaws = [:]
-        // 문서 자체는 버전이 고정돼 불변이지만, 이전 지갑의 발급자 흔적을 남기지 않는다.
+        // The documents themselves are immutable since their versions are fixed, but leave no trace of the previous wallet's issuers.
         Task { await DIDDocumentResolver.shared.removeAll() }
         setRoot(.splash)
     }

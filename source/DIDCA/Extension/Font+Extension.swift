@@ -19,8 +19,8 @@ import SwiftUI
 
 extension Font
 {
-    // VF named instance 의 PostScript name 으로 직접 룩업.
-    // "PretendardVariable" (family base) 만으로는 매칭 실패 → 시스템 폰트로 fallback 됨.
+    // Look up directly by the PostScript name of the VF named instance.
+    // "PretendardVariable" (family base) alone fails to match → falls back to the system font.
     static func pretendard(
         size : CGFloat,
         weight : Weight

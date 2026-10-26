@@ -22,14 +22,14 @@ import DIDWalletSDK
 enum VerifyVcError: Error {
     case noMatchingCredential
     case missingProfile
-    /// 스키마·발급자 조건에는 맞는 VC 를 갖고 있는데, 프로파일이 그 VC 에 없는 claim 을
-    /// `requiredClaims`/`displayClaims` 로 요구함 — 검증자 설정 오류.
-    /// (보유 VC 자체가 없는 건 `noMatchingCredential` 로 구분한다.)
+    /// The wallet holds a VC matching the schema/issuer conditions, but the profile demands, via
+    /// `requiredClaims`/`displayClaims`, a claim that VC does not have — a verifier configuration error.
+    /// (Holding no VC at all is distinguished as `noMatchingCredential`.)
     case profileClaimMismatch
 }
 
-// `AppError.other` 는 `"\(error)"` 로 문구를 만든다 — enum case 이름이 그대로 노출되지 않도록
-// 사용자에게 보일 문장을 여기서 준다.
+// `AppError.other` builds its message from `"\(error)"` — supply the user-facing sentence here
+// so the enum case name is not exposed as-is.
 extension VerifyVcError: CustomStringConvertible {
     var description: String {
         switch self {
@@ -43,29 +43,29 @@ extension VerifyVcError: CustomStringConvertible {
     }
 }
 
-// MARK: - 일반 VP 제출 흐름 (OpenDID SDK 사용 예시)
+// MARK: - Plain VP presentation flow (OpenDID SDK usage example)
 //
-// 진입점은 두 단계로 나뉜다:
+// The entry point is split into two stages:
 //
-//   preProcess(offerId:)                   ─ 사용자 인증 전
-//     [1] request-profile          verifier 프로필 조회 → 검증자 정보 / 요구 스키마 / txId
-//     [2] request-wallet-token     LIST_VC_AND_PRESENT_VP 용도
+//   preProcess(offerId:)                   ─ before user authentication
+//     [1] request-profile          fetch verifier profile → verifier info / required schemas / txId
+//     [2] request-wallet-token     for LIST_VC_AND_PRESENT_VP
 //
-//   process(claimInfos:passcode:)          ─ 사용자 PIN/BIO 인증 직후
+//   process(claimInfos:passcode:)          ─ right after user PIN/BIO authentication
 //     [3] createEncVp + request-verify
-//                                   wallet 의 VC 로 암호화 VP 를 만들고 verifier 에 제출
+//                                   build an encrypted VP from the wallet's VCs and submit it to the verifier
 //
-// 편의를 위해 정적 진입점도 제공:
-//   VerifyVcProtocol.requestProfile(offerId:)   ─ preProcess 만 실행 후 profile 반환
-//   VerifyVcProtocol.presentationSummary(profile:)  ─ 화면·제출 공용 산출(규칙 적용 지점)
-//   VerifyVcProtocol.submit(profile:summary:…)      ─ 그 산출 + 사용자 체크 → process 연쇄
+// Static entry points are also provided for convenience:
+//   VerifyVcProtocol.requestProfile(offerId:)   ─ runs only preProcess, then returns the profile
+//   VerifyVcProtocol.presentationSummary(profile:)  ─ output shared by screen and submit (where the rules apply)
+//   VerifyVcProtocol.submit(profile:summary:…)      ─ that output + user checks → chains into process
 //
-// 패턴 출처: did-ca-ios 의 `VerifyVcProtocol` (CommonProtocol 기반 singleton).
-// DIDCA 는 throwaway instance + static convenience 조합으로 호출자 API 를
-// 종전과 동일하게 유지.
+// Pattern source: did-ca-ios `VerifyVcProtocol` (CommonProtocol-based singleton).
+// DIDCA combines a throwaway instance + static convenience so the caller API
+// stays the same as before.
 nonisolated final class VerifyVcProtocol {
 
-    // MARK: - 단계별 누적 상태
+    // MARK: - State accumulated across stages
     private var verifyProfile: _RequestProfile? = nil
     private var hWalletToken: String = ""
     private var txId: String = ""
@@ -115,16 +115,16 @@ nonisolated final class VerifyVcProtocol {
         try await HttpClient.sendPostRequest(urlString: urlString, request: request)
     }
 
-    // MARK: - 진입점: 사용자 인증 전 단계 (1 ~ 2)
+    // MARK: - Entry point: stages before user authentication (1 ~ 2)
     @discardableResult
     func preProcess(offerId: String) async throws -> _RequestProfile {
         try await requestProfile(offerId: offerId)
         try await requestWalletToken()
-        // requestProfile 직후 verifyProfile 가 채워지므로 안전.
+        // Safe, since verifyProfile is populated right after requestProfile.
         return verifyProfile!
     }
 
-    // MARK: - 진입점: 사용자 인증 후 단계 (3)
+    // MARK: - Entry point: stage after user authentication (3)
     func process(claimInfos: [ClaimInfo], passcode: String?) async throws {
         try await requestVerify(claimInfos: claimInfos, passcode: passcode)
     }
@@ -132,38 +132,38 @@ nonisolated final class VerifyVcProtocol {
 
 // MARK: - Static convenience
 //
-// 현재 UX 는 (1) QR 스캔 → profile 조회 후 VP 요청 화면 표시, (2) 사용자가
-// 제출 버튼 → 인증 → 제출, 의 두 분기 사용자 액션이라 protocol 인스턴스를
-// 두 단계 사이에서 유지하지 않음. 각 static 메서드가 throwaway 인스턴스를
-// 생성하므로 walletToken 은 submit 단계에서 재발급 (cost 무시 수준).
+// The current UX has two separate user actions — (1) QR scan → fetch profile, then show the VP
+// request screen; (2) the user taps submit → authenticate → submit — so the protocol instance is
+// not kept between the two stages. Each static method creates a throwaway instance,
+// so the walletToken is reissued in the submit stage (negligible cost).
 extension VerifyVcProtocol {
 
-    /// VP 제출 1단계 — verifier 프로필 조회.
-    /// 내부적으로 preProcess(request-profile + request-wallet-token) 수행 후 profile 만 반환.
+    /// VP presentation stage 1 — fetch the verifier profile.
+    /// Internally runs preProcess (request-profile + request-wallet-token) and returns only the profile.
     static func requestProfile(offerId: String) async throws -> _RequestProfile {
         let proto = VerifyVcProtocol()
         return try await proto.preProcess(offerId: offerId)
     }
 
-    /// VP 제출 2단계 — 표시 단계에서 확정한 제출 계획에 사용자 체크를 얹어 암호화 VP 를 제출.
-    /// passcode 는 PIN 인증이면 입력값, BIO 면 nil.
+    /// VP presentation stage 2 — apply the user's checks to the submission plan fixed at display time and submit the encrypted VP.
+    /// passcode is the entered value for PIN authentication, nil for BIO.
     ///
-    /// VC 선택·노출·필수 판정은 전부 `presentationSummary` 에서 끝났고 여기서 다시 하지 않는다 —
-    /// 같은 규칙을 두 벌로 두면 화면에 보여 준 것과 실제로 나가는 것이 어긋난다.
-    /// - parameter summary: `presentationSummary` 가 만든 것 그대로.
-    /// - parameter selectedCodes: credentialId → 사용자가 체크한 code. 화면에 뜬 문서는 전부 담긴다
-    ///   (체크가 하나도 없으면 빈 집합).
+    /// VC selection, exposure and required-ness are all settled in `presentationSummary` and not redone here —
+    /// keeping the same rules in two places lets what the screen showed drift from what is actually sent.
+    /// - parameter summary: exactly what `presentationSummary` produced.
+    /// - parameter selectedCodes: credentialId → codes the user checked. Every document shown on screen is included
+    ///   (an empty set if nothing is checked).
     static func submit(profile: _RequestProfile,
                        summary: VpPresentationSummary,
                        passcode: String?,
                        selectedCodes: [String: Set<String>] = [:]) async throws {
-        // 제출 = requiredCodes ∪ 체크. 코드 순서는 의미가 없다 — SDK `VCManager.makePresentation` 이
-        // VC 의 claim 순서를 돌며 이 목록을 포함 여부로만 쓴다.
+        // Submitted = requiredCodes ∪ checked. Code order is meaningless — SDK `VCManager.makePresentation`
+        // walks the VC's claim order and uses this list only for membership.
         let claimInfos: [ClaimInfo] = summary.documents.compactMap { doc in
-            // 화면은 **선택된 후보 1건만** 담아 보낸다 — 키가 없으면 고르지 않은 후보다(PRES-B-05).
+            // The screen sends **only the one selected candidate** — no key means an unchosen candidate (PRES-B-05).
             guard let checked = selectedCodes[doc.credentialId] else { return nil }
-            // 체크 0건이어도 REQUIRED 가 있으면 제출한다 — OPTIONAL 기본값이 해제이므로
-            // "체크 0건"을 "안 내겠다"로 읽을 수 없다(REQUIRED 만 있는 구성이 정상 경로다).
+            // Submit even with 0 checks if there are REQUIRED items — OPTIONAL defaults to unchecked, so
+            // "0 checks" cannot be read as "send nothing" (a REQUIRED-only setup is the normal path).
             let codes = doc.requiredCodes.union(checked)
             guard !codes.isEmpty else { return nil }
             return ClaimInfo(credentialId: doc.credentialId, claimCodes: Array(codes))
@@ -171,8 +171,8 @@ extension VerifyVcProtocol {
         guard !claimInfos.isEmpty else { throw NoSubmittableCredentialError() }
 
         let proto = VerifyVcProtocol()
-        // preProcess 결과(profile)는 호출자가 이미 갖고 있으므로 [1] 은 건너뛰고
-        // 상태만 인스턴스에 주입. walletToken 만 새로 발급([2] 재실행).
+        // The caller already has the preProcess result (profile), so skip [1] and
+        // just inject the state into the instance. Only the walletToken is newly issued (re-run [2]).
         proto.verifyProfile = profile
         proto.txId = profile.txId
         try await proto.requestWalletToken()
@@ -182,23 +182,23 @@ extension VerifyVcProtocol {
 
 }
 
-// 표시 모델(`VpPresentationSummary` 등)은 `Logic/Display/PresentationSummary.swift` 에 있다 —
-// OID4VP 도 같은 타입을 만들어 같은 화면에 넘기므로 특정 프로토콜에 두지 않는다.
+// The display models (`VpPresentationSummary` etc.) live in `Logic/Display/PresentationSummary.swift` —
+// OID4VP builds the same types and hands them to the same screen, so they don't belong to one protocol.
 
 extension VerifyVcProtocol {
 
-    /// 프로파일 + 지갑 VC → 화면·제출 공용 산출. **제출 프로파일 규칙을 적용하는 유일한 지점**이다.
-    /// 스키마 하나가 카드 하나이며, 순서는 이렇다.
+    /// Profile + wallet VCs → output shared by screen and submit. **The single place where submission profile rules are applied.**
+    /// One schema is one card, in this order:
     ///
-    /// 1. 후보 = `credentialSchema.id` 일치 && (`allowedIssuers` 없거나 발급자 포함)
-    /// 2. 어느 스키마에도 후보가 없으면 `noMatchingCredential` — 프로파일은 멀쩡하고 카드가 없는 것
-    /// 3. `presentAll = true` → `displayClaims`·`requiredClaims` 를 읽지 않는다.
-    ///    노출 = VC claim 전체, 전부 잠금 + 전부 제출
-    /// 4. `presentAll ≠ true` → 후보 중 `requiredClaims ∪ displayClaims` 를 **전부 보유한** 첫 VC 선택.
-    ///    그런 VC 가 없으면 `profileClaimMismatch` — 카드는 있는데 프로파일이 없는 claim 을 요구한 것
-    /// 5. 노출 = `displayClaims ∪ requiredClaims`(둘 다 미지정이면 VC claim 전체), VC claim 순서 유지
-    /// 6. REQUIRED = 노출 ∩ `requiredClaims`. 나머지 노출분은 OPTIONAL(해제 상태로 시작)
-    /// 7. 제출은 `submit` 에서 `requiredCodes ∪ 체크`
+    /// 1. Candidates = `credentialSchema.id` matches && (no `allowedIssuers` or issuer included)
+    /// 2. If no schema has any candidate, `noMatchingCredential` — the profile is fine, there is just no card
+    /// 3. `presentAll = true` → `displayClaims`/`requiredClaims` are not read.
+    ///    Exposed = all VC claims, all locked + all submitted
+    /// 4. `presentAll ≠ true` → pick the first candidate that **holds all of** `requiredClaims ∪ displayClaims`.
+    ///    If no such VC, `profileClaimMismatch` — a card exists but the profile demanded a claim it lacks
+    /// 5. Exposed = `displayClaims ∪ requiredClaims` (all VC claims if neither is set), keeping VC claim order
+    /// 6. REQUIRED = exposed ∩ `requiredClaims`. The rest of the exposed set is OPTIONAL (starts unchecked)
+    /// 7. Submission is `requiredCodes ∪ checked` in `submit`
     static func presentationSummary(profile: _RequestProfile) async throws -> VpPresentationSummary {
         let verifierName = profile.profile.profile.verifier.name
         let hWalletToken = try await TokenGenerator.requestWalletToken(purpose: .LIST_VC_AND_PRESENT_VP)
@@ -206,16 +206,16 @@ extension VerifyVcProtocol {
 
         var documents: [VpPresentationDocument] = []
         for schema in profile.profile.profile.filter.credentialSchemas {
-            // [1] 후보 추리기. 후보가 없는 스키마는 건너뛴다 — 하나도 없으면 [2] 에서 일괄 처리.
+            // [1] Narrow down candidates. Skip schemas with no candidates — if none at all, handled together in [2].
             let candidates = vcs.filter { vc in
                 vc.credentialSchema.id == schema.id
                     && (schema.allowedIssuers?.contains(vc.issuer.id) ?? true)
             }
             guard !candidates.isEmpty else { continue }
 
-            // [2-1] ACTIVE 만 후보로 올린다(PRES-B-06) — Inactive·Expired 는 제출 대상이 아니다.
-            // 판정 사다리(새 조회 → 마지막 조회 상태 → 만료일)는 `CredentialStore.submittableIds` 참조.
-            // 조회처가 서버 `vc-meta`(VC 단위 API)라 SD-JWT·mDoc 처럼 묶을 수단이 없다 — 한 건씩 묻는다.
+            // [2-1] Only ACTIVE ones become candidates (PRES-B-06) — Inactive/Expired are not submittable.
+            // For the decision ladder (fresh lookup → last looked-up status → expiry date) see `CredentialStore.submittableIds`.
+            // The lookup source is the server `vc-meta` (a per-VC API), so unlike SD-JWT/mDoc there is no way to batch — ask one at a time.
             var active: [VerifiableCredential] = []
             for candidate in candidates {
                 if await CredentialStore.shared.isSubmittable(w3c: candidate) {
@@ -229,15 +229,15 @@ extension VerifyVcProtocol {
             let requiredCodes: Set<String>
 
             if schema.presentAll ?? false {
-                // [3] 전체 공개. claim 목록을 읽지 않으므로 프로파일 불일치가 성립하지 않는다.
+                // [3] Full disclosure. The claim list is not read, so a profile mismatch cannot occur.
                 vc = active[0]
                 shownCodes = vc.credentialSubject.claims.map(\.code)
                 requiredCodes = Set(shownCodes)
             } else {
                 let required = Set(schema.requiredClaims ?? [])
-                // 빈 배열은 "지정 없음"과 같게 본다 → 전체 노출.
+                // An empty array is treated the same as "not specified" → expose everything.
                 let display: Set<String>? = schema.displayClaims.flatMap { $0.isEmpty ? nil : Set($0) }
-                // [4] 프로파일이 지목한 claim 을 전부 가진 후보를 고른다.
+                // [4] Pick the candidate that has every claim the profile names.
                 let needed = required.union(display ?? [])
                 guard let matched = active.first(where: { candidate in
                     needed.isSubset(of: Set(candidate.credentialSubject.claims.map(\.code)))
@@ -245,10 +245,10 @@ extension VerifyVcProtocol {
                     throw VerifyVcError.profileClaimMismatch
                 }
                 vc = matched
-                // [5] 노출 = displayClaims ∪ requiredClaims, VC claim 순서 유지. 미지정이면 전체.
-                // 필수를 합치는 이유는 PRES-B-06 — 사용자가 뺄 수 없는 항목이라도 무엇이 제출되는지
-                // 화면에서 확인할 수 있어야 한다. [4] 가 필수를 전부 가진 VC 만 통과시키므로
-                // caption·값은 여기서 그대로 나온다.
+                // [5] Exposed = displayClaims ∪ requiredClaims, keeping VC claim order. All if unspecified.
+                // Required ones are merged in because of PRES-B-06 — even items the user can't remove must be
+                // visible on screen so the user can see what gets submitted. [4] only passes VCs holding all required
+                // claims, so caption/value come straight from here.
                 let allCodes = vc.credentialSubject.claims.map(\.code)
                 let visible = display.map { $0.union(required) }
                 shownCodes = visible.map { visible in allCodes.filter(visible.contains) } ?? allCodes
@@ -257,13 +257,13 @@ extension VerifyVcProtocol {
 
             let claimsByCode = Dictionary(vc.credentialSubject.claims.map { ($0.code, $0) },
                                           uniquingKeysWith: { first, _ in first })
-            // [6] REQUIRED = 노출 ∩ required. [5] 에서 노출이 required 를 포함하므로 화면 밖 필수는 없다.
+            // [6] REQUIRED = exposed ∩ required. In [5] the exposed set includes required, so no required item is off screen.
             let claims: [VpPresentationClaim] = shownCodes.compactMap { code in
                 guard let claim = claimsByCode[code] else { return nil }
                 return VpPresentationClaim(
                     code: code,
                     label: claim.caption,
-                    // 이미지 클레임(portrait 등)은 값 텍스트 대신 이미지로 그린다 — PRES-B-04.
+                    // Image claims (portrait etc.) are drawn as images instead of value text — PRES-B-04.
                     value: ImageClaim.claimValue(type: claim.type, encoded: claim.value),
                     required: requiredCodes.contains(code)
                 )
@@ -272,9 +272,9 @@ extension VerifyVcProtocol {
             documents.append(VpPresentationDocument(
                 credentialId: vc.id, title: title, claims: claims,
                 requiredCodes: requiredCodes,
-                bindingKeyId: nil))   // 일반 VP 는 W3C 전용 — 서명키는 passcode 유무로 갈린다.
+                bindingKeyId: nil))   // Plain VP is W3C-only — the signing key depends on whether a passcode is present.
         }
-        // [2] 어느 스키마에도 후보가 없었음 — 미보유와 ACTIVE 0건을 구분하지 않는다(PRES-E-04).
+        // [2] No schema had any candidate — not holding one and 0 ACTIVE are not distinguished (PRES-E-04).
         guard !documents.isEmpty else { throw NoSubmittableCredentialError() }
         return VpPresentationSummary(verifierName: verifierName, documents: documents)
     }

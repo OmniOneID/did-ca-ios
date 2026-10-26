@@ -23,6 +23,18 @@ import DIDWalletSDK
 @Observable
 final class StepViewModel {
 
+    // Unlock PIN received via Yes in the Step 1 lock popup — kept until it is registered together with binding on entering Step 2.
+    // It lives only in memory, so it is lost if the app terminates in between, and a resumed Step 2 binds without a lock
+    // (the lock choice is not asked again). The screen and view model are recreated when the Step changes, hence static.
+    private static var pendingLockPasscode: String?
+
+    // ONB-E-04 — came back after Save in Server settings following a binding failure. Since the server changed, the Step 1
+    // web view registration is redone, and after re-registration it goes to Step 2 with the previous lock choice (pendingLockPasscode), without the lock popup.
+    private static var reregistering = false
+
+    // Binding in progress — lets NEXT wait for the one started on entering Step 2 instead of starting it again.
+    @ObservationIgnored private var bindingTask: Task<Bool, Never>?
+
     // MARK: - NEXT
 
     func handleNext(step: StepEnum, coordinator: AppCoordinator) {
@@ -36,9 +48,36 @@ final class StepViewModel {
         }
     }
 
-    // popup 만 즉시 띄움. 통신 (signup + bind) 은 사용자 선택 후 일괄 진행
-    // 하여 로딩 노출 구간을 한 번으로 모은다.
+    // ONB-01 — opens the user registration web view. When registration finishes (ONB-03), saves userId · username and
+    // shows the lock popup. Binding is not done here but on entering Step 2 (ONB-03 · ONB-E-04).
     private func handleStep1Next(coordinator: AppCoordinator) {
+        // Registration is done but Unlock PIN registration was closed with X, leaving us on Step 1 — treat it as no lock
+        // set and go straight to Step 2. Reopening the web view would register the same user twice (same reason as ONB-E-02).
+        if Preference.getUserId() != nil, !Self.reregistering {
+            Self.pendingLockPasscode = nil
+            coordinator.setRoot(.onboarding(step: .step2))
+            return
+        }
+        guard let url = URL(string: URLs.DEMO_URL + "/addUserInfo") else {
+            showStepError(title: "Error", error: URLError(.badURL), coordinator: coordinator)
+            return
+        }
+        Task {
+            guard let user = await coordinator.presentUserInfoWebView(url: url) else { return }
+            Preference.setUserId(user.userId)
+            // On re-registration, overwrite even with an empty name so the previous server's name doesn't linger (empty reads as no name).
+            Preference.setUserName(user.userName)
+            if Self.reregistering {
+                Self.reregistering = false
+                coordinator.setRoot(.onboarding(step: .step2))
+                return
+            }
+            showLockPopup(coordinator: coordinator)
+        }
+    }
+
+    /// 02d — "Set wallet lock" popup. No → Step 2, Yes → register Unlock PIN, then Step 2.
+    private func showLockPopup(coordinator: AppCoordinator) {
         OverlayManager.shared.showPopup(
             title: "Set wallet lock",
             message: "Would you like to set the Wallet for lock type?",
@@ -49,8 +88,9 @@ final class StepViewModel {
         )
     }
 
-    // setLock=true 면 PIN 입력 모달까지 거쳐 lockPasscode 동반 바인딩, false 면 PIN 없이 바로 바인딩.
-    // bind 실패 시 userId 를 비워 "userId 있음 = step1 완료" invariant 유지.
+    // Only takes the lock choice and moves to Step 2 — no network. If Yes, the Unlock PIN is received and kept, and
+    // registered together with binding on entering Step 2 (in the SDK, bindUser must come before registerLock).
+    // If Unlock PIN registration is closed with X, we stay on Step 1, and subsequent NEXT goes to Step 2 without a lock.
     private func handleLockChoice(coordinator: AppCoordinator, setLock: Bool) {
         Task {
             var lockPin: String? = nil
@@ -58,33 +98,76 @@ final class StepViewModel {
                 guard let pin = await coordinator.presentPinLockRegister() else { return }
                 lockPin = pin
             }
+            Self.pendingLockPasscode = lockPin
+            coordinator.setRoot(.onboarding(step: .step2))
+        }
+    }
+
+    // MARK: - Binding (on entering Step 2)
+
+    /// true if not yet bound. If a holder DID exists, the wallet has already passed Step 2.
+    private var needsBinding: Bool {
+        !Preference.isUserBound() && !WalletState.hasHolderDID
+    }
+
+    /// ONB-03 · ONB-E-04 — starts user binding right after entering Step 2. Input is blocked with loading while processing.
+    /// On failure, shows a COM-02-family popup (with a Server settings link if the server was unreachable) and stays on Step 2.
+    func startBindingIfNeeded(step: StepEnum, coordinator: AppCoordinator) {
+        guard step == .step2, needsBinding else { return }
+        _ = runBinding(coordinator: coordinator)
+    }
+
+    /// Runs binding, or returns the task if one is in progress. The result is success or not, and the failure popup is
+    /// shown only once here — even if NEXT waits on the task started on entry, the popup doesn't appear twice.
+    /// userId is not cleared even if binding fails — the user is already registered on the server, so clearing it would
+    /// require redoing web view registration and cause a duplicate registration. The kept Unlock PIN also stays until success, for retries.
+    private func runBinding(coordinator: AppCoordinator) -> Task<Bool, Never> {
+        if let bindingTask { return bindingTask }
+        let lockPin = Self.pendingLockPasscode
+        let task = Task<Bool, Never> {
+            defer { self.bindingTask = nil }
+            // The failure popup (showPopup) dismisses loading, so hideLoading is only called on the success path.
             OverlayManager.shared.showLoading()
-            defer { OverlayManager.shared.hideLoading() }
             do {
-                await signupIfNeeded()
                 try await UserBinder.bind(lockPasscode: lockPin)
-                coordinator.setRoot(.onboarding(step: .step2))
+                Preference.setUserBound(true)
+                Self.pendingLockPasscode = nil
+                OverlayManager.shared.hideLoading()
+                return true
             } catch {
-                Preference.clearUserId()
-                OverlayManager.shared.showErrorPopup(
-                    title: setLock ? "Failed to set wallet lock" : "Failed to bind user",
-                    error: error
+                self.showStepError(
+                    title: lockPin != nil ? "Failed to set wallet lock" : "Failed to bind user",
+                    error: error,
+                    coordinator: coordinator,
+                    onSaved: {
+                        Self.reregistering = true
+                        coordinator.setRoot(.onboarding(step: .step1))
+                    }
                 )
+                return false
             }
         }
+        bindingTask = task
+        return task
     }
 
     // MARK: - Step 2
 
-    // PIN → 생체인증 모달 → (skip/enable 무관) 한 토큰으로 기본 키 + DID 문서 일괄 생성.
-    // 키 생성과 createHolderDIDDocument 가 같은 .CREATE_DID 토큰을 사용하므로
-    // 묶어서 로딩/통신 구간을 한 번으로 줄인다.
+    // PIN → biometric modal → (regardless of skip/enable) create default keys + DID document in one go with a single token.
+    // Key generation and createHolderDIDDocument use the same .CREATE_DID token, so
+    // they are bundled to reduce the loading/network span to one.
     private func handleStep2Next(coordinator: AppCoordinator) {
         Task {
+            // If binding failed on entry, retry it (runBinding handles loading and the failure popup). Signing keys
+            // are created only in a bound wallet. runBinding shows the failure popup.
+            if needsBinding {
+                guard await runBinding(coordinator: coordinator).value else { return }
+            }
+
             guard let pin = await coordinator.presentPinRegister() else { return }
 
-            // skip 이든 enable 이든 onboarding 계속 진행.
-            // completeBiometric 은 모달을 닫지 않는다(설정 흐름의 PIN content swap 때문) — 여기서 닫는다.
+            // Continue onboarding whether skip or enable.
+            // completeBiometric doesn't close the modal (because of the PIN content swap in the settings flow) — close it here.
             _ = await coordinator.presentBiometric()
             coordinator.dismissModal()
 
@@ -93,21 +176,20 @@ final class StepViewModel {
             do {
                 let hWalletToken = try await TokenGenerator.requestWalletToken(purpose: .CREATE_DID)
 
-                // 둘 다 홀더 DID 문서에 실려야 하므로 문서 생성 전에 만든다.
+                // Both must be included in the holder DID document, so create them before generating the document.
                 try WalletKeys.generatePin(hWalletToken: hWalletToken, passcode: pin)
                 try WalletKeys.generateKeyAgree(hWalletToken: hWalletToken)
 
                 _ = try WalletAPI.shared.createHolderDIDDocument(hWalletToken: hWalletToken)
                 try WalletAPI.shared.saveHolderDIDDocument()
             } catch {
-                // NEXT 재시도 시 이전에 만들어진 홀더 레이어 (바이오키/PIN키/holderDID 등) 가
-                // 남아있으면 중복 생성으로 흐름이 꼬임. 로컬 전용/동기 호출이라 통신 추가 없음.
-                // deviceDID/CoreData (step1 user binding) 는 deleteAll=false 라 보존.
+                // On NEXT retry, if the holder layer created earlier (bio key/PIN key/holderDID etc.)
+                // remains, duplicate creation tangles the flow. Local-only/synchronous calls, so no extra network.
+                // deviceDID/CoreData (user binding on entering step2) is preserved since deleteAll=false.
                 try? WalletAPI.shared.deleteWallet(deleteAll: false)
-                OverlayManager.shared.showErrorPopup(
-                    title: "Failed to register wallet keys",
-                    error: error
-                )
+                showStepError(title: "Failed to register wallet keys",
+                              error: error,
+                              coordinator: coordinator)
                 return
             }
 
@@ -117,13 +199,14 @@ final class StepViewModel {
 
     // MARK: - Step 3
 
-    // RegUserProtocol 전체 흐름. createHolderDIDDocument + saveHolderDIDDocument 는 step2 에서 완료.
-    // 흐름: initiateUserRegistration → getSharedSecret → requestServerToken →
+    // Full RegUserProtocol flow. createHolderDIDDocument + saveHolderDIDDocument are completed in step2.
+    // Flow: initiateUserRegistration → getSharedSecret → requestServerToken →
     //       retrieveKYC → createSignedDIDDoc → requestRegisterUser →
     //       confirmUserRegistration
     private func handleStep3Next(coordinator: AppCoordinator) {
         Task {
-            guard let pin = await coordinator.presentPinAuth() else { return }
+            // Don't close the auth screen until registration finishes — report failure on top of it (ONB-E-08).
+            guard let pin = await coordinator.presentHeldPinAuth() else { return }
 
             OverlayManager.shared.showLoading()
             defer { OverlayManager.shared.hideLoading() }
@@ -137,7 +220,7 @@ final class StepViewModel {
                     sharedSecret: sharedSecret
                 )
 
-                // DIDCA 는 AccessToken 미사용 → kycToken nil, kycTxId = signup userId
+                // DIDCA doesn't use AccessToken → kycToken nil, kycTxId = userId received from the registration web view
                 try await TASConnection.retrieveKYC(
                     request: RetrieveKyc(
                         id: UUID().uuidString,
@@ -163,32 +246,49 @@ final class StepViewModel {
                 )
 
                 Preference.setUserRegistered(true)
+                coordinator.dismissModal()
                 coordinator.popToMain()
             } catch {
-                OverlayManager.shared.showErrorPopup(
-                    title: "Failed to register user",
-                    error: error
-                )
+                showRegistrationError(error: error, coordinator: coordinator)
             }
         }
     }
 
-    // MARK: - Signup
+    // MARK: - Error display
 
-    // userId 가 이미 있으면 스킵. walletId 는 SDK 의 Properties
-    // (requestRegisterWallet 시점에 set) 에서 조회.
-    // walletId 부재 또는 CAS 실패 시 무시.
-    private func signupIfNeeded() async {
-        guard Preference.getUserId() == nil else { return }
-        guard let walletId = Properties.getWalletId() else { return }
-        let userId = UUID().uuidString
-        do {
-            try await CASConnection.signup(
-                request: .init(userId: userId, walletId: walletId)
-            )
-            Preference.setUserId(userId)
-        } catch {
-            // stub URL 이라 실패가 정상. userId 저장도 보류.
-        }
+    /// ONB-E-04 — error during a step. If the server was unreachable (COM-02), a Server settings link is attached at
+    /// the bottom, and on returning from that screen without saving, **the same popup is shown again**. Staying on the
+    /// step where the error occurred is COM-05's (keep) policy, so the returned screen must not look blank with no guidance.
+    /// If `onSaved` is given, it runs instead of the popup when returning via Save (binding failure → Step 1 re-registration).
+    private func showStepError(title: String, error: Error, coordinator: AppCoordinator,
+                               onSaved: (() -> Void)? = nil) {
+        OverlayManager.shared.showErrorPopup(
+            title: title,
+            error: error,
+            onServerSettings: {
+                coordinator.presentServerURL(onReturn: { saved in
+                    if saved, let onSaved {
+                        onSaved()
+                    } else {
+                        self.showStepError(title: title, error: error, coordinator: coordinator, onSaved: onSaved)
+                    }
+                })
+            }
+        )
+    }
+
+    /// ONB-E-08 — Step 3 user registration failure. Shown on top of the auth screen (not an inline PIN error); OK closes the
+    /// auth screen and returns to Step 3. Server settings closes the auth screen and goes there, and returning via Save · Back ·
+    /// Cancel stays on Step 3 — tapping NEXT starts again from authentication.
+    private func showRegistrationError(error: Error, coordinator: AppCoordinator) {
+        OverlayManager.shared.showErrorPopup(
+            title: "Failed to register user",
+            error: error,
+            primaryAction: { coordinator.dismissModal() },
+            onServerSettings: {
+                coordinator.dismissModal()
+                coordinator.presentServerURL()
+            }
+        )
     }
 }

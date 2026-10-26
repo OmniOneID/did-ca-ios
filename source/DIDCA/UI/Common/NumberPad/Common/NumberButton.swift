@@ -34,8 +34,8 @@ struct NumberButton: View {
     }
 }
 
-/// NumberPad 키 공통 스타일 — 화면설계서 NumKey 매핑.
-/// pressed 시 배경 paleOrange (C.primaryPale), 120ms ease transition, subtle shadow.
+/// Common style for NumberPad keys — mapped to the screen design spec NumKey.
+/// On press, background paleOrange (C.primaryPale), 120ms ease transition, subtle shadow.
 struct NumKeyButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

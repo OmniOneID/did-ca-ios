@@ -19,34 +19,34 @@
 import Foundation
 import DIDWalletSDK
 
-/// mDoc(ISO/IEC 18013-5) 원소 값을 화면 표시용으로 옮기는 공용 로직.
-/// 목록·상세(`CredentialStore`)와 VP 요청화면(`OID4VPPresenter`)이 같은 규칙을 쓰도록 한 곳에 모은다
-/// — SD-JWT 쪽 `SdJwtClaimDisplay` 와 같은 자리다.
+/// Shared logic that converts mDoc (ISO/IEC 18013-5) element values for on-screen display.
+/// Gathered in one place so list/detail (`CredentialStore`) and the VP request screen (`OID4VPPresenter`) use the same rules
+/// — the counterpart of `SdJwtClaimDisplay` on the SD-JWT side.
 ///
-/// 원소 값은 JSON 이 아니라 CBOR 이라 문자열로만 다룰 수 없다. 세 갈래가 특히 중요하다.
-/// - `.bytes` 는 바이트열이다. 이름이 이미지 화이트리스트에 들고 실제로 이미지로 열리면 그림으로,
-///   아니면 `"(N bytes)"` 로 적는다(설계서 VC-B-01). 바이트를 문자열로 흉내 내지 않는다.
-/// - `.fullDate` 는 **문자열 그대로** 둔다. 시각도 시간대도 없는 값이라 `Date` 로 바꾸면 표시할 때
-///   하루가 밀 수 있다(SDK 문서 3절).
-/// - `.dateTime` 만 실제 시점이라 포맷한다.
+/// Element values are CBOR, not JSON, so they can't be handled as strings only. Three branches matter in particular.
+/// - `.bytes` is a byte string. If the name is in the image whitelist and it actually opens as an image, draw it as a picture;
+///   otherwise write `"(N bytes)"` (design spec VC-B-01). Bytes are not faked as a string.
+/// - `.fullDate` is kept **as the string**. It has no time or time zone, so converting it to `Date` can shift it
+///   by a day on display (SDK doc section 3).
+/// - Only `.dateTime` is an actual point in time, so it is formatted.
 ///
-/// 상태 없는 순수 변환이라 `nonisolated` 다 — 프로토콜 계층이 메인 액터 밖에서 호출한다.
+/// A stateless pure transformation, hence `nonisolated` — the protocol layer calls it off the main actor.
 nonisolated enum MdocClaimDisplay {
 
-    /// mDoc 카드 제목. SD-JWT 와 같은 규칙(`configurationId`)을 쓴다 — `SdJwtClaimDisplay.title` 참조.
-    /// docType 은 제목이 아니라 발급기관 자리에 적는다(사람이 읽는 이름이 아니라 문서 종류라서).
+    /// mDoc card title. Uses the same rule as SD-JWT (`configurationId`) — see `SdJwtClaimDisplay.title`.
+    /// docType goes in the issuer slot rather than the title (it is a document kind, not a human-readable name).
     static func title(of item: MdocCredentialItem) -> String {
         item.configurationId
     }
 
-    /// 원소 한 건의 표시값. 복합값(array/map)은 값 자리를 비우고 `childRows` 로 펼친다.
+    /// Display value of one element. Composite values (array/map) leave the value slot empty and expand into `childRows`.
     ///
-    /// 라벨은 `elementIdentifier` 원문 그대로다 — 네임스페이스를 앞에 붙이지 않는다.
-    /// 발급자가 실어 보내는 원소 이름에 네임스페이스가 이미 들어 있어, 접두하면 두 번 나온다.
+    /// The label is the raw `elementIdentifier` — no namespace is prepended.
+    /// The element names the issuer sends already include the namespace, so prefixing would show it twice.
     static func claimValue(name: String, value: MdocElementValue) -> ClaimValue {
         switch value {
         case .bytes(let data):
-            // 이미지 판정·`"(N bytes)"` 폴백은 ImageClaim 이 함께 쥔다(포맷별 판정 규칙과 같은 자리).
+            // Image detection and the `"(N bytes)"` fallback are both owned by ImageClaim (same place as the per-format detection rules).
             return ImageClaim.claimValue(name: name, data: data)
         case .array, .map:
             return .text("")
@@ -55,26 +55,26 @@ nonisolated enum MdocClaimDisplay {
         }
     }
 
-    /// 스칼라 원소 → 표시 문자열. 복합값·바이트열은 여기서 빈 문자열이다
-    /// (바이트열은 `claimValue` 가 이미지나 크기 표기로 처리한다).
+    /// Scalar element → display string. Composite values and byte strings are an empty string here
+    /// (byte strings are handled by `claimValue` as an image or a size notation).
     static func scalarString(_ value: MdocElementValue) -> String {
         switch value {
         case .text(let text):       return text
         case .integer(let number):  return String(number)
         case .double(let number):   return String(number)
         case .bool(let flag):       return flag ? "true" : "false"
-        case .fullDate(let date):   return date          // 발급자가 쓴 그대로 — 변환 금지.
+        case .fullDate(let date):   return date          // As written by the issuer — do not convert.
         case .dateTime(let date):   return dateTimeFormatter.string(from: date)
         case .bytes, .array, .map, .null:
             return ""
         }
     }
 
-    /// 복합값(array/map)의 하위 항목. 스칼라·빈 값이면 빈 배열.
-    /// - map   → 키별 한 행. `Dictionary` 라 순회 순서가 실행마다 달라지므로 키로 정렬해 고정한다.
-    /// - array → 라벨 없는 행(label=""). 인덱스는 발급자가 실은 값이 아니라 순서에 붙은 번호다.
+    /// Child items of a composite value (array/map). Empty array for scalars or empty values.
+    /// - map   → one row per key. `Dictionary` iteration order varies per run, so sort by key to fix it.
+    /// - array → unlabeled rows (label=""). The index is not a value the issuer sent but a number attached to the order.
     ///
-    /// 하위가 또 복합값이면 값 자리가 빈다 — 화면이 한 단계만 그린다(SD-JWT 쪽과 같은 규칙).
+    /// If a child is itself composite, its value slot is empty — the screen draws only one level (same rule as the SD-JWT side).
     static func childRows(_ value: MdocElementValue) -> [(label: String, value: ClaimValue)] {
         switch value {
         case .map(let keyValues):
@@ -87,8 +87,8 @@ nonisolated enum MdocClaimDisplay {
         }
     }
 
-    /// `.dateTime` 표기 — 날짜 부분은 목록의 ISSUED / VALID UNTIL 과 같은 모양이고, 실제 시점이라
-    /// 시·분까지 붙인다. 시간대는 기기 로컬이다(발급자가 실은 값은 UTC 기준 시점 그 자체다).
+    /// `.dateTime` notation — the date part has the same shape as the list's ISSUED / VALID UNTIL, and since it is an actual
+    /// point in time, hours and minutes are appended. Time zone is device-local (the issuer's value is a UTC-based instant itself).
     private static let dateTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")

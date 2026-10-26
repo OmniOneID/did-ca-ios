@@ -18,10 +18,10 @@
 
 import Foundation
 
-// 생체인증 등록 실패 분류 (화면설계서 BIO-E). 메시지는 설계서 문구 그대로.
-//   BIO-E-04(취소·타임아웃) 와 BIO-E-05(알수없음·기기결함) 는 설계서상 동일 문구라 .notCompleted 로 합침.
-//   BIO-E-06(Skip/Cancel 버튼) 은 BiometricsView 가, BIO-E-07(OS 프롬프트) 은 OS 가 처리 — 별도 코드 없음.
-// LAError → 이 타입으로의 분류는 Biometrics.error(from:) 담당.
+// Classification of biometric enrollment failures (screen design spec BIO-E). Messages are the design spec text verbatim.
+//   BIO-E-04 (cancel/timeout) and BIO-E-05 (unknown/device fault) share the same text in the design spec, so merged into .notCompleted.
+//   BIO-E-06 (Skip/Cancel button) is handled by BiometricsView, BIO-E-07 (OS prompt) by the OS — no separate code.
+// Classification from LAError into this type is done by Biometrics.error(from:).
 enum BiometricError: Error {
     case notEnrolled    // BIO-E-01
     case notAvailable   // BIO-E-02

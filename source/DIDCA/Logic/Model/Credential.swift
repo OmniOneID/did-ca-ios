@@ -30,21 +30,21 @@ enum CredentialStatus: String {
     case expired = "Expired"
 }
 
-/// 클레임 값 — 텍스트 또는 이미지(원본 비율 유지 렌더링).
+/// Claim value — text or image (rendered keeping the original aspect ratio).
 enum ClaimValue: Hashable {
     case text(String)
     case image(Data)
 }
 
-/// 단일 클레임 항목 (라벨 + 값). 접이식 그룹의 하위 항목으로도 쓰인다.
+/// A single claim item (label + value). Also used as a child item of a collapsible group.
 struct ClaimItem: Identifiable, Hashable {
     let id = UUID()
     let label: String
     let value: ClaimValue
 }
 
-/// VC 상세화면 클레임 목록의 한 항목 — 단일 행 또는 접이식 그룹.
-/// 그룹(VCSchema namespace 기반)은 후속 작업용이며, 현재 매핑은 .row 만 생성한다.
+/// One item in the VC detail screen's claim list — a single row or a collapsible group.
+/// Groups (based on VCSchema namespace) are for follow-up work; the current mapping produces only .row.
 struct ClaimEntry: Identifiable, Hashable {
     enum Kind: Hashable {
         case row(label: String, value: ClaimValue)
@@ -64,9 +64,9 @@ struct Credential: Identifiable, Hashable {
     let status: CredentialStatus
     let zkp: Bool
     let icon: ImageResource
-    /// "Certificate Details" 섹션에 표시할 VC 클레임.
+    /// VC claims to show in the "Certificate Details" section.
     let claims: [ClaimEntry]
-    /// "Zero-Knowledge Proof" 섹션에 표시할 ZKP 클레임 (zkp == true 일 때만 채워짐).
+    /// ZKP claims to show in the "Zero-Knowledge Proof" section (filled only when zkp == true).
     let zkpClaims: [ClaimItem]
 
     init(
@@ -95,8 +95,8 @@ struct Credential: Identifiable, Hashable {
         self.zkpClaims = zkpClaims
     }
 
-    /// 상태만 바꾼 사본. 표시 데이터를 다 만든 뒤 상태 조회 결과로 덮어쓸 때 쓴다
-    /// (SD-JWT 는 만료일로 먼저 만들고 Status List 결과를 얹는다).
+    /// A copy with only the status changed. Used to overwrite with a status lookup result after all display data is built
+    /// (SD-JWT is built from the expiry date first, then the Status List result is layered on).
     func with(status: CredentialStatus) -> Credential {
         Credential(
             id: id,

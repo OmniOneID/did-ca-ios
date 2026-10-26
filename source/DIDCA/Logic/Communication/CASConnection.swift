@@ -19,7 +19,8 @@ import Foundation
 import DIDWalletSDK
 
 enum CASConnection {
-    static let host = URLs.CAS_URL
+    // Applied immediately on save (SRV-E-07) — not cached; read on every request.
+    static var host: String { URLs.CAS_URL }
 }
 
 extension CASConnection {
@@ -34,7 +35,7 @@ extension CASConnection {
         return try await HttpClient.sendPostRequest(urlString: urlString, request: request)
     }
 
-    /// CAS 가 서명·인증한 앱 정보 조회 (ServerTokenSeed 구성에 필요).
+    /// Fetches app info signed and authenticated by the CAS (needed to build ServerTokenSeed).
     static func requestAttestedAppInfo() async throws -> AttestedAppInfo {
         let urlString = host + "/cas/api/v1/request-attested-appinfo"
         let walletId = Properties.getWalletId() ?? Preference.getUserId() ?? ""

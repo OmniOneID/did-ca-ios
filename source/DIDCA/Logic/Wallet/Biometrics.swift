@@ -20,24 +20,24 @@ import Foundation
 import LocalAuthentication
 import DIDWalletSDK
 
-// 생체인증 가용성 판정과 인증 수행. 지갑 상태를 바꾸지 않는 것만 둔다 —
-// #bio 키 생성은 지갑을 변경하고 hWalletToken 을 요구하므로 WalletKeys 로 분리했다.
+// Biometric availability checks and authentication. Only things that don't change wallet state live here —
+// #bio key creation mutates the wallet and requires hWalletToken, so it was split out into WalletKeys.
 nonisolated enum Biometrics {
 
-    /// LAError / 기타 에러를 BIO-E 로 분류. 사전 점검·런타임 catch 공용.
-    /// LAError 가 아니면(생체 prompt 취소의 errSecUserCanceled 등) BIO-E-04/05 로 본다.
+    /// Classifies LAError / other errors into BIO-E. Shared by pre-checks and runtime catches.
+    /// Non-LAError cases (e.g. errSecUserCanceled from a cancelled biometric prompt) are treated as BIO-E-04/05.
     static func error(from error: Error?) -> BiometricError {
         guard let code = (error as? LAError)?.code else { return .notCompleted }
         switch code {
         case .biometryNotEnrolled:                   return .notEnrolled   // BIO-E-01
         case .biometryNotAvailable, .passcodeNotSet: return .notAvailable  // BIO-E-02
         case .biometryLockout:                       return .lockedOut     // BIO-E-03
-        default:                                     return .notCompleted  // BIO-E-04/05 (취소·실패·타임아웃·기타)
+        default:                                     return .notCompleted  // BIO-E-04/05 (cancel, failure, timeout, other)
         }
     }
 
-    /// 생체인증 사전 점검 — 불가하면 사유(BIO-E-01/02/03) 반환, 가능하면 nil.
-    /// 키 생성/PIN 입력에 들어가기 전에 호출해 불필요한 단계를 막는다.
+    /// Biometric pre-check — returns the reason (BIO-E-01/02/03) if unavailable, nil if available.
+    /// Call before entering key creation/PIN entry to avoid unnecessary steps.
     static func check() -> BiometricError? {
         let context = LAContext()
         var error: NSError?
@@ -47,34 +47,34 @@ nonisolated enum Biometrics {
         return self.error(from: error)
     }
 
-    /// 사유가 필요 없는 자리에서 쓰는 가부 판정. 바이오 키가 있어도 디바이스 LAContext 가
-    /// 사용 불가(FaceID 미등록/비활성 등) 면 선택 시트를 띄우지 않고 PIN 으로 fallback 한다.
+    /// Yes/no check for places that don't need a reason. Even with a bio key, if the device LAContext is
+    /// unavailable (Face ID not enrolled/disabled, etc.), the selection sheet is skipped and it falls back to PIN.
     static func canEvaluate() -> Bool { check() == nil }
 
-    /// 지갑에 #bio 키가 있는지 — 디바이스 생체 가용성(`check`)과는 별개다.
-    /// 키 보유 / 디바이스 가용 / 서명 가능(`signingReadiness`)은 서로 다른 질문이라 합치지 않는다.
+    /// Whether the wallet has a #bio key — separate from device biometric availability (`check`).
+    /// Key ownership / device availability / signing capability (`signingReadiness`) are distinct questions and aren't merged.
     static var hasBioKey: Bool {
         (try? WalletAPI.shared.isSavedKey(keyId: KeyIdName.bio)) ?? false
     }
 
-    /// 생체로 서명/인증할 수 있는 상태인지 — 지갑에 #bio 키가 있고 디바이스 생체가 가용한지.
-    /// 불가 시 사유(BIO-E) 반환, 가능하면 nil. VAUTH 의 BIO/PIN_AND_BIO 케이스에서
-    /// "생체 필수인데 미등록 → 중단" 판정에 쓴다. (#bio 키 없음 = 지갑에 생체 미등록 → .notEnrolled)
+    /// Whether biometric signing/auth is possible — the wallet has a #bio key and device biometrics are available.
+    /// Returns the reason (BIO-E) if not, nil if possible. Used in VAUTH's BIO/PIN_AND_BIO cases for the
+    /// "biometrics required but not enrolled → abort" decision. (No #bio key = biometrics not enrolled in wallet → .notEnrolled)
     static func signingReadiness() -> BiometricError? {
         if !hasBioKey { return .notEnrolled }
         return check()
     }
 
-    /// BIO 등록을 시작할 수 없는 사유 — 시작해도 되면 nil.
-    /// 이미 등록됨(SET-E-03) 또는 디바이스 불가(BIO-E-01/02/03) 두 갈래를 한 판정으로 묶는다.
-    /// 설정 진입 시점과 Enable 버튼 시점 양쪽에서 부르는데, 그 사이에 상태가 바뀔 수 있어
-    /// 호출은 두 번 그대로 두고 판정만 공유한다.
+    /// Reason BIO enrollment cannot start — nil if it may start.
+    /// Combines two branches into one check: already enrolled (SET-E-03) or device unavailable (BIO-E-01/02/03).
+    /// Called both on entering Settings and on tapping Enable; state may change in between, so
+    /// both calls are kept as is and only the check is shared.
     static func enrollmentBlock() -> String? {
         if hasBioKey { return "Biometric data is already registered on this device." }
         return check()?.message
     }
 
-    /// 생체 인증 prompt 를 직접 띄워 성공/실패를 반환 (PIN_AND_BIO 의 생체 게이트용).
+    /// Shows the biometric prompt directly and returns success/failure (for PIN_AND_BIO's biometric gate).
     static func evaluate(reason: String) async -> Bool {
         let context = LAContext()
         guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) else { return false }

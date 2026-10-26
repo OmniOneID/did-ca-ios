@@ -19,15 +19,15 @@
 import Foundation
 import DIDWalletSDK
 
-// 지갑 키 자료(#pin / #keyagree / #bio) 생성을 한 곳에 모은다. 세 키가 SDK 에 넘기는
-// 인자 조합이 서로 다르고(passcode 유무 · promptMsg 유무) 그 차이가 곧 키의 용도라,
-// 호출처에 흩어지면 조합을 틀리기 쉽다. 키 식별자는 KeyIdName 참조.
+// Gathers wallet key material (#pin / #keyagree / #bio) creation in one place. The three keys pass different
+// argument combinations to the SDK (passcode or not · promptMsg or not), and that difference is the key's purpose,
+// so scattering them across call sites makes it easy to get the combination wrong. Key identifiers: see KeyIdName.
 //
-// 생성만 여기 모으고 삭제(deleteKeyPair)는 흐름 쪽에 남긴다 — 삭제는 롤백/문서 갱신과
-// 한 덩어리로 움직여서(UpdateUserProtocol) 떼어내면 오히려 맥락이 끊긴다.
+// Only creation lives here; deletion (deleteKeyPair) stays with the flows — deletion moves as one unit with
+// rollback/document updates (UpdateUserProtocol), so pulling it out would actually break the context.
 nonisolated enum WalletKeys {
 
-    /// #pin — PIN 서명키. passcode 로 잠그며 이후 모든 서명/인증의 기준 키가 된다.
+    /// #pin — PIN signing key. Locked with the passcode; it becomes the base key for all subsequent signing/auth.
     static func generatePin(hWalletToken: String, passcode: String) throws {
         _ = try WalletAPI.shared.generateKeyPair(
             hWalletToken: hWalletToken,
@@ -37,8 +37,8 @@ nonisolated enum WalletKeys {
         )
     }
 
-    /// #keyagree — ECDH 키 합의용. 서명키가 아니라서 passcode 를 받지 않는다
-    /// (TokenGenerator 가 `.keyAgreement` proofPurpose 로 사용).
+    /// #keyagree — for ECDH key agreement. Not a signing key, so it takes no passcode
+    /// (used by TokenGenerator with the `.keyAgreement` proofPurpose).
     static func generateKeyAgree(hWalletToken: String) throws {
         _ = try WalletAPI.shared.generateKeyPair(
             hWalletToken: hWalletToken,
@@ -47,9 +47,9 @@ nonisolated enum WalletKeys {
         )
     }
 
-    /// #bio — 생체 서명키. 생성 시점에 iOS 가 FaceID/TouchID prompt 를 띄우므로
-    /// 취소·잠김 등의 실패를 BiometricError(BIO-E) 로 변환해 던진다.
-    /// (서버/SDK 에러는 이 단계 밖에서 발생 — 호출 측 catch 가 따로 처리.)
+    /// #bio — biometric signing key. iOS shows the Face ID/Touch ID prompt at creation time, so
+    /// failures such as cancellation or lockout are converted to BiometricError (BIO-E) and thrown.
+    /// (Server/SDK errors occur outside this step — handled separately by the caller's catch.)
     static func generateBio(hWalletToken: String) throws {
         do {
             _ = try WalletAPI.shared.generateKeyPair(

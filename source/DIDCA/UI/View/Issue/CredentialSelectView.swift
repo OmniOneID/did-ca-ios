@@ -18,12 +18,12 @@
 import SwiftUI
 import DIDWalletSDK
 
-/// OID4VCI 발급 — 프로토콜 선택에서 바로 진입한다. Issuer 선택 단계를 따로 두지 않고,
-/// 목록사업자가 내려준 Issuer 를 **섹션 헤더(`credentialIssuer`)로 구분해 한 화면에** 펼친다.
+/// OID4VCI issuance — entered directly from protocol selection. There is no separate Issuer selection step;
+/// the Issuers returned by the directory provider are laid out **on one screen, separated by section headers (`credentialIssuer`)**.
 ///
-/// 크리덴셜 이름은 configuration id 를 그대로 쓴다(현재 서버 metadata 에 `display.name` 없음).
-/// SD-JWT 와 mDoc 은 둘 다 선택·발급 가능하다(`isIssuable`). 앱이 표시할 줄 모르는 포맷만
-/// 선택 불가로 둔다 — 끝까지 진행시키면 클레임을 다 입력한 뒤 마지막 단계에서 실패한다.
+/// Credential names use the configuration id as-is (current server metadata has no `display.name`).
+/// Both SD-JWT and mDoc are selectable and issuable (`isIssuable`). Only formats the app can't display
+/// are made unselectable — carrying them through would fail at the last step after all claims were entered.
 struct CredentialSelectView: View {
 
     @Environment(AppCoordinator.self) private var coordinator
@@ -41,7 +41,7 @@ struct CredentialSelectView: View {
                         issuerSection(section)
                     }
 
-                    // 조회 실패는 팝업으로 알리고 Docs 로 돌아가므로, 이 문구는 "0건" 전용이다.
+                    // A fetch failure is reported via popup and returns to Docs, so this text is for the "0 results" case only.
                     if !vm.isLoading && vm.sections.isEmpty {
                         Text("No issuers support this protocol yet.")
                             .font(.pretendard(size: 13, weight: .regular))
@@ -78,8 +78,8 @@ struct CredentialSelectView: View {
 
     private func issuerSection(_ section: CredentialSelectViewModel.IssuerSection) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Issuer 식별자는 서버가 준 값(스펙상 URL)이라 대문자 변환 없이 원형으로 보인다.
-            // 발급 목록 계열의 헤더 모양(11pt·커닝 0.3·primary 막대)은 그대로 유지.
+            // The Issuer identifier is the server-provided value (a URL per spec), so it's shown as-is without uppercasing.
+            // The issuance-list header style (11pt · kerning 0.3 · primary bar) is kept.
             SectionHeader(title: section.issuer.credentialIssuer,
                           style: .uppercase,
                           preservesCase: true)

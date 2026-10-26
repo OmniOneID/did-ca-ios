@@ -17,12 +17,12 @@
 
 import SwiftUI
 
-/// VC 상세화면 상단 히어로 — 컬러 배경 + 타이틀 + 발급정보 카드.
-/// 백/휴지통 네비바는 `VCDetailView` 가 고정 영역으로 따로 그리며,
-/// 이 히어로는 그 네비바 아래 스크롤 영역의 첫 콘텐츠로 들어간다.
+/// Hero at the top of the VC detail screen — colored background + title + issuance info card.
+/// The back/trash nav bar is drawn separately by `VCDetailView` as a fixed area,
+/// and this hero goes in as the first content of the scroll area below that nav bar.
 struct CredentialHero: View {
     let credential: Credential
-    /// 상세화면 진입 시 새로 조회한 상태로 뱃지를 덮어쓴다. nil 이면 credential.status 사용.
+    /// Overrides the badge with the status freshly fetched on entering the detail screen. If nil, credential.status is used.
     var statusOverride: CredentialStatus? = nil
 
     var body: some View {

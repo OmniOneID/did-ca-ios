@@ -17,9 +17,9 @@
 
 import SwiftUI
 
-/// 발급 프로토콜 선택 화면 (화면설계서 18a). "From list" 진입 시 addCertificate 앞단에 표시된다.
-/// - Open DID: 현행 TAS 플랜 리스트(AddCertificateView)로 진입.
-/// - OID4VCI: 현재 미제공 — 안내 토스트. 후속(목록사업자 URL 변경) 작업 예정.
+/// Issuance protocol selection screen (screen design spec 18a). Shown ahead of addCertificate when entering via "From list".
+/// - Open DID: goes to the current TAS plan list (AddCertificateView).
+/// - OID4VCI: not currently offered — shows a notice toast. Follow-up work planned (directory provider URL change).
 struct ProtocolSelectView: View {
 
     var onBack: () -> Void = {}

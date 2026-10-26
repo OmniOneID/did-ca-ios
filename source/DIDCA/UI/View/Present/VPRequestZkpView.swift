@@ -17,14 +17,14 @@
 
 import SwiftUI
 
-/// ZKP VP 제출 메인 화면. did-ca-ios `ZKPSubmissionViewController` 와 동일 구조 —
-/// 한 화면에 Attributes / Predicates / Self-Attributes 세 그룹이 평탄하게 나열되고,
-/// document 단위 accordion 으로 묶지 않는다 (proof 는 여러 VC 의 sub-referent 를 섞을 수
-/// 있어 "한 VC = 한 카드" 매핑이 성립하지 않음).
+/// Main ZKP VP submission screen. Same structure as did-ca-ios `ZKPSubmissionViewController` —
+/// the three groups Attributes / Predicates / Self-Attributes are listed flat on one screen,
+/// not grouped into per-document accordions (a proof can mix sub-referents from multiple VCs,
+/// so a "one VC = one card" mapping doesn't hold).
 struct VPRequestZkpView: View {
     var onBack: () -> Void = {}
     var onSubmit: () -> Void = {}
-    /// attribute / predicate 행의 값(또는 "Tap to select >") 을 탭했을 때 picker 진입 — referent key 인자.
+    /// Enters the picker when an attribute / predicate row's value (or "Tap to select >") is tapped — argument is the referent key.
     var onSelectAttribute: (_ key: String) -> Void = { _ in }
 
     @Environment(AppCoordinator.self) private var coordinator
@@ -34,7 +34,7 @@ struct VPRequestZkpView: View {
             ?? ZkpPresentationSummary(verifierName: "", title: "", attributes: [], predicates: [], selfAttributes: [])
     }
 
-    /// referent key 에 대해 사용자가 picker 로 고른 sub-referent 의 raw 값 (없으면 nil).
+    /// Raw value of the sub-referent the user picked for the referent key (nil if none).
     private func selectedValue(for claim: ZkpPresentationClaim) -> String? {
         guard let idx = coordinator.zkpAttrSelections[claim.key],
               claim.availableValues.indices.contains(idx) else {
@@ -43,7 +43,7 @@ struct VPRequestZkpView: View {
         return claim.availableValues[idx].raw
     }
 
-    /// 모든 attribute / predicate 가 선택되고 모든 self-attribute 가 채워졌는지 — Submit 활성화 조건.
+    /// Whether every attribute / predicate is selected and every self-attribute filled — the Accept enable condition.
     private var canSubmit: Bool {
         for claim in summary.attributes {
             if coordinator.zkpAttrSelections[claim.key] == nil { return false }
@@ -153,10 +153,23 @@ struct VPRequestZkpView: View {
         }
     }
 
+    /// PRES-B-12 — same Reject / Accept layout as the SD screen (VPRequestView). Reject is the same cancel path as Back.
     private var submitBar: some View {
-        VStack {
+        HStack(spacing: 10) {
+            Button(action: onBack) {
+                Text("Reject")
+                    .font(.pretendard(size: 16, weight: .semibold))
+                    .foregroundStyle(.customPrimary)
+                    .frame(height: 52)
+                    .frame(maxWidth: .infinity)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(.customPrimary, lineWidth: 1.5)
+                    )
+            }
+
             Button(action: onSubmit) {
-                Text("Submit")
+                Text("Accept")
                     .font(.pretendard(size: 16, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(height: 52)
@@ -231,8 +244,8 @@ struct VPRequestZkpView: View {
     }
 
     private func predicateRow(claim: ZkpPresentationClaim, isLast: Bool) -> some View {
-        // did-ca-ios 와 동일: predicate 셀도 사용자가 picker 로 어느 VC 의 sub-referent 로 증명할지 선택,
-        // 선택된 sub-referent 의 raw 값을 표시 (verifier 에는 raw 가 노출되지 않음 — 표시는 사용자 확인용).
+        // Same as did-ca-ios: for predicate cells the user also picks which VC's sub-referent to prove with,
+        // and the selected sub-referent's raw value is shown (raw is not exposed to the verifier — display is for user confirmation).
         let value = selectedValue(for: claim)
         return ZkpPickerRow(
             label: claim.label,
@@ -256,9 +269,9 @@ struct VPRequestZkpView: View {
     }
 }
 
-/// label + value(또는 placeholder) + trailing(눈 토글 또는 EmptyView) — attribute / predicate
-/// 행을 공유하는 픽커 행. did-ca-ios `ZKPSubmissionTableViewCell` 와 동일하게 한 cell 을
-/// 두 섹션이 공유하며 trailing(눈 버튼) 만 표시/숨김으로 차이를 둔다.
+/// label + value (or placeholder) + trailing (eye toggle or EmptyView) — picker row shared by attribute / predicate
+/// rows. Like did-ca-ios `ZKPSubmissionTableViewCell`, one cell is shared by
+/// both sections, differing only in whether trailing (eye button) is shown or hidden.
 private struct ZkpPickerRow<Trailing: View>: View {
     let label: String
     let value: String
@@ -270,8 +283,8 @@ private struct ZkpPickerRow<Trailing: View>: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                // 라벨은 원형 그대로 — caption 이 없으면 attribute 키 원문이 그대로 오므로
-                // 대문자 변환은 데이터 변형이 된다. VP 제출·속성 선택·VC 상세와 표기를 맞춘다.
+                // Label kept as-is — without a caption the raw attribute key comes through,
+                // so uppercasing would alter the data. Matches VP submission, attribute selection and VC detail.
                 Text(label)
                     .font(.pretendard(size: 11, weight: .medium))
                     .kerning(0.5)
@@ -297,7 +310,7 @@ private struct ZkpPickerRow<Trailing: View>: View {
     }
 }
 
-/// self-attribute 입력 행 — label + 텍스트필드. did-ca-ios `ZKPSubmissionTextTableViewCell` 와 등가.
+/// self-attribute input row — label + text field. Equivalent to did-ca-ios `ZKPSubmissionTextTableViewCell`.
 private struct ZkpSelfAttrRow: View {
     let label: String
     @Binding var text: String
@@ -305,7 +318,7 @@ private struct ZkpSelfAttrRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // 라벨 원형 유지 — ZkpPickerRow 주석 참조.
+            // Keep the label as-is — see the ZkpPickerRow comment.
             Text(label)
                 .font(.pretendard(size: 11, weight: .medium))
                 .kerning(0.5)

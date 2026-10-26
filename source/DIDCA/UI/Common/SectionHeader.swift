@@ -19,12 +19,12 @@ import SwiftUI
 
 struct SectionHeader: View {
 
-    /// 화면설계서에는 섹션 헤더가 **두 종류**로 정의돼 있다. 화면 계열마다 지정된 쪽을 쓴다 —
-    /// 어느 쪽인지는 설계서를 확인하고 임의로 통일하지 않는다.
+    /// The screen design spec defines **two kinds** of section headers. Use the one specified for each screen family —
+    /// check the design spec for which one, and don't unify them arbitrarily.
     enum Style {
-        /// 설정 · VC 상세 · VP 요청 (설계서 `sectionTitle()` 헬퍼). 대문자 변환 없음.
+        /// Settings · VC detail · VP request (design spec `sectionTitle()` helper). No uppercasing.
         case standard
-        /// 발급 목록 계열 — 프로토콜 선택 · Issuer/Credential 목록. 전부 대문자.
+        /// Issuance list family — protocol selection · Issuer/Credential lists. All uppercase.
         case uppercase
 
         var size: CGFloat {
@@ -58,11 +58,11 @@ struct SectionHeader: View {
 
     let title: String
     var style: Style = .standard
-    /// 지정하지 않으면 스타일 기본값(standard=accentOrange, uppercase=primary).
+    /// If unspecified, the style default (standard=accentOrange, uppercase=primary).
     var accent: Color? = nil
-    /// 스타일의 대소문자 변환만 끈다 — 크기·커닝·막대 색은 스타일 그대로 유지한다.
-    /// 고정 문구가 아니라 **서버가 준 값**(Issuer 식별자 등)을 타이틀에 넣을 때 쓴다.
-    /// 대문자로 바꾸면 원문이 변형되기 때문이다.
+    /// Turns off only the style's case conversion — size, kerning and bar color stay as the style defines.
+    /// Used when putting a **server-provided value** (Issuer identifier, etc.) in the title rather than fixed text,
+    /// because uppercasing would alter the original.
     var preservesCase: Bool = false
 
     var body: some View {

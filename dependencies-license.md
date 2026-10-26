@@ -31,3 +31,12 @@ SwiftCBOR(0.6.5) — Unlicense
 (https://github.com/niscy-eudiw/SwiftCBOR)
 
 <br>
+
+### This project also bundles the following font in the app:
+
+**Pretendard**
+Pretendard Variable(1.309) — OFL-1.1
+(https://github.com/orioncactus/pretendard)
+License text: [source/DIDCA/Assets/PretendardVariable-OFL.txt](source/DIDCA/Assets/PretendardVariable-OFL.txt)
+
+<br>

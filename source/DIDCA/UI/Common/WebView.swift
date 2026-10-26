@@ -18,15 +18,15 @@
 import SwiftUI
 import WebKit
 
-/// 범용 `WKWebView` 래퍼. 발급·검증 등 특정 흐름에 종속되지 않으며,
-/// 웹 페이지 + JS 브리지가 필요한 어느 화면에서든 재사용한다.
-/// - `messageHandlers`: 등록할 JS 메시지 핸들러 이름. 웹 페이지가
-///   `window.webkit.messageHandlers.<name>.postMessage(...)` 를 호출하면 `onMessage` 로 전달된다.
-/// - `onLoadingChanged`: 페이지 로딩 시작(true) / 완료·실패(false) 시 호출.
-/// - `allowedHosts`: 비우면 http/https 를 host 제한 없이 허용(기존 동작). 채우면 그 host 로만 이동
-///   가능하고 나머지 navigation 은 차단된다.
-/// - `completionScheme` / `onCompletionURI`: 페이지가 앱으로 결과를 되돌리는 custom scheme.
-///   해당 스킴 navigation 은 중단(cancel)하고 URL 을 콜백으로 넘긴다 — 외부 앱 실행으로 넘기지 않는다.
+/// General-purpose `WKWebView` wrapper. Not tied to any specific flow such as issuance or verification;
+/// reused by any screen that needs a web page + JS bridge.
+/// - `messageHandlers`: names of JS message handlers to register. When the web page calls
+///   `window.webkit.messageHandlers.<name>.postMessage(...)`, it is delivered to `onMessage`.
+/// - `onLoadingChanged`: called when page loading starts (true) / finishes or fails (false).
+/// - `allowedHosts`: if empty, http/https is allowed with no host restriction (existing behavior). If set,
+///   navigation is only possible to those hosts and all other navigation is blocked.
+/// - `completionScheme` / `onCompletionURI`: custom scheme by which the page returns a result to the app.
+///   Navigation to that scheme is cancelled and the URL is passed to the callback — not handed off to launch an external app.
 struct WebView: UIViewRepresentable {
 
     let url: URL
@@ -36,14 +36,14 @@ struct WebView: UIViewRepresentable {
     var allowedHosts: [String] = []
     var completionScheme: String? = nil
     var onCompletionURI: ((_ url: URL) -> Void)? = nil
-    /// 페이지를 열지 못했을 때 호출 — 메인 프레임이 비-2xx 로 응답했거나(statusCode 동봉, 본문은
-    /// 렌더링하지 않음) 전송 자체가 실패한 경우(nil). 앱이 취소한 navigation 은 실패로 보지 않는다.
+    /// Called when the page could not be opened — the main frame responded with a non-2xx (statusCode included,
+    /// body not rendered) or the transfer itself failed (nil). Navigation cancelled by the app is not treated as failure.
     var onLoadFailure: ((_ statusCode: Int?) -> Void)? = nil
-    /// 페이지 동작에 JS 가 필요할 때만 true. 필요 없는 화면은 꺼 둔다.
+    /// true only when the page needs JS to function. Leave it off for screens that don't.
     var javaScriptEnabled: Bool = true
-    /// true 면 페이지의 JS 다이얼로그(alert/confirm/prompt)를 팝업으로 띄우지 않고 즉시 기본값으로
-    /// ack 한다(did-ca 파리티). 결과를 JS 브리지로 받는 발급 폼처럼, 페이지가 부수적으로 쏘는
-    /// alert(예: 성공 직후의 잘못된 "실패" alert)가 흐름을 어지럽히지 않도록 할 때 사용한다.
+    /// If true, the page's JS dialogs (alert/confirm/prompt) are not shown as popups and are acked immediately
+    /// with the default value (did-ca parity). Used, like the issuance form whose result comes over the JS bridge,
+    /// so that incidental alerts fired by the page (e.g. a bogus "failure" alert right after success) don't disrupt the flow.
     var silenceJSDialogs: Bool = false
 
     func makeCoordinator() -> Coordinator {
@@ -68,15 +68,15 @@ struct WebView: UIViewRepresentable {
         config.userContentController = contentController
 
         let webView = WKWebView(frame: .zero, configuration: config)
-        // 웹 인스펙터는 디버그 빌드에서만 — 배포 빌드에서 발급 화면을 들여다볼 수 없게 한다.
+        // Web inspector only in debug builds — so the issuance screen can't be inspected in release builds.
         #if DEBUG
         webView.isInspectable = true
         #else
         webView.isInspectable = false
         #endif
         webView.navigationDelegate = context.coordinator
-        // JS 다이얼로그(alert/confirm/prompt)·새 창 요청을 앱이 직접 처리하기 위한 UI 델리게이트.
-        // 미설정 시 alert 는 무시·confirm 은 false·prompt 는 nil·새 창은 먹통이 된다.
+        // UI delegate so the app itself handles JS dialogs (alert/confirm/prompt) and new-window requests.
+        // If unset, alert is ignored, confirm returns false, prompt returns nil, and new windows do nothing.
         webView.uiDelegate = context.coordinator
         webView.allowsLinkPreview = false
         webView.load(URLRequest(url: url))
@@ -85,7 +85,7 @@ struct WebView: UIViewRepresentable {
 
     func updateUIView(_ webView: WKWebView, context: Context) {}
 
-    /// 등록한 메시지 핸들러를 해제해 coordinator ↔ WKWebView 사이 retain cycle 을 끊는다.
+    /// Unregisters the message handlers to break the retain cycle between the coordinator and WKWebView.
     static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
         let controller = webView.configuration.userContentController
         for name in coordinator.registeredHandlers {
@@ -102,8 +102,8 @@ struct WebView: UIViewRepresentable {
         private let completionScheme: String?
         private let onCompletionURI: ((URL) -> Void)?
         private let onLoadFailure: ((Int?) -> Void)?
-        /// 첫 메인 프레임 페이지가 정상(2xx)으로 뜬 적이 있는지 — 오류 가로채기를 시작 페이지로만
-        /// 한정하는 데 쓴다. 재시도(`.id(attempt)`)로 웹뷰를 새로 만들면 coordinator 도 새로 생겨 초기화된다.
+        /// Whether the first main-frame page has ever loaded successfully (2xx) — used to limit error interception
+        /// to the start page only. Recreating the web view on retry (`.id(attempt)`) also creates a new coordinator, resetting it.
         private var hasLoadedMainFrame = false
         var registeredHandlers: [String] = []
 
@@ -152,18 +152,18 @@ struct WebView: UIViewRepresentable {
             handleNavigationFailure(error, phase: "didFailProvisional")
         }
 
-        /// navigation 실패 처리. 순서가 중요하다.
+        /// Handles navigation failures. Order matters.
         ///
-        /// 1. **완료 스킴 복구** — 서버가 `302 Location: <completionScheme>://…` 로 완료를 알릴 때,
-        ///    WebKit 이 그 리다이렉트를 `decidePolicyFor navigationAction` 에 태우지 않고 로드만
-        ///    취소하는 경우가 있다(커스텀 스킴 리다이렉트). 그러면 화면도 그대로고 콜백도 없어
-        ///    오퍼가 통째로 유실된다. 실패 error 에 실려오는 failing URL 이 완료 스킴이면 여기서
-        ///    건져 정상 경로와 똑같이 콜백한다 — `decidePolicyFor` 로도 들어왔다면 호출 측이
-        ///    중복을 막으므로(코디네이터의 처리중 플래그) 두 번 타도 무해하다.
-        /// 2. 앱이 스스로 끊은 navigation(완료 스킴 가로채기·host 차단·비-2xx 취소)은 로딩 실패가 아니다.
+        /// 1. **Completion-scheme recovery** — when the server signals completion with `302 Location: <completionScheme>://…`,
+        ///    WebKit may not route that redirect through `decidePolicyFor navigationAction` and simply cancel
+        ///    the load (custom-scheme redirect). The screen then stays as is with no callback, and the
+        ///    offer is lost entirely. If the failing URL carried in the error is the completion scheme, it is
+        ///    recovered here and called back exactly like the normal path — if it also came through `decidePolicyFor`,
+        ///    the caller prevents duplicates (the coordinator's in-progress flag), so going through both is harmless.
+        /// 2. Navigation the app cut off itself (completion-scheme interception, host block, non-2xx cancel) is not a load failure.
         private func handleNavigationFailure(_ error: Error, phase: String) {
             let error = error as NSError
-            // NSURLErrorDomain·WebKitErrorDomain 모두 실패 URL 을 이 키에 담는다.
+            // Both NSURLErrorDomain and WebKitErrorDomain put the failing URL under this key.
             let failingURL = error.userInfo[NSURLErrorFailingURLErrorKey] as? URL
             print("▶️[WEBVIEW]◀️ \(phase) domain=\(error.domain) code=\(error.code) "
                   + "failingURL=\(failingURL?.absoluteString ?? "nil")")
@@ -175,20 +175,20 @@ struct WebView: UIViewRepresentable {
             }
 
             let isCancelled = error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled
-            // WebKitErrorFrameLoadInterruptedByPolicyChange — decidePolicyFor 에서 .cancel 한 경우.
+            // WebKitErrorFrameLoadInterruptedByPolicyChange — the case where decidePolicyFor returned .cancel.
             let isPolicyCancel = error.domain == "WebKitErrorDomain" && error.code == 102
             guard !isCancelled, !isPolicyCancel else { return }
             onLoadFailure?(nil)
         }
 
-        /// **시작 페이지**가 오류 응답(4xx·5xx)이면 본문을 렌더링하지 않고 앱 오류 화면으로 넘긴다 —
-        /// 서버 오류 응답(JSON·스택트레이스 등)이 사용자에게 그대로 노출되지 않게 한다.
+        /// If the **start page** is an error response (4xx/5xx), its body is not rendered and the app error screen takes over —
+        /// so server error responses (JSON, stack traces, etc.) are never exposed to the user as is.
         ///
-        /// 첫 페이지가 뜬 뒤로는 응답을 가로채지 않는다. 서버가 폼 검증 실패를 `400 + 폼 HTML`
-        /// (필수 항목 안내 포함)로 돌려주기 때문에, 그걸 오류로 막으면 사용자가 무엇을 고쳐야 할지
-        /// 볼 수 없다. 3xx 도 막지 않는다 — 발급 완료가 `openid-credential-offer://` 로의 302 redirect
-        /// 로 오며, 그 결과는 `decidePolicyFor navigationAction` 또는 `handleNavigationFailure` 의
-        /// 복구 경로가 잡는다.
+        /// After the first page has loaded, responses are not intercepted. The server returns form validation failures as
+        /// `400 + form HTML` (including required-field hints), so blocking those as errors would hide what the user needs
+        /// to fix. 3xx is not blocked either — issuance completion arrives as a 302 redirect to `openid-credential-offer://`,
+        /// and that result is caught by `decidePolicyFor navigationAction` or the recovery path in
+        /// `handleNavigationFailure`.
         func webView(_ webView: WKWebView,
                      decidePolicyFor navigationResponse: WKNavigationResponse,
                      decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
@@ -209,8 +209,8 @@ struct WebView: UIViewRepresentable {
             onLoadFailure?(response.statusCode)
         }
 
-        /// 완료 스킴은 중단 후 콜백, http/https 는 (allowedHosts 가 있으면 그 host 만) 통과,
-        /// 그 외 스킴(javascript:·file:·content:·외부 앱 등)은 모두 차단한다.
+        /// The completion scheme is cancelled then called back, http/https passes (only the allowedHosts if set),
+        /// and every other scheme (javascript:, file:, content:, external apps, etc.) is blocked.
         func webView(_ webView: WKWebView,
                      decidePolicyFor navigationAction: WKNavigationAction,
                      decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -220,7 +220,7 @@ struct WebView: UIViewRepresentable {
             }
             let scheme = url.scheme?.lowercased()
 
-            // 완료 응답 — navigation 을 실제로 중단하고 앱이 처리한다(외부 앱 실행으로 넘기지 않는다).
+            // Completion response — actually cancel the navigation and let the app handle it (not handed off to launch an external app).
             if let completionScheme, scheme == completionScheme.lowercased() {
                 decisionHandler(.cancel)
                 onCompletionURI?(url)
@@ -228,7 +228,7 @@ struct WebView: UIViewRepresentable {
             }
 
             guard scheme == "http" || scheme == "https" else {
-                // allowedHosts 를 쓰지 않는 기존 화면은 확장자 html 문서를 통과시키던 동작을 유지한다.
+                // Existing screens that don't use allowedHosts keep the behavior of letting .html documents through.
                 let isHtml = url.absoluteString.hasSuffix("html")
                 decisionHandler(allowedHosts.isEmpty && isHtml ? .allow : .cancel)
                 return
@@ -242,18 +242,18 @@ struct WebView: UIViewRepresentable {
             decisionHandler(allowedHosts.contains { $0.lowercased() == host } ? .allow : .cancel)
         }
 
-        // MARK: - WKUIDelegate (JS 다이얼로그 · 새 창)
+        // MARK: - WKUIDelegate (JS dialogs · new windows)
         //
-        // JS 의 네이티브 UI 요청을 OS 기본 팝업 대신 앱 커스텀 팝업(OverlayManager)으로 처리한다.
-        // 각 completionHandler 는 반드시 정확히 한 번 호출해야 JS 가 멈추지 않는다 — 커스텀 팝업은
-        // 버튼으로만 닫히고(backdrop 탭 비활성) 모든 버튼 액션이 핸들러를 호출하므로 보장된다.
+        // JS native UI requests are handled with the app's custom popup (OverlayManager) instead of the OS default popup.
+        // Each completionHandler must be called exactly once or JS stalls — this is guaranteed because the custom popup
+        // closes only via its buttons (backdrop tap disabled) and every button action calls the handler.
 
-        /// `window.alert()` → 단일 OK 버튼 팝업. OK 누르면 JS 진행.
+        /// `window.alert()` → single OK-button popup. Tapping OK resumes JS.
         func webView(_ webView: WKWebView,
                      runJavaScriptAlertPanelWithMessage message: String,
                      initiatedByFrame frame: WKFrameInfo,
                      completionHandler: @escaping () -> Void) {
-            // did-ca 파리티: 발급 폼처럼 결과를 브리지로 받는 경우 페이지 alert 는 띄우지 않고 즉시 ack.
+            // did-ca parity: when the result comes over the bridge, as in the issuance form, the page alert is not shown and is acked immediately.
             if silenceJSDialogs { completionHandler(); return }
             OverlayManager.shared.showPopup(
                 title: "Notification",
@@ -263,7 +263,7 @@ struct WebView: UIViewRepresentable {
             )
         }
 
-        /// `window.confirm()` → OK/Cancel 팝업. OK→true, Cancel→false.
+        /// `window.confirm()` → OK/Cancel popup. OK→true, Cancel→false.
         func webView(_ webView: WKWebView,
                      runJavaScriptConfirmPanelWithMessage message: String,
                      initiatedByFrame frame: WKFrameInfo,
@@ -279,9 +279,9 @@ struct WebView: UIViewRepresentable {
             )
         }
 
-        /// `window.prompt()` → 커스텀 팝업엔 입력칸이 없어 텍스트 편집은 불가.
-        /// OK 는 JS 가 준 기본값을, Cancel 은 nil 을 반환한다(네이티브 prompt 의 OK=기본값 동작에 준함).
-        /// 실제 자유 입력이 필요하면 PopupView 에 TextField 변형을 추가해야 한다.
+        /// `window.prompt()` → the custom popup has no input field, so text editing isn't possible.
+        /// OK returns the default value JS supplied and Cancel returns nil (mirroring native prompt's OK = default value behavior).
+        /// If real free-form input is needed, a TextField variant must be added to PopupView.
         func webView(_ webView: WKWebView,
                      runJavaScriptTextInputPanelWithPrompt prompt: String,
                      defaultText: String?,
@@ -298,8 +298,8 @@ struct WebView: UIViewRepresentable {
             )
         }
 
-        /// `window.open()` / `target="_blank"` — 별도 창 대신 현재 웹뷰에서 로드.
-        /// 새 WKWebView 를 만들지 않으므로 nil 반환.
+        /// `window.open()` / `target="_blank"` — loads in the current web view instead of a separate window.
+        /// Returns nil since no new WKWebView is created.
         func webView(_ webView: WKWebView,
                      createWebViewWith configuration: WKWebViewConfiguration,
                      for navigationAction: WKNavigationAction,

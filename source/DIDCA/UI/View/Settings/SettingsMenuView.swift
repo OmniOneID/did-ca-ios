@@ -28,10 +28,32 @@ struct SettingsMenuView: View {
     var onChangeUnlockPin: () -> Void = {}
     var onAddBiometrics: () -> Void = {}
     var onResetApp: () -> Void = {}
+    var onServerUrl: () -> Void = {}
 
-    @State private var showCopiedToast: Bool = false
+    /// username provided by the registration web view (SET-E-06). If empty, the name row is hidden.
+    var userName: String? = Preference.getUserName()
+
+    /// Copy toast message — hidden when nil. Each row has a different message (DID · User name).
+    @State private var copiedToast: String? = nil
+    /// BLE Transfer Mode selection sheet (BLE-02). Preference holds the source of truth; the screen keeps a copy only for display.
+    @State private var showBleModeSheet: Bool = false
+    @State private var bleMode: BleTransferMode = Preference.bleTransferMode
+    /// The sheet model keeps a single instance and only swaps `contents` — recreating the sheet (id change) cuts off
+    /// the dismiss animation and it vanishes in place.
+    @State private var bleModeSheetModel = ActionSheetViewModel(
+        title: "BLE Transfer Mode",
+        message: "Which BLE role this wallet takes when sending data to a reader.",
+        contents: []
+    )
 
     var body: some View {
+        ZStack(alignment: .bottom) {
+            content
+            bleModeSheet
+        }
+    }
+
+    private var content: some View {
         VStack(spacing: 0) {
             HStack {
                 Button(action: onBack) {
@@ -52,20 +74,18 @@ struct SettingsMenuView: View {
             VStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 0) {
                     SectionHeader(title: "Information")
-                    HStack(alignment: .center, spacing: 8) {
-                        Text(did)
-                            .font(.pretendard(size: 14, weight: .regular))
-                            .foregroundStyle(.black)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        Button(action: copyDid) {
-                            Image(.icCopy)
+                    // SET-E-06 — each row is label + value + copy button. First row User Name, second row DID.
+                    // If the name is empty, only the DID row remains, with no empty row or placeholder.
+                    VStack(spacing: 0) {
+                        if let userName, !userName.isEmpty {
+                            infoRow(label: "User Name", value: userName,
+                                    toast: "User name copied to clipboard")
+                            Rectangle().fill(.borderGray).frame(height: 1)
                         }
+                        infoRow(label: "DID", value: did, toast: "DID copied to clipboard",
+                                breaksAnywhere: true)
                     }
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
                     .padding(.vertical, 4)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
@@ -77,6 +97,9 @@ struct SettingsMenuView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     SectionHeader(title: "General")
                     VStack(spacing: 0) {
+                        // Design spec 29 · top of General.
+                        SettingsRow(title: "Server URL", action: onServerUrl)
+                        Rectangle().fill(.borderGray).frame(height: 1)
                         SettingsRow(title: "Change PIN", action: onChangePin)
                         Rectangle().fill(.borderGray).frame(height: 1)
                         SettingsRow(title: "Change Unlock PIN", action: onChangeUnlockPin)
@@ -86,13 +109,44 @@ struct SettingsMenuView: View {
                         SettingsRow(title: "Reset App") {
                             OverlayManager.shared.showPopup(
                                 title: "Reset App",
-                                message: "Resetting will permanently erase all stored data (VCs, PIN, etc.) and cannot be undone. Continue?",
+                                message: "Resetting will permanently erase all stored data (VCs, PIN, server settings, etc.) and cannot be undone. Continue?",
                                 primaryButtonTitle: "Reset",
                                 primaryAction: { onResetApp() },
                                 secondaryButtonTitle: "Cancel"
                             )
                         }
                     }
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(.borderGray, lineWidth: 1)
+                            .fill(.white)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+
+                // BLE has no platform constraints, so it's shown on both Android · iOS (SET-E-05).
+                VStack(alignment: .leading, spacing: 0) {
+                    SectionHeader(title: "Proximity")
+                    // Both the label and current value are long and would be cut off on small devices in a single right-aligned line — 2-line stack (BLE-01).
+                    // This one row is the whole setting, with no screen navigation.
+                    Button(action: { showBleModeSheet = true }) {
+                        HStack(spacing: 14) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("BLE Transfer Mode")
+                                    .font(.pretendard(size: 15, weight: .medium))
+                                    .foregroundStyle(.black)
+                                Text(bleMode.label)
+                                    .font(.pretendard(size: 13, weight: .regular))
+                                    .foregroundStyle(.customGray)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                            Image(.icChevR)
+                        }
+                        .padding(16)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(.borderGray, lineWidth: 1)
@@ -107,8 +161,8 @@ struct SettingsMenuView: View {
         }
         .background(.backgroundGray)
         .overlay(alignment: .bottom) {
-            if showCopiedToast {
-                Text("DID copied to clipboard")
+            if let copiedToast {
+                Text(copiedToast)
                     .font(.pretendard(size: 13, weight: .medium))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 18)
@@ -123,15 +177,59 @@ struct SettingsMenuView: View {
         }
     }
 
-    private func copyDid() {
-        UIPasteboard.general.string = did
+    /// BLE-02~06 — lists the three options in Both → Central → Peripheral order; tapping saves and closes immediately.
+    /// Closing by dim tap · drag leaves the value unchanged. When the current value changes, only the row's checkmark position updates.
+    private var bleModeSheet: some View {
+        DraggableActionSheet(isPresented: $showBleModeSheet, viewModel: bleModeSheetModel)
+            .onAppear { bleModeSheetModel.contents = bleModeRows() }
+            .onChange(of: bleMode) { _, _ in bleModeSheetModel.contents = bleModeRows() }
+    }
+
+    private func bleModeRows() -> [ActionSheetContent] {
+        BleTransferMode.allCases.map { mode in
+            .init(title: mode.label,
+                  selected: mode == bleMode,
+                  action: {
+                      Preference.bleTransferMode = mode
+                      bleMode = mode
+                  })
+        }
+    }
+
+    /// - Parameter breaksAnywhere: per-character wrapping (SET-E-06 DID) — inserts zero-width spaces into the display string only
+    ///   so a value without spaces doesn't break only after `:`. The copied value is the original as is.
+    private func infoRow(label: String, value: String, toast: String,
+                         breaksAnywhere: Bool = false) -> some View {
+        HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.pretendard(size: 12, weight: .regular))
+                    .foregroundStyle(.customGray)
+                Text(breaksAnywhere ? value.map(String.init).joined(separator: "\u{200B}") : value)
+                    .font(.pretendard(size: 14, weight: .regular))
+                    .foregroundStyle(.black)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button { copy(value, toast: toast) } label: {
+                Image(.icCopy)
+            }
+        }
+        .padding(.vertical, 12)
+    }
+
+    private func copy(_ text: String, toast: String) {
+        UIPasteboard.general.string = text
         withAnimation(.easeOut(duration: 0.2)) {
-            showCopiedToast = true
+            copiedToast = toast
         }
         Task {
             try? await Task.sleep(for: .seconds(1.8))
             withAnimation(.easeOut(duration: 0.2)) {
-                showCopiedToast = false
+                // If another row was copied in the meantime, that toast is dismissed by its own timer.
+                if copiedToast == toast { copiedToast = nil }
             }
         }
     }

@@ -18,9 +18,9 @@
 import SwiftUI
 import AVFoundation
 
-/// AVFoundation 기반 QR 스캐너 — 카메라 프리뷰 + QR 메타데이터 인식.
-/// 첫 QR 1건을 인식하면 onScan 을 호출하고 세션을 멈춘다(중복 콜백 방지).
-/// 카메라 권한 확인은 호출 측(QrScanView)이 담당 — 여기서는 캡처 세션만 다룬다.
+/// AVFoundation-based QR scanner — camera preview + QR metadata recognition.
+/// On recognizing the first QR, calls onScan and stops the session (prevents duplicate callbacks).
+/// Camera permission checks are the caller's (QrScanView) job — this only handles the capture session.
 struct QRCodeScanner: UIViewControllerRepresentable {
     var onScan: (String) -> Void
 
@@ -39,7 +39,7 @@ final class QRScannerController: UIViewController, AVCaptureMetadataOutputObject
     var onScan: ((String) -> Void)?
 
     private let session = AVCaptureSession()
-    // startRunning/stopRunning 은 블로킹이라 메인 스레드 밖에서 호출한다.
+    // startRunning/stopRunning are blocking, so they're called off the main thread.
     private let sessionQueue = DispatchQueue(label: "org.omnione.did.ca.qr.session")
     private var previewLayer: AVCaptureVideoPreviewLayer?
     private var didScan = false
@@ -51,7 +51,7 @@ final class QRScannerController: UIViewController, AVCaptureMetadataOutputObject
     }
 
     private func configureSession() {
-        // 시뮬레이터 등 카메라가 없으면 input 구성 실패 — 프리뷰 없이 종료.
+        // Without a camera (e.g. simulator), input setup fails — exit without a preview.
         guard let device = AVCaptureDevice.default(for: .video),
               let input = try? AVCaptureDeviceInput(device: device),
               session.canAddInput(input)

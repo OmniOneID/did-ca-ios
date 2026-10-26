@@ -23,7 +23,9 @@ enum TokenGeneratorError: Error {
     case userIdMissing
 }
 
-// DIDCA 는 AccessToken/RefreshToken 을 사용하지 않으므로 needToken 파라미터 없음.
+// DIDCA does not use AccessToken/RefreshToken, so there is no needToken parameter.
+// Wallet tokens are obtained via two paths depending on purpose — read/present are issued locally by the SDK
+// (0 network calls); everything else (create, issue, delete, update, personalize) round-trips to CAS.
 nonisolated enum TokenGenerator {
 
     enum ECDHTarget {
@@ -31,7 +33,23 @@ nonisolated enum TokenGenerator {
         case holder
     }
 
+    /// Purposes the SDK allows issuing without CAS — mirror of `WalletToken.localTokenPurposes` (internal, so not referenceable).
+    /// Based on SDK doc WalletAPI.md 2.6. If the SDK-side list changes, update this too.
+    private static let localTokenPurposes: Set<WalletTokenPurposeEnum> = [
+        .LIST_VC, .DETAIL_VC, .PRESENT_VP, .LIST_VC_AND_PRESENT_VP
+    ]
+
     static func requestWalletToken(purpose: WalletTokenPurposeEnum) async throws -> String {
+        // Read/present purposes are issued locally — listing and proximity presentation work even with the backend unreachable.
+        // Before personalization the SDK throws notPersonalized(05046), but in this app root is onboarding before
+        // personalization, so execution never reaches here.
+        if localTokenPurposes.contains(purpose) {
+            return try WalletAPI.shared.createLocalWalletToken(
+                purpose: purpose,
+                pkgName: Bundle.main.bundleIdentifier!
+            )
+        }
+
         guard let userId = Preference.getUserId() else {
             throw TokenGeneratorError.userIdMissing
         }
@@ -59,7 +77,7 @@ nonisolated enum TokenGenerator {
 // MARK: - ECDH / Server Token (Step3 RegUserProtocol)
 extension TokenGenerator {
 
-    /// 디바이스 또는 홀더 키 합의로 sharedSecret 도출 (서버 토큰 복호화 키).
+    /// Derives sharedSecret via device or holder key agreement (the key for decrypting the server token).
     static func getSharedSecret(type: ECDHTarget = .holder, txId: String) async throws -> Data {
         let nonce = try CryptoUtils.generateNonce(size: 16)
         let clientNonce = MultibaseUtils.encode(type: .base58BTC, data: nonce)
@@ -109,7 +127,7 @@ extension TokenGenerator {
         return keyData.prefix(32)
     }
 
-    /// 서버 토큰(hServerToken) 생성. RegUserProtocol 의 retrieveKYC / requestRegisterUser 에 사용.
+    /// Creates the server token (hServerToken). Used by RegUserProtocol's retrieveKYC / requestRegisterUser.
     static func requestServerToken(
         purpose: WalletTokenPurposeEnum,
         txId: String,
@@ -142,7 +160,7 @@ extension TokenGenerator {
         return MultibaseUtils.encode(type: .base64, data: digest)
     }
 
-    // certVc 무결성 검증: DID 일치, role claim 일치, issuer 서명 검증.
+    // certVc integrity check: DID match, role claim match, issuer signature verification.
     private static func verifyCertVc(serverTokenData: ServerTokenData, roleType: RoleTypeEnum) async throws {
         let did = serverTokenData.provider.did
         let urlString = serverTokenData.provider.certVcRef

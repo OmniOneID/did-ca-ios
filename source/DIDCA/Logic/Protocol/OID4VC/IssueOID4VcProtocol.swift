@@ -26,65 +26,74 @@ enum IssueOID4VcError: Error {
     case unsupportedGrantType
     case failedToFetchIssuerMetadata
     case tokenEndpointNotFound
-    /// 오퍼의 credential_issuer 가 사용자가 목록에서 고른 Issuer 와 다름 (WebView 발급 전용 검증).
+    /// The offer's credential_issuer differs from the Issuer the user picked from the list (WebView-issuance-only check).
     case issuerMismatch
-    /// 오퍼의 credential_configuration_ids 에 사용자가 고른 configuration 이 없음 (WebView 발급 전용 검증).
+    /// The offer's credential_configuration_ids does not contain the configuration the user picked (WebView-issuance-only check).
     case configurationMismatch
-    /// **token 요청** 단계의 실패 — 원인 오류를 그대로 안고 있다.
+    /// Failure in the **token request** step — wraps the underlying error as-is.
     ///
-    /// 설계서 TXC-E-01 이 `"Wrong code."` 폴백을 **이 단계에만** 걸기 때문에 따로 표시한다.
-    /// 이 표시가 없으면 metadata 조회·지갑 토큰·credential 요청 실패까지 "코드가 틀렸다"로 읽힌다.
+    /// Marked separately because design spec TXC-E-01 applies the `"Wrong code."` fallback **only to this step**.
+    /// Without this marker, failures in metadata fetch, wallet token, or credential request would all read as "wrong code".
     case tokenRequestFailed(Error)
+    /// `requestCredential(passcode:)` was called before `requestToken(txCode:)` succeeded — call-order error.
+    case tokenNotRequested
 }
 
-// MARK: - OID4VCI 발급 흐름
+// MARK: - OID4VCI issuance flow
 //
-// TAS 핸드셰이크(propose/profile/confirm) 기반의 IssueVcProtocol 과 달리 OID4VCI 는
-// credential offer → token → credential 3-스텝이고, 진입점을 둘로 나눈다:
+// Unlike IssueVcProtocol, which is based on the TAS handshake (propose/profile/confirm), OID4VCI is
+// a 3-step credential offer → token → credential flow, split into three entry points:
 //
-//   begin(rawPayload:)                     ─ 사용자 입력(tx_code)·인증 전
+//   begin(rawPayload:)                     ─ before user input (tx_code) and auth
 //     [1] getCredentialOffer         credential_offer_uri GET → CredentialOfferResponse
 //
-//   process(txCode:passcode:)              ─ tx_code / holder 인증 직후
-//     [2] getMetadata                issuer 메타데이터(token/credential 엔드포인트 등)
+//   requestToken(txCode:)                  ─ right after tx_code input, before holder auth
+//     [2] getMetadata                issuer metadata (token/credential endpoints, etc.)
 //     [3] getTokenByPreAuthorizedCode  pre-authorized_code + tx_code → access token
-//     [4] requestCredential          holder 키 바인딩 proof 서명 + VC 저장 → 발급 크리덴셜(String)
 //
-// begin 과 process 사이의 tx_code 입력 모달·holder 인증 시트는 UI 정책이라
-// 호출측(AppCoordinator)이 담당한다. 이 타입은 offer 를 노출해 호출측이
-// grant type / tx_code 사양을 읽고 모달을 띄울 수 있게 한다.
+//   requestCredential(passcode:)           ─ right after holder auth
+//     [4] requestCredential          sign holder key-binding proof + store VC → issued credential (String)
 //
-// SDK OID4VCIProtocol 의 6개 API(getCredentialOffer/getMetadata/
-// getTokenByPreAuthorizedCode/requestCredential/checkGrantType/getCredentialRequestURL)를
-// 이름·시그니처 그대로 이 타입에 static 으로 이식했다. static 들은 상태가 없고
-// (인자 in → 결과 out), 인스턴스(offer/metadata)와 orchestration(begin/process)이
-// 그 위를 감싼다. 발급 본체(proof 서명·검증·저장)는 여전히 SDK 소관이라
-// requestCredential 은 WalletAPI.requestIssueOID4VC 로 위임한다.
+// Why the token is obtained before auth: the tx_code verdict only comes from the token response (TXC-B-01·TXC-E-01).
+// If deferred until after auth, a user who entered the wrong code would only see the error after also entering a PIN.
+//
+// The tx_code input modal and holder auth sheet between steps are UI policy, so
+// the caller (AppCoordinator) handles them. This type exposes the offer so the caller can
+// read the grant type / tx_code spec and present the modal.
+//
+// The 6 APIs of SDK OID4VCIProtocol (getCredentialOffer/getMetadata/
+// getTokenByPreAuthorizedCode/requestCredential/checkGrantType/getCredentialRequestURL) were
+// ported into this type as statics with the same names and signatures. The statics are stateless
+// (args in → result out), and the instance (offer/metadata/token) and orchestration (begin/requestToken/
+// requestCredential)
+// wrap them. The issuance core (proof signing, verification, storage) is still the SDK's job, so
+// requestCredential delegates to WalletAPI.requestIssueOID4VC.
 nonisolated final class IssueOID4VcProtocol {
 
     typealias TxCode = CredentialOfferResponse.Grants.PreAuthorizedCode.TxCode
 
-    // MARK: - 단계별 누적 상태
+    // MARK: - State accumulated per step
     let offer: CredentialOfferResponse
     private var metadata: IssuerMetadataResponse? = nil
+    private var token: TokenResponse? = nil
 
     private init(offer: CredentialOfferResponse) {
         self.offer = offer
     }
 
-    // MARK: - 노출 프로퍼티 (호출측 UI 정책 판단용)
+    // MARK: - Exposed properties (for the caller's UI policy decisions)
 
-    // v1 은 pre-authorized_code 그랜트만 지원.
+    // v1 supports only the pre-authorized_code grant.
     var isPreAuthorized: Bool {
         offer.grants.preAuthorizedCode != nil
     }
 
-    // offer 가 요구하는 tx_code 사양 (없으면 nil → tx_code 입력 불요).
+    // tx_code spec required by the offer (nil if none → no tx_code input needed).
     var txCode: TxCode? {
         offer.grants.preAuthorizedCode?.txCode
     }
 
-    // 발급 대상 credential configuration id (offer 의 첫 항목).
+    // Credential configuration id to issue (the offer's first entry).
     var configurationId: String? {
         offer.credentialConfigurationIds?.first
     }
@@ -95,11 +104,11 @@ nonisolated final class IssueOID4VcProtocol {
         return IssueOID4VcProtocol(offer: offer)
     }
 
-    /// WebView(user-initiated) 발급 전용 오퍼 검증 — 사용자가 목록에서 고른 Issuer·Credential 이
-    /// 실제로 돌아온 오퍼와 같은지 확인한다 (연동 가이드 §8).
+    /// Offer validation for WebView (user-initiated) issuance only — checks that the Issuer and Credential the user
+    /// picked from the list match the offer that actually came back (integration guide §8).
     ///
-    /// QR·딥링크 발급에는 호출하지 않는다. 그쪽은 오퍼 자체가 흐름의 출발점이라 대조할 기준값이 없다.
-    /// 오퍼 1회 소비 여부는 발급 세션을 소유한 호출측(AppCoordinator)이 판정한다.
+    /// Not called for QR/deep-link issuance. There the offer itself is the flow's starting point, so there is no reference to compare against.
+    /// Whether the offer has already been consumed once is decided by the caller that owns the issuance session (AppCoordinator).
     func validate(expectedIssuer: String, configurationId: String) throws {
         guard OID4VciIssuerDirectory.isSameIssuer(offer.credentialIssuer, expectedIssuer) else {
             throw IssueOID4VcError.issuerMismatch
@@ -112,44 +121,58 @@ nonisolated final class IssueOID4VcProtocol {
         }
     }
 
-    // MARK: - [2][3][4] process
+    // MARK: - [2][3] requestToken
     //
-    // getTokenByPreAuthorizedCode / requestCredential 둘 다 issuer 메타데이터를 요구하므로
-    // 발급 전 한 번 조회해 재사용한다. passcode 가 발급 proof 서명 키를 정한다:
-    // PIN(nil 아님)→#pin 키, BIO(nil)→#bio 키.
+    // getTokenByPreAuthorizedCode and requestCredential both require issuer metadata, so
+    // fetch it once here, keep it alongside the token, and requestCredential reuses it.
     ///
-    /// - parameter txCode: 오퍼가 tx_code 를 요구할 때만 사용자 입력값. 요구하지 않으면 **nil** —
-    ///   빈 문자열을 넘기면 `tx_code=` 가 실려 나간다. WebView(user-initiated) 발급은 서버가
-    ///   tx_code 없는 Pre-Authorized Code 를 만들므로 항상 nil 이다.
-    @discardableResult
-    func process(txCode: String?, passcode: String?) async throws -> String {
-        guard let configId = configurationId else {
+    /// - parameter txCode: user input, only when the offer requires tx_code. If not required, **nil** —
+    ///   passing an empty string sends `tx_code=`. WebView (user-initiated) issuance is always nil, since the server
+    ///   creates a Pre-Authorized Code without tx_code.
+    func requestToken(txCode: String?) async throws {
+        guard configurationId != nil else {
             throw IssueOID4VcError.noIssuableCredential
         }
 
         let metadata = try await Self.getMetadata(issuerURL: offer.credentialIssuer)
-        self.metadata = metadata
 
-        // tx_code 판정은 token POST 응답에만 걸린다(TXC-E-01) — 그 한 호출만
-        // `tokenRequestFailed` 로 올라오도록 `requestTokenByPreAuthorizedCode` 안에서 감싼다.
-        // 준비 단계 실패는 여기서 그대로 통과해 일반 발급 실패로 처리된다.
+        // The tx_code verdict applies only to the token POST response (TXC-E-01) — so only that one call
+        // is wrapped inside `requestTokenByPreAuthorizedCode` to surface as `tokenRequestFailed`.
+        // Failures in the preparation steps pass straight through here and are treated as general issuance failures.
         let token = try await Self.requestTokenByPreAuthorizedCode(
             metadata: metadata,
             offer: offer,
             txCode: txCode
         )
 
-        // OID4VCI: token 응답이 authorization_details 를 내려주면 credential_identifier 로 요청해야 한다
-        // (configuration id 경로 대신). configId 에 해당하는 항목의 첫 identifier 를 고르고,
-        // 없으면 nil → requestCredential 이 credential_configuration_id 경로로 폴백한다.
+        self.metadata = metadata
+        self.token = token
+    }
+
+    // MARK: - [4] requestCredential
+    //
+    // Call only after requestToken has finished. The passcode decides the issuance proof signing key:
+    // PIN (non-nil) → #pin key, BIO (nil) → #bio key.
+    @discardableResult
+    func requestCredential(passcode: String?) async throws -> String {
+        guard let configId = configurationId else {
+            throw IssueOID4VcError.noIssuableCredential
+        }
+        guard let metadata, let token else {
+            throw IssueOID4VcError.tokenNotRequested
+        }
+
+        // OID4VCI: if the token response returns authorization_details, the request must use credential_identifier
+        // (instead of the configuration id path). Pick the first identifier of the entry matching configId;
+        // if none, nil → requestCredential falls back to the credential_configuration_id path.
         let credentialIdentifier = token.authorizationDetails?
             .first { $0.credentialConfigurationId == configId }?
             .credentialIdentifiers?.first
 
-        // requestCredential 이 hWalletToken 필수. 발급 목적의 지갑 토큰 조달.
+        // requestCredential requires hWalletToken. Obtain a wallet token for issuance.
         let hWalletToken = try await TokenGenerator.requestWalletToken(purpose: .ISSUE_VC)
 
-        return try await Self.requestCredential(
+        let credentialId = try await Self.requestCredential(
             hWalletToken: hWalletToken,
             metadata: metadata,
             token: token,
@@ -158,10 +181,14 @@ nonisolated final class IssueOID4VcProtocol {
             credentialIdentifier: credentialIdentifier,
             APIGatewayURL: URLs.API_URL
         )
+
+        // Recorded so the same issuer metadata can be fetched again at revocation — exactly the raw value used for the metadata fetch.
+        OID4VcIssuerStore.register(credentialIssuer: offer.credentialIssuer, forCredentialId: credentialId)
+        return credentialId
     }
 }
 
-// MARK: - 이식한 SDK OID4VCIProtocol API (static · 이름/시그니처 그대로 · 상태 없음)
+// MARK: - Ported SDK OID4VCIProtocol API (static · same names/signatures · stateless)
 extension IssueOID4VcProtocol {
 
     static func getCredentialOffer(uri: String) async throws -> CredentialOfferResponse {
@@ -190,9 +217,9 @@ extension IssueOID4VcProtocol {
         try await getMetadata(metadataURI: issuerURL + "/.well-known/openid-credential-issuer")
     }
 
-    /// well-known 경로가 이미 붙은 완성 URI 로 조회한다. 목록사업자가 내려주는
-    /// `credentialIssuerMetadataUri` 가 이 형태라, issuer URL 에 경로를 덧붙이는 위 오버로드를 쓰면
-    /// well-known 이 두 번 붙는다.
+    /// Fetches using a complete URI that already has the well-known path. The `credentialIssuerMetadataUri`
+    /// given by the directory provider has this form, so using the overload above (which appends the path to the issuer URL)
+    /// would append well-known twice.
     static func getMetadata(metadataURI: String) async throws -> IssuerMetadataResponse {
         let meta: IssuerMetadataResponse = try await CommunicationClient.sendRequest(
             urlString: metadataURI,
@@ -236,10 +263,10 @@ extension IssueOID4VcProtocol {
             authorizationDetails: authDetailsArray
         )
 
-        // TXC-E-01 — tx_code 판정이 걸리는 지점은 **이 POST 의 응답뿐**이다. 위의 준비 단계
-        // (grant type 확인·endpoint 검증·authorization server 메타데이터 조회·발급 대상 확인)는
-        // 코드와 무관하므로 `tokenRequestFailed` 로 감싸지 않는다 — 감싸면 코드를 맞게 입력한
-        // 사용자에게 "Wrong code." 를 보여주게 된다.
+        // TXC-E-01 — the only point where the tx_code verdict applies is **this POST's response**. The preparation steps above
+        // (grant type check, endpoint validation, authorization server metadata fetch, issuance target check) are
+        // unrelated to the code, so they are not wrapped in `tokenRequestFailed` — wrapping them would show
+        // "Wrong code." to a user who entered the correct code.
         do {
             let response: TokenResponse = try await CommunicationClient.sendPostUrlencoded(
                 urlString: tokenEndpoint,

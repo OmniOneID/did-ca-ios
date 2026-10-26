@@ -17,92 +17,92 @@
 
 import Foundation
 
-// MARK: - VP 요청 화면 표시 데이터
+// MARK: - VP request screen display data
 //
-// 프로토콜 계층이 만들고 화면이 소비하는 공용 표시 모델. 특정 프로토콜에 종속되지 않는다 —
-// 일반 VP(`VerifyVcProtocol`)와 OID4VP(`OID4VPPresenter`)가 같은 `VpPresentationSummary` 를
-// 만들어 같은 화면(`VPRequestView`)에 넘긴다.
+// Shared display model built by the protocol layer and consumed by the screen. Not tied to a specific protocol —
+// plain VP (`VerifyVcProtocol`) and OID4VP (`OID4VPPresenter`) build the same `VpPresentationSummary`
+// and hand it to the same screen (`VPRequestView`).
 
 struct VpPresentationClaim {
-    /// 제출에 나가는 claim code. **SDK 가 준 값 그대로**이며 앱이 만들거나 쪼개지 않는다
-    /// (SD-JWT·mDoc 은 `consentItems`, W3C 는 VC claim code).
+    /// The claim code that goes out in the submission. **Exactly as given by the SDK**; the app neither builds nor splits it
+    /// (SD-JWT/mDoc: `consentItems`, W3C: VC claim code).
     ///
-    /// `nil` 이면 **제출 단위가 아닌 행**이다 — 따로 뺄 수단이 없어 상위·원소와 함께 나간다
-    /// (SD-JWT rideAlong, mDoc 복합값의 원소). 체크박스를 그리지 않는다.
+    /// `nil` means **a row that is not a submission unit** — there is no way to exclude it, so it goes out with its parent/element
+    /// (SD-JWT rideAlong, elements of an mDoc composite value). No checkbox is drawn.
     let code: String?
     let label: String
-    /// 텍스트 또는 이미지(portrait 등). 이미지면 값 텍스트를 대신한다 — 판정은 `ImageClaim` 참조.
+    /// Text or image (portrait etc.). An image replaces the value text — see `ImageClaim` for detection.
     let value: ClaimValue
-    /// REQUIRED 섹션 소속 — 사용자가 뺄 수 없고 항상 제출된다. **체크박스를 그리지 않는다**
-    /// (회색 비활성 체크박스를 쓰지 않는다 — PRES-B-02).
-    /// `false` 면 OPTIONAL 섹션이며 **해제 상태로 시작한다**(opt-in).
+    /// Belongs to the REQUIRED section — the user can't remove it and it is always submitted. **No checkbox is drawn**
+    /// (no greyed-out disabled checkbox is used — PRES-B-02).
+    /// `false` means the OPTIONAL section, and it **starts unchecked** (opt-in).
     ///
-    /// 필수는 상위에서만 내려오고 서브트리 전체로 전파된다 — 상위가 REQUIRED 면 하위도 REQUIRED 다.
+    /// Required-ness only flows down from the parent and propagates to the whole subtree — if the parent is REQUIRED, so are the children.
     let required: Bool
-    /// 하위 항목. 비어 있으면 단일 행, 있으면 접이식 그룹으로 표시한다(한 단계만 그린다).
+    /// Child items. If empty, shown as a single row; otherwise as a collapsible group (only one level is drawn).
     ///
-    /// **하위는 개별 체크박스를 갖지 않는다** — 그룹은 상위 체크박스 하나로 통째 토글한다(PRES-B-03).
-    /// 하위의 `code` 는 제출 집합을 만들 때만 쓴다(상위를 켜면 하위 code 도 함께 나간다).
-    /// W3C VC 는 항상 비어 있다.
+    /// **Children have no individual checkboxes** — a group is toggled as a whole by the single parent checkbox (PRES-B-03).
+    /// A child's `code` is used only when building the submission set (turning on the parent sends the child codes too).
+    /// Always empty for W3C VCs.
     var children: [VpPresentationClaim] = []
 }
 
-/// VP 요청 화면에 표시할 제출 대상 문서 (크리덴셜 1건).
+/// A document to submit shown on the VP request screen (one credential).
 ///
-/// 화면과 제출이 같은 근거를 쓰도록, 프로토콜 계층이 한 번만 산출해 여기에 담는다.
-/// 카드 하나는 네 집합으로 기술된다 — 노출(`claims`), 필수(`claims[].required`),
-/// 체크(화면이 보유), 제출(`requiredCodes ∪ 체크`).
+/// So that screen and submission rely on the same basis, the protocol layer computes it once and stores it here.
+/// A card is described by four sets — exposed (`claims`), required (`claims[].required`),
+/// checked (held by the screen), submitted (`requiredCodes ∪ checked`).
 struct VpPresentationDocument {
     let credentialId: String
     let title: String
-    /// 노출 집합. REQUIRED 는 항상 제출되고, OPTIONAL 은 해제 상태로 시작한다.
+    /// The exposed set. REQUIRED is always submitted; OPTIONAL starts unchecked.
     let claims: [VpPresentationClaim]
-    /// 토글과 무관하게 항상 제출되는 code — 노출 집합의 REQUIRED 행(과 그 하위)과 같은 집합이다.
+    /// Codes always submitted regardless of toggles — the same set as the REQUIRED rows (and their children) of the exposed set.
     ///
-    /// **필수는 화면에 숨기지 않는다**(PRES-B-06) — OpenDID 프로파일의 `requiredClaims` 가
-    /// `displayClaims` 밖에 있어도 노출 집합에 합쳐 그린다. 그래도 이 집합을 따로 들고 다니는 것은
-    /// 제출 산출을 노출 트리 순회에 의존시키지 않기 위해서다(하위 code 까지 한 곳에 모인다).
+    /// **Required items are not hidden from the screen** (PRES-B-06) — even if the OpenDID profile's `requiredClaims` lie
+    /// outside `displayClaims`, they are merged into the exposed set and drawn. This set is still carried separately
+    /// so the submission output doesn't depend on traversing the exposed tree (child codes are gathered in one place).
     let requiredCodes: Set<String>
-    /// OID4VC 발급분(SD-JWT·mDoc) 전용 — 이 크리덴셜이 **발급 시 바인딩된** 서명키 id
+    /// Only for OID4VC-issued (SD-JWT/mDoc) — the signing key id this credential was **bound to at issuance**
     /// (`KeyIdName.pin` / `.bio`).
-    /// 제출 인증수단은 사용자가 고르는 게 아니라 이 값이 정한다: SDK 는 크리덴셜마다
-    /// `walletCore.sign(keyId: item.kid, …)` 로 서명하므로 바인딩을 바꿀 수 없다.
-    /// W3C 카드는 nil (그쪽은 passcode 유무로 서명키가 갈려 사용자가 고를 수 있다).
+    /// The presentation authentication method isn't chosen by the user but determined by this value: the SDK signs each credential
+    /// with `walletCore.sign(keyId: item.kid, …)`, so the binding can't be changed.
+    /// nil for W3C cards (there the signing key depends on whether a passcode is present, so the user can choose).
     let bindingKeyId: String?
 }
 
-/// 검증자명 + 제출 **후보** 목록 — VPRequestView 표시용.
+/// Verifier name + list of submission **candidates** — for VPRequestView display.
 ///
-/// 후보가 2건 이상이면 화면이 라디오 옵션 카드로 갈리고 **그중 1건만 제출된다**(PRES-B-05).
-/// 후보는 ACTIVE 인 것만 담긴다(PRES-B-06) — 0건이면 프로토콜 계층이 제출 불가로 중단한다.
+/// With 2+ candidates the screen splits into radio option cards and **only one of them is submitted** (PRES-B-05).
+/// Only ACTIVE candidates are included (PRES-B-06) — if 0, the protocol layer aborts as not submittable.
 struct VpPresentationSummary {
     let verifierName: String
     let documents: [VpPresentationDocument]
 }
 
-// MARK: - ZKP VP 요청 화면 표시 데이터 (`VPRequestZkpView` 용)
+// MARK: - ZKP VP request screen display data (for `VPRequestZkpView`)
 
-/// 하나의 sub-referent 표시 — raw 값과 그 값이 나온 schema 이름을 함께 묶어,
-/// 같은 raw 값을 가진 sub-referent 들이 picker 에서 다른 row 로 구분되도록 한다.
-/// did-ca-ios `AttrSelectionViewController` 의 cell (nameLabel = schema.name, valueLabel = raw) 대응.
+/// Display of one sub-referent — bundles the raw value with the schema name it came from,
+/// so sub-referents with the same raw value are distinguished as different rows in the picker.
+/// Counterpart of the cell in did-ca-ios `AttrSelectionViewController` (nameLabel = schema.name, valueLabel = raw).
 struct ZkpAvailableValue {
     let raw: String
     let schemaName: String
 }
 
 struct ZkpPresentationClaim {
-    /// AvailableReferent.attrReferent[].key — coordinator 선택/입력 dictionary 의 키.
+    /// AvailableReferent.attrReferent[].key — key of the coordinator's selection/input dictionary.
     let key: String
     let label: String
-    /// 사용자가 picker 로 고를 수 있는 후보 — AvailableReferent.attrReferent[].referent[] 와 1:1.
-    /// index 가 그대로 UserReferent(attrReferent:selectedIndex:) 의 selectedIndex 로 사용됨.
-    /// did-ca-ios 와 동일하게 predicate 도 후보 리스트를 제공해 사용자가 선택. self-attribute 는 비어 있음.
+    /// Candidates the user can pick in the picker — 1:1 with AvailableReferent.attrReferent[].referent[].
+    /// The index is used directly as the selectedIndex of UserReferent(attrReferent:selectedIndex:).
+    /// As in did-ca-ios, predicates also provide a candidate list for the user to choose. Empty for self-attributes.
     let availableValues: [ZkpAvailableValue]
 }
 
-/// VPRequestZkpView 표시 모델 — did-ca-ios `ZKPSubmissionViewController` 와 동일하게
-/// 단일 화면에 Attributes / Predicates / Self-Attributes 세 그룹이 평탄하게 나열된다
-/// (document 단위 grouping 없음).
+/// VPRequestZkpView display model — as in did-ca-ios `ZKPSubmissionViewController`,
+/// the three groups Attributes / Predicates / Self-Attributes are listed flat on a single screen
+/// (no per-document grouping).
 struct ZkpPresentationSummary {
     let verifierName: String
     let title: String

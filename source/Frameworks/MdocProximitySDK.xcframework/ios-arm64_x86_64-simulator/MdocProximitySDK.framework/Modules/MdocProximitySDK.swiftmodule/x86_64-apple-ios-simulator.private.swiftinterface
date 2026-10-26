@@ -1,0 +1,1173 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.4 effective-5.10 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)
+// swift-module-flags: -target x86_64-apple-ios17.0-simulator -enable-objc-interop -enable-library-evolution -language-mode 5 -O -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name MdocProximitySDK
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.4
+import CoreBluetooth
+import CoreNFC
+import CryptoKit
+import Foundation
+import Swift
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+@_spi(MdocInternal) final public class NfcCardTransport : MdocProximitySDK::DataRetrievalTransportProtocol {
+  @_spi(MdocInternal) final public let events: _Concurrency::AsyncStream<MdocProximitySDK::TransportEvent>
+  @_spi(MdocInternal) public init(emulation: any MdocProximitySDK::NfcCardEmulationProtocol, handoverSelect: Foundation::Data, maxCommandDataLength: Swift::Int, maxResponseDataLength: Swift::Int, mode: MdocProximitySDK::Type4TagEmulator.MdocProximitySDK::Mode = .static)
+  @_spi(MdocInternal) final public func open(_ config: MdocProximitySDK::TransportConfig) async throws
+  @_spi(MdocInternal) final public func send(_ message: Foundation::Data) async throws
+  @_spi(MdocInternal) final public func close(_ reason: MdocProximitySDK::TransportCloseReason)
+  @_spi(MdocInternal) @objc deinit
+}
+@_spi(MdocInternal) public struct Type4TagEmulator {
+  @_spi(MdocInternal) public static let ccFileID: Swift::UInt16
+  @_spi(MdocInternal) public static let ndefFileID: Swift::UInt16
+  @_spi(MdocInternal) public enum Mode {
+    @_spi(MdocInternal) case `static`
+    @_spi(MdocInternal) case negotiated(MdocProximitySDK::Tnep.MdocProximitySDK::ServiceParameter, onHandoverRequest: (Foundation::Data) -> Foundation::Data?)
+  }
+  @_spi(MdocInternal) public var lastResponse: Foundation::Data? {
+    get
+  }
+  @_spi(MdocInternal) public init(ndefMessage: Foundation::Data, mode: MdocProximitySDK::Type4TagEmulator.MdocProximitySDK::Mode = .static, mLe: Swift::UInt16 = 255, mLc: Swift::UInt16 = 255)
+  @_spi(MdocInternal) public mutating func reset()
+  @_spi(MdocInternal) public mutating func handle(_ apdu: Foundation::Data) -> Foundation::Data
+}
+@_spi(MdocInternal) public struct NfcCarrierConfiguration : Swift::Equatable {
+  @_spi(MdocInternal) public let maxCommandDataLength: Swift::UInt64
+  @_spi(MdocInternal) public let maxResponseDataLength: Swift::UInt64
+  @_spi(MdocInternal) public init(maxCommandDataLength: Swift::UInt64, maxResponseDataLength: Swift::UInt64)
+  @_spi(MdocInternal) public var encoded: Foundation::Data {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public init?(_ d: Foundation::Data)
+  @_spi(MdocInternal) public static func == (a: MdocProximitySDK::NfcCarrierConfiguration, b: MdocProximitySDK::NfcCarrierConfiguration) -> Swift::Bool
+}
+@_spi(MdocInternal) public enum HandoverSelect {
+  @_spi(MdocInternal) public static let nfcCarrierType: Foundation::Data
+  @_spi(MdocInternal) public static let bleOobType: Foundation::Data
+  @_spi(MdocInternal) public static let version: Swift::UInt8
+  @_spi(MdocInternal) public struct Parsed : Swift::Equatable {
+    @_spi(MdocInternal) public var carriers: [MdocProximitySDK::TransmissionTechnology]
+    @_spi(MdocInternal) public var nfc: MdocProximitySDK::NfcCarrierConfiguration?
+    @_spi(MdocInternal) public var bleServiceUUID: Foundation::Data?
+    @_spi(MdocInternal) public init()
+    @_spi(MdocInternal) public static func == (a: MdocProximitySDK::HandoverSelect.MdocProximitySDK::Parsed, b: MdocProximitySDK::HandoverSelect.MdocProximitySDK::Parsed) -> Swift::Bool
+  }
+  @_spi(MdocInternal) public static func build(deviceEngagement: Foundation::Data, nfc: MdocProximitySDK::NfcCarrierConfiguration) -> Foundation::Data
+  @_spi(MdocInternal) public static func build(deviceEngagement: Foundation::Data, carrier: MdocProximitySDK::HandoverSelect.MdocProximitySDK::Carrier) -> Foundation::Data
+  @_spi(MdocInternal) public enum Carrier : Swift::Equatable {
+    @_spi(MdocInternal) case nfc(MdocProximitySDK::NfcCarrierConfiguration)
+    @_spi(MdocInternal) case nfcReader
+    @_spi(MdocInternal) case ble(role: Swift::UInt8, serviceUUID: Foundation::Data?)
+    @_spi(MdocInternal) public static func == (a: MdocProximitySDK::HandoverSelect.MdocProximitySDK::Carrier, b: MdocProximitySDK::HandoverSelect.MdocProximitySDK::Carrier) -> Swift::Bool
+  }
+  @_spi(MdocInternal) public static func bleOob(role: Swift::UInt8, serviceUUID: Foundation::Data?) -> Foundation::Data
+  @_spi(MdocInternal) public static func parse(_ records: [MdocProximitySDK::NdefRecord]) -> MdocProximitySDK::HandoverSelect.MdocProximitySDK::Parsed
+}
+@_spi(MdocInternal) public enum HandoverRequest {
+  @_spi(MdocInternal) public struct Offer : Swift::Equatable {
+    @_spi(MdocInternal) public var carriers: [MdocProximitySDK::TransmissionTechnology]
+    @_spi(MdocInternal) public var nfc: MdocProximitySDK::NfcCarrierConfiguration?
+    @_spi(MdocInternal) public var readerServiceUUID: Foundation::Data?
+    @_spi(MdocInternal) public init()
+    @_spi(MdocInternal) public static func == (a: MdocProximitySDK::HandoverRequest.MdocProximitySDK::Offer, b: MdocProximitySDK::HandoverRequest.MdocProximitySDK::Offer) -> Swift::Bool
+  }
+  @_spi(MdocInternal) public static func build(carriers: [MdocProximitySDK::HandoverSelect.MdocProximitySDK::Carrier], collisionResolution: Swift::UInt16) -> Foundation::Data
+  @_spi(MdocInternal) public static func parse(_ records: [MdocProximitySDK::NdefRecord]) -> MdocProximitySDK::HandoverRequest.MdocProximitySDK::Offer
+}
+public protocol NfcCardEmulationProtocol : AnyObject {
+  func start(handler: @escaping (Foundation::Data) async -> Foundation::Data) async throws
+  var onDeactivated: (() -> Swift::Void)? { get set }
+  func stop()
+}
+@_spi(MdocInternal) final public class FirstReadyTransport : MdocProximitySDK::DataRetrievalTransportProtocol {
+  @_spi(MdocInternal) final public let events: _Concurrency::AsyncStream<MdocProximitySDK::TransportEvent>
+  @_spi(MdocInternal) final public var onCandidateEvent: ((Swift::String, MdocProximitySDK::TransportEvent) -> Swift::Void)?
+  @_spi(MdocInternal) convenience public init(_ candidates: [any MdocProximitySDK::DataRetrievalTransportProtocol])
+  @_spi(MdocInternal) public init(_ labeled: [(Swift::String, any MdocProximitySDK::DataRetrievalTransportProtocol)])
+  @_spi(MdocInternal) final public func open(_ config: MdocProximitySDK::TransportConfig) async throws
+  @_spi(MdocInternal) final public func add(_ label: Swift::String, _ candidate: any MdocProximitySDK::DataRetrievalTransportProtocol) async throws
+  @_spi(MdocInternal) final public func send(_ message: Foundation::Data) async throws
+  @_spi(MdocInternal) final public func close(_ reason: MdocProximitySDK::TransportCloseReason)
+  @_spi(MdocInternal) @objc deinit
+}
+@_spi(MdocInternal) @objc final public class BleGattClientTransport : ObjectiveC::NSObject, MdocProximitySDK::DataRetrievalTransportProtocol {
+  @_spi(MdocInternal) final public let events: _Concurrency::AsyncStream<MdocProximitySDK::TransportEvent>
+  @_spi(MdocInternal) public init(profile: MdocProximitySDK::BleServiceProfile, expectedIdent: Foundation::Data? = nil, drainLimit: Foundation::TimeInterval = 1.0)
+  @_spi(MdocInternal) final public func open(_ config: MdocProximitySDK::TransportConfig) async throws
+  @_spi(MdocInternal) final public func send(_ message: Foundation::Data) async throws
+  @_spi(MdocInternal) final public func close(_ reason: MdocProximitySDK::TransportCloseReason)
+  @_spi(MdocInternal) @objc deinit
+}
+@_spi(MdocInternal) extension MdocProximitySDK::BleGattClientTransport : CoreBluetooth::CBCentralManagerDelegate, CoreBluetooth::CBPeripheralDelegate {
+  @_spi(MdocInternal) @objc final public func centralManagerDidUpdateState(_ manager: CoreBluetooth::CBCentralManager)
+  @_spi(MdocInternal) @objc final public func centralManager(_ manager: CoreBluetooth::CBCentralManager, didDiscover p: CoreBluetooth::CBPeripheral, advertisementData: [Swift::String : Any], rssi RSSI: Foundation::NSNumber)
+  @_spi(MdocInternal) @objc final public func centralManager(_ manager: CoreBluetooth::CBCentralManager, didConnect p: CoreBluetooth::CBPeripheral)
+  @_spi(MdocInternal) @objc final public func centralManager(_ manager: CoreBluetooth::CBCentralManager, didFailToConnect p: CoreBluetooth::CBPeripheral, error: (any Swift::Error)?)
+  @_spi(MdocInternal) @objc final public func centralManager(_ manager: CoreBluetooth::CBCentralManager, didDisconnectPeripheral p: CoreBluetooth::CBPeripheral, error: (any Swift::Error)?)
+  @_spi(MdocInternal) @objc final public func peripheral(_ p: CoreBluetooth::CBPeripheral, didDiscoverServices error: (any Swift::Error)?)
+  @_spi(MdocInternal) @objc final public func peripheral(_ p: CoreBluetooth::CBPeripheral, didDiscoverCharacteristicsFor service: CoreBluetooth::CBService, error: (any Swift::Error)?)
+  @_spi(MdocInternal) @objc final public func peripheral(_ p: CoreBluetooth::CBPeripheral, didUpdateValueFor c: CoreBluetooth::CBCharacteristic, error: (any Swift::Error)?)
+  @_spi(MdocInternal) @objc final public func peripheral(_ p: CoreBluetooth::CBPeripheral, didUpdateNotificationStateFor c: CoreBluetooth::CBCharacteristic, error: (any Swift::Error)?)
+}
+@_spi(MdocInternal) @objc final public class BleGattServerTransport : ObjectiveC::NSObject, MdocProximitySDK::DataRetrievalTransportProtocol {
+  @_spi(MdocInternal) final public let events: _Concurrency::AsyncStream<MdocProximitySDK::TransportEvent>
+  @_spi(MdocInternal) public init(profile: MdocProximitySDK::BleServiceProfile, identValue: Foundation::Data? = nil, publishesL2cap: Swift::Bool = false, drainLimit: Foundation::TimeInterval = 1.0)
+  @_spi(MdocInternal) final public func open(_ config: MdocProximitySDK::TransportConfig) async throws
+  @_spi(MdocInternal) final public func send(_ message: Foundation::Data) async throws
+  @_spi(MdocInternal) final public func close(_ reason: MdocProximitySDK::TransportCloseReason)
+  @_spi(MdocInternal) @objc deinit
+}
+@_spi(MdocInternal) extension MdocProximitySDK::BleGattServerTransport : CoreBluetooth::CBPeripheralManagerDelegate {
+  @_spi(MdocInternal) @objc final public func peripheralManagerDidUpdateState(_ peripheral: CoreBluetooth::CBPeripheralManager)
+  @_spi(MdocInternal) @objc final public func peripheralManager(_ peripheral: CoreBluetooth::CBPeripheralManager, didAdd service: CoreBluetooth::CBService, error: (any Swift::Error)?)
+  @_spi(MdocInternal) @objc final public func peripheralManager(_ peripheral: CoreBluetooth::CBPeripheralManager, central: CoreBluetooth::CBCentral, didSubscribeTo characteristic: CoreBluetooth::CBCharacteristic)
+  @_spi(MdocInternal) @objc final public func peripheralManager(_ peripheral: CoreBluetooth::CBPeripheralManager, central: CoreBluetooth::CBCentral, didUnsubscribeFrom characteristic: CoreBluetooth::CBCharacteristic)
+  @_spi(MdocInternal) @objc final public func peripheralManager(_ peripheral: CoreBluetooth::CBPeripheralManager, didReceiveWrite requests: [CoreBluetooth::CBATTRequest])
+  @_spi(MdocInternal) @objc final public func peripheralManagerIsReady(toUpdateSubscribers peripheral: CoreBluetooth::CBPeripheralManager)
+  @_spi(MdocInternal) @objc final public func peripheralManager(_ peripheral: CoreBluetooth::CBPeripheralManager, didPublishL2CAPChannel PSM: CoreBluetooth::CBL2CAPPSM, error: (any Swift::Error)?)
+  @_spi(MdocInternal) @objc final public func peripheralManager(_ peripheral: CoreBluetooth::CBPeripheralManager, didOpen channel: CoreBluetooth::CBL2CAPChannel?, error: (any Swift::Error)?)
+}
+@_spi(MdocInternal) @objc @_hasMissingDesignatedInitializers public class BleL2capTransportBase : ObjectiveC::NSObject, MdocProximitySDK::DataRetrievalTransportProtocol {
+  @_spi(MdocInternal) final public let events: _Concurrency::AsyncStream<MdocProximitySDK::TransportEvent>
+  @_spi(MdocInternal) public func open(_ config: MdocProximitySDK::TransportConfig) async throws
+  @_spi(MdocInternal) public func send(_ message: Foundation::Data) async throws
+  @_spi(MdocInternal) public func close(_ reason: MdocProximitySDK::TransportCloseReason)
+  @_spi(MdocInternal) @objc deinit
+}
+@_spi(MdocInternal) @objc @_hasMissingDesignatedInitializers final public class BleL2capOpeningTransport : MdocProximitySDK::BleL2capTransportBase {
+  @_spi(MdocInternal) public init(profile: MdocProximitySDK::BleServiceProfile, psm: Swift::UInt64? = nil, expectedIdent: Foundation::Data? = nil, fallback: @escaping () -> any MdocProximitySDK::DataRetrievalTransportProtocol)
+  @_spi(MdocInternal) override final public func open(_ config: MdocProximitySDK::TransportConfig) async throws
+  @_spi(MdocInternal) override final public func close(_ reason: MdocProximitySDK::TransportCloseReason)
+  @_spi(MdocInternal) @objc deinit
+}
+@_spi(MdocInternal) extension MdocProximitySDK::BleL2capOpeningTransport : CoreBluetooth::CBCentralManagerDelegate, CoreBluetooth::CBPeripheralDelegate {
+  @_spi(MdocInternal) @objc final public func centralManagerDidUpdateState(_ manager: CoreBluetooth::CBCentralManager)
+  @_spi(MdocInternal) @objc final public func centralManager(_ manager: CoreBluetooth::CBCentralManager, didDiscover p: CoreBluetooth::CBPeripheral, advertisementData: [Swift::String : Any], rssi RSSI: Foundation::NSNumber)
+  @_spi(MdocInternal) @objc final public func centralManager(_ manager: CoreBluetooth::CBCentralManager, didConnect p: CoreBluetooth::CBPeripheral)
+  @_spi(MdocInternal) @objc final public func centralManager(_ manager: CoreBluetooth::CBCentralManager, didFailToConnect p: CoreBluetooth::CBPeripheral, error: (any Swift::Error)?)
+  @_spi(MdocInternal) @objc final public func centralManager(_ manager: CoreBluetooth::CBCentralManager, didDisconnectPeripheral p: CoreBluetooth::CBPeripheral, error: (any Swift::Error)?)
+  @_spi(MdocInternal) @objc final public func peripheral(_ p: CoreBluetooth::CBPeripheral, didDiscoverServices error: (any Swift::Error)?)
+  @_spi(MdocInternal) @objc final public func peripheral(_ p: CoreBluetooth::CBPeripheral, didDiscoverCharacteristicsFor service: CoreBluetooth::CBService, error: (any Swift::Error)?)
+  @_spi(MdocInternal) @objc final public func peripheral(_ p: CoreBluetooth::CBPeripheral, didUpdateValueFor c: CoreBluetooth::CBCharacteristic, error: (any Swift::Error)?)
+  @_spi(MdocInternal) @objc final public func peripheral(_ p: CoreBluetooth::CBPeripheral, didOpen channel: CoreBluetooth::CBL2CAPChannel?, error: (any Swift::Error)?)
+}
+@_spi(MdocInternal) public struct BleServiceProfile {
+  @_spi(MdocInternal) public let serviceUUID: CoreBluetooth::CBUUID
+  @_spi(MdocInternal) public let state: CoreBluetooth::CBUUID
+  @_spi(MdocInternal) public let client2Server: CoreBluetooth::CBUUID
+  @_spi(MdocInternal) public let server2Client: CoreBluetooth::CBUUID
+  @_spi(MdocInternal) public let ident: CoreBluetooth::CBUUID?
+  @_spi(MdocInternal) public let l2cap: CoreBluetooth::CBUUID
+  @_spi(MdocInternal) public static func peripheralServerMode(serviceUUID: CoreBluetooth::CBUUID) -> MdocProximitySDK::BleServiceProfile
+  @_spi(MdocInternal) public static func centralClientMode(serviceUUID: CoreBluetooth::CBUUID) -> MdocProximitySDK::BleServiceProfile
+}
+@_spi(MdocInternal) public struct DeviceTransportFactory : MdocProximitySDK::TransportFactoryProtocol {
+  @_spi(MdocInternal) public init()
+  @_spi(MdocInternal) public var availableTechnologies: [MdocProximitySDK::TransmissionTechnology] {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public func makeTransport(_ p: MdocProximitySDK::TransportParameters) throws -> any MdocProximitySDK::DataRetrievalTransportProtocol
+}
+public enum MdocDeviceState : Swift::String {
+  case idle, engaging, sessionEstablished, awaitingResponse, responding, completed, terminated, failed
+  public init?(rawValue: Swift::String)
+  public typealias RawValue = Swift::String
+  public var rawValue: Swift::String {
+    get
+  }
+}
+public protocol MdocDeviceSessionDelegate : AnyObject {
+  func mdocSession(_ s: MdocProximitySDK::MdocDeviceSession, didChangeState state: MdocProximitySDK::MdocDeviceState)
+  func mdocSession(_ s: MdocProximitySDK::MdocDeviceSession, didReceiveRequest deviceRequest: Foundation::Data, sessionTranscript: Foundation::Data)
+  func mdocSession(_ s: MdocProximitySDK::MdocDeviceSession, didProgress sent: Swift::Int, of total: Swift::Int)
+  func mdocSessionDidFinish(_ s: MdocProximitySDK::MdocDeviceSession)
+  func mdocSession(_ s: MdocProximitySDK::MdocDeviceSession, didFailWith error: MdocProximitySDK::MdocProximityError)
+}
+extension MdocProximitySDK::MdocDeviceSessionDelegate {
+  public func mdocSession(_ s: MdocProximitySDK::MdocDeviceSession, didProgress sent: Swift::Int, of total: Swift::Int)
+}
+final public class MdocDeviceSession {
+  final public var state: MdocProximitySDK::MdocDeviceState {
+    get
+  }
+  weak final public var delegate: (any MdocProximitySDK::MdocDeviceSessionDelegate)?
+  @_spi(MdocInternal) final public var onTransportEvent: ((MdocProximitySDK::TransportEvent) -> Swift::Void)?
+  @_spi(MdocInternal) final public var onCandidateEvent: ((Swift::String, MdocProximitySDK::TransportEvent) -> Swift::Void)?
+  final public let configuration: MdocProximitySDK::MdocDeviceConfiguration
+  convenience public init(configuration: MdocProximitySDK::MdocDeviceConfiguration = MdocDeviceConfiguration(), nfcCardEmulation: (any MdocProximitySDK::NfcCardEmulationProtocol)? = nil)
+  @_spi(MdocInternal) public init(configuration: MdocProximitySDK::MdocDeviceConfiguration = MdocDeviceConfiguration(), transportFactory: any MdocProximitySDK::TransportFactoryProtocol, nfcCardEmulation: (any MdocProximitySDK::NfcCardEmulationProtocol)? = nil)
+  @_spi(MdocInternal) public init(configuration: MdocProximitySDK::MdocDeviceConfiguration = MdocDeviceConfiguration(), transport: any MdocProximitySDK::DataRetrievalTransportProtocol)
+  @discardableResult
+  final public func start(technology: MdocProximitySDK::EngagementTechnology) async throws -> MdocProximitySDK::EngagementPayload
+  @_spi(MdocInternal) final public func begin(transcript: MdocProximitySDK::SessionTranscriptBytes, sharedSecret: Foundation::Data)
+  @_spi(MdocInternal) final public func receive(_ encrypted: Foundation::Data) throws
+  final public func respond(deviceResponse: Foundation::Data) async throws
+  final public func reject() async throws
+  final public func terminate()
+  @objc deinit
+}
+@_spi(MdocInternal) public enum Apdu {
+  @_spi(MdocInternal) public static func selectByName(_ aid: Foundation::Data) -> Foundation::Data
+  @_spi(MdocInternal) public static func selectFile(_ fileID: Swift::UInt16) -> Foundation::Data
+  @_spi(MdocInternal) public static func readBinary(offset: Swift::UInt16, length: Swift::UInt8) -> Foundation::Data
+  @_spi(MdocInternal) public static func updateBinary(offset: Swift::UInt16, data: Foundation::Data) -> Foundation::Data
+  @_spi(MdocInternal) public static func envelope(_ chunk: Foundation::Data, isLast: Swift::Bool, le: Swift::UInt8?) -> Foundation::Data
+  @_spi(MdocInternal) public static func envelopeExtended(_ chunk: Foundation::Data, isLast: Swift::Bool, le: Swift::Int?) -> Foundation::Data
+  @_spi(MdocInternal) public static func getResponseExtended(le: Swift::Int) -> Foundation::Data
+  @_spi(MdocInternal) public static func berTlv53(_ payload: Foundation::Data) -> Foundation::Data
+  @_spi(MdocInternal) public static func getResponse(le: Swift::UInt8) -> Foundation::Data
+  @_spi(MdocInternal) public static func statusWord(_ r: Foundation::Data) -> Swift::UInt16
+}
+@_spi(MdocInternal) public struct CapabilityContainer {
+  @_spi(MdocInternal) public let mLe: Swift::UInt16
+  @_spi(MdocInternal) public let mLc: Swift::UInt16
+  @_spi(MdocInternal) public let ndefFileID: Swift::UInt16
+  @_spi(MdocInternal) public let maxNdefSize: Swift::UInt16
+  @_spi(MdocInternal) public let writable: Swift::Bool
+  @_spi(MdocInternal) public init?(_ d: Foundation::Data)
+}
+@_spi(MdocInternal) public struct EnvelopeChaining {
+  @_spi(MdocInternal) public let commandLimit: Swift::Int
+  @_spi(MdocInternal) public let responseLimit: Swift::Int
+  @_spi(MdocInternal) public var extended: Swift::Bool {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public init(commandLimit: Swift::Int, responseLimit: Swift::Int)
+  @_spi(MdocInternal) public func commands(for message: Foundation::Data) throws -> [Foundation::Data]
+  @_spi(MdocInternal) public enum Next : Swift::Equatable {
+    @_spi(MdocInternal) case done(Foundation::Data)
+    @_spi(MdocInternal) case getResponse(le: Swift::UInt8)
+    @_spi(MdocInternal) case getResponseExtended(le: Swift::Int)
+    @_spi(MdocInternal) case failed
+    @_spi(MdocInternal) public static func == (a: MdocProximitySDK::EnvelopeChaining.MdocProximitySDK::Next, b: MdocProximitySDK::EnvelopeChaining.MdocProximitySDK::Next) -> Swift::Bool
+  }
+  @_spi(MdocInternal) public func step(_ response: Foundation::Data) -> MdocProximitySDK::EnvelopeChaining.MdocProximitySDK::Next
+}
+@_spi(MdocInternal) public protocol Iso7816Channel : AnyObject {
+  @_spi(MdocInternal) func transceive(_ apdu: Foundation::Data) async throws -> Foundation::Data
+  @_spi(MdocInternal) var isAvailable: Swift::Bool { get }
+  @_spi(MdocInternal) func close()
+}
+@_spi(MdocInternal) public enum BerTlv53 {
+  @_spi(MdocInternal) public static func value(_ d: Foundation::Data) throws -> Foundation::Data
+  @_spi(MdocInternal) public static func values(_ d: Foundation::Data) throws -> Foundation::Data
+  @_spi(MdocInternal) public static func encode(_ payload: Foundation::Data) -> Foundation::Data
+}
+@_spi(MdocInternal) public struct NdefRecord : Swift::Equatable {
+  @_spi(MdocInternal) public let typeNameFormat: Swift::UInt8
+  @_spi(MdocInternal) public let type: Foundation::Data
+  @_spi(MdocInternal) public let id: Foundation::Data
+  @_spi(MdocInternal) public let payload: Foundation::Data
+  @_spi(MdocInternal) public var typeText: Swift::String {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public static func == (a: MdocProximitySDK::NdefRecord, b: MdocProximitySDK::NdefRecord) -> Swift::Bool
+}
+@_spi(MdocInternal) public enum Ndef {
+  @_spi(MdocInternal) public static let deviceEngagementType: Foundation::Data
+  @_spi(MdocInternal) public static let handoverServiceName: Swift::String
+  @_spi(MdocInternal) public static func parse(_ message: Foundation::Data) throws -> [MdocProximitySDK::NdefRecord]
+  @_spi(MdocInternal) public static func encode(_ records: [MdocProximitySDK::NdefRecord]) -> Foundation::Data
+  @_spi(MdocInternal) public static func isNegotiated(_ records: [MdocProximitySDK::NdefRecord]) -> Swift::Bool
+  @_spi(MdocInternal) public static func deviceEngagement(in records: [MdocProximitySDK::NdefRecord]) -> Foundation::Data?
+}
+@_spi(MdocInternal) public enum Tnep {
+  @_spi(MdocInternal) public static let version: Swift::UInt8
+  @_spi(MdocInternal) public static let statusSuccess: Swift::UInt8
+  @_spi(MdocInternal) public static let statusProtocolError: Swift::UInt8
+  @_spi(MdocInternal) public struct ServiceParameter : Swift::Equatable {
+    @_spi(MdocInternal) public var serviceName: Swift::String
+    @_spi(MdocInternal) public var communicationMode: Swift::UInt8
+    @_spi(MdocInternal) public var waitTimeCode: Swift::UInt8
+    @_spi(MdocInternal) public var maxWaitExtensions: Swift::UInt8
+    @_spi(MdocInternal) public var maxMessageSize: Swift::UInt16
+    @_spi(MdocInternal) public init(serviceName: Swift::String, communicationMode: Swift::UInt8 = 0x00, waitTimeCode: Swift::UInt8, maxWaitExtensions: Swift::UInt8, maxMessageSize: Swift::UInt16)
+    @_spi(MdocInternal) public var minimumWaitTime: Foundation::TimeInterval {
+      @_spi(MdocInternal) get
+    }
+    @_spi(MdocInternal) public var record: MdocProximitySDK::NdefRecord {
+      @_spi(MdocInternal) get
+    }
+    @_spi(MdocInternal) public init?(payload d: Foundation::Data)
+    @_spi(MdocInternal) public static func == (a: MdocProximitySDK::Tnep.MdocProximitySDK::ServiceParameter, b: MdocProximitySDK::Tnep.MdocProximitySDK::ServiceParameter) -> Swift::Bool
+  }
+  @_spi(MdocInternal) public static func serviceParameter(in records: [MdocProximitySDK::NdefRecord]) -> MdocProximitySDK::Tnep.MdocProximitySDK::ServiceParameter?
+  @_spi(MdocInternal) public static func serviceSelect(_ name: Swift::String) -> MdocProximitySDK::NdefRecord
+  @_spi(MdocInternal) public static func selectedService(in records: [MdocProximitySDK::NdefRecord]) -> Swift::String?
+  @_spi(MdocInternal) public static func status(_ code: Swift::UInt8) -> MdocProximitySDK::NdefRecord
+  @_spi(MdocInternal) public static func statusCode(in records: [MdocProximitySDK::NdefRecord]) -> Swift::UInt8?
+}
+@_spi(MdocInternal) public enum NfcAid {
+  @_spi(MdocInternal) public static let ndefTagApplication: Foundation::Data
+  @_spi(MdocInternal) public static let mdocDataRetrieval: Foundation::Data
+}
+@_spi(MdocInternal) public enum NfcCapability {
+  @_spi(MdocInternal) public static func mdocSupport() -> MdocProximitySDK::TransportCapability
+  @_spi(MdocInternal) public static func readerSupport(hasSelectIdentifiers: Swift::Bool) -> MdocProximitySDK::TransportCapability
+  @_spi(MdocInternal) public static func validateSelectIdentifiers(_ list: [Foundation::Data]) -> Swift::Bool
+  @_spi(MdocInternal) public static func validateSelectIdentifiers(_ list: [Swift::String]) -> Swift::Bool
+}
+@_spi(MdocInternal) final public class NfcDataRetrievalTransport : MdocProximitySDK::DataRetrievalTransportProtocol {
+  @_spi(MdocInternal) final public let events: _Concurrency::AsyncStream<MdocProximitySDK::TransportEvent>
+  @_spi(MdocInternal) public init(channel: any MdocProximitySDK::Iso7816Channel, maxCommandDataLength: Swift::Int, maxResponseDataLength: Swift::Int, selectsApplication: Swift::Bool = true, presenceInterval: Foundation::TimeInterval = 0.25)
+  @_spi(MdocInternal) final public func open(_ config: MdocProximitySDK::TransportConfig) async throws
+  @_spi(MdocInternal) final public func send(_ message: Foundation::Data) async throws
+  @_spi(MdocInternal) final public func close(_ reason: MdocProximitySDK::TransportCloseReason)
+  @_spi(MdocInternal) @objc deinit
+}
+@_spi(MdocInternal) public struct Type4TagEngagementReader {
+  @_spi(MdocInternal) public init(channel: any MdocProximitySDK::Iso7816Channel)
+  @_spi(MdocInternal) public struct NotAnMdocTag : Swift::Error {
+  }
+  @_spi(MdocInternal) public struct Result {
+    @_spi(MdocInternal) public let engagementBytes: Foundation::Data
+    @_spi(MdocInternal) public let handoverSelectBytes: Foundation::Data
+    @_spi(MdocInternal) public let writable: Swift::Bool
+    @_spi(MdocInternal) public let records: [MdocProximitySDK::NdefRecord]
+    @_spi(MdocInternal) public let handover: MdocProximitySDK::HandoverSelect.MdocProximitySDK::Parsed
+    @_spi(MdocInternal) public let handoverRequestBytes: Foundation::Data?
+  }
+  @_spi(MdocInternal) public func read(negotiated: ((MdocProximitySDK::Tnep.MdocProximitySDK::ServiceParameter) -> Foundation::Data)? = nil) async throws -> MdocProximitySDK::Type4TagEngagementReader.MdocProximitySDK::Result
+  @_spi(MdocInternal) public func select(fileID: Swift::UInt16) async throws
+  @_spi(MdocInternal) public func readBinary(offset: Swift::Int, length: Swift::Int, unit: Swift::Int) async throws -> Foundation::Data
+  @_spi(MdocInternal) public func updateBinary(offset: Swift::Int, data: Foundation::Data, unit: Swift::Int) async throws
+}
+@_spi(MdocInternal) public enum CborDecoder {
+  @_spi(MdocInternal) public static let maxDepth: Swift::Int
+  @_spi(MdocInternal) public static let maxItems: Swift::Int
+  @_spi(MdocInternal) public static func decode(_ data: Foundation::Data) throws -> MdocProximitySDK::CborValue
+  @_spi(MdocInternal) public static func decodeNode(_ data: Foundation::Data) throws -> MdocProximitySDK::CborNode
+}
+@_spi(MdocInternal) public enum CborEncoder {
+  @_spi(MdocInternal) public static func encode(_ v: MdocProximitySDK::CborValue) -> Foundation::Data
+  @_spi(MdocInternal) public static func tag24(_ innerEncoded: Foundation::Data) -> Foundation::Data
+}
+@_spi(MdocInternal) indirect public enum CborValue : Swift::Equatable {
+  @_spi(MdocInternal) case unsigned(Swift::UInt64)
+  @_spi(MdocInternal) case negative(Swift::UInt64)
+  @_spi(MdocInternal) case bytes(Foundation::Data)
+  @_spi(MdocInternal) case text(Swift::String)
+  @_spi(MdocInternal) case array([MdocProximitySDK::CborValue])
+  @_spi(MdocInternal) case map([MdocProximitySDK::CborPair])
+  @_spi(MdocInternal) case tagged(Swift::UInt64, MdocProximitySDK::CborValue)
+  @_spi(MdocInternal) case bool(Swift::Bool)
+  @_spi(MdocInternal) case null
+  @_spi(MdocInternal) case undefined
+  @_spi(MdocInternal) case float(Swift::Double)
+  @_spi(MdocInternal) case simple(Swift::UInt8)
+  @_spi(MdocInternal) public static func == (a: MdocProximitySDK::CborValue, b: MdocProximitySDK::CborValue) -> Swift::Bool
+}
+@_spi(MdocInternal) public struct CborPair : Swift::Equatable {
+  @_spi(MdocInternal) public let key: MdocProximitySDK::CborValue
+  @_spi(MdocInternal) public let value: MdocProximitySDK::CborValue
+  @_spi(MdocInternal) public init(_ key: MdocProximitySDK::CborValue, _ value: MdocProximitySDK::CborValue)
+  @_spi(MdocInternal) public static func == (a: MdocProximitySDK::CborPair, b: MdocProximitySDK::CborPair) -> Swift::Bool
+}
+@_spi(MdocInternal) extension MdocProximitySDK::CborValue {
+  @_spi(MdocInternal) public func member(_ key: Swift::UInt64) -> MdocProximitySDK::CborValue?
+  @_spi(MdocInternal) public func member(_ key: Swift::String) -> MdocProximitySDK::CborValue?
+  @_spi(MdocInternal) public var asUInt: Swift::UInt64? {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public var asText: Swift::String? {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public var asBytes: Foundation::Data? {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public var asArray: [MdocProximitySDK::CborValue]? {
+    @_spi(MdocInternal) get
+  }
+}
+@_spi(MdocInternal) @_hasMissingDesignatedInitializers final public class CborNode {
+  @_spi(MdocInternal) final public let value: MdocProximitySDK::CborValue
+  @_spi(MdocInternal) final public let range: Swift::Range<Swift::Int>
+  @_spi(MdocInternal) final public let children: [MdocProximitySDK::CborNode]
+  @_spi(MdocInternal) @objc deinit
+}
+@_spi(MdocInternal) public struct OpaqueCBOR : Swift::Equatable {
+  @_spi(MdocInternal) public init(preserving bytes: Foundation::Data)
+  @_spi(MdocInternal) public init(_ node: MdocProximitySDK::CborNode, in data: Foundation::Data)
+  @_spi(MdocInternal) public var raw: Foundation::Data {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public static func == (a: MdocProximitySDK::OpaqueCBOR, b: MdocProximitySDK::OpaqueCBOR) -> Swift::Bool
+}
+@_spi(MdocInternal) public enum EngagementCodec {
+  @_spi(MdocInternal) public static func decode(_ data: Foundation::Data) throws -> MdocProximitySDK::DeviceEngagement
+}
+@_spi(MdocInternal) extension MdocProximitySDK::EngagementCodec {
+  @_spi(MdocInternal) public static func encode(cipherSuite: Swift::Int64 = 1, eDeviceKeyBytes: MdocProximitySDK::OpaqueCBOR, retrievalMethods: [MdocProximitySDK::DeviceRetrievalMethod]) throws -> Foundation::Data
+}
+@_spi(MdocInternal) public enum RequestCodec {
+  @_spi(MdocInternal) public static func encode(_ request: MdocProximitySDK::DeviceRequest) throws -> Foundation::Data
+}
+@_spi(MdocInternal) public enum ResponseCodec {
+  @_spi(MdocInternal) public static func decode(_ data: Foundation::Data) throws -> MdocProximitySDK::DeviceResponse
+}
+@_spi(MdocInternal) public enum SessionCodec {
+  @_spi(MdocInternal) public static func encodeEstablishment(eReaderKeyBytes: MdocProximitySDK::OpaqueCBOR, data: Foundation::Data) throws -> Foundation::Data
+  @_spi(MdocInternal) public static func decodeEstablishment(_ bytes: Foundation::Data) throws -> MdocProximitySDK::SessionEstablishment
+  @_spi(MdocInternal) public static func encodeData(_ s: MdocProximitySDK::SessionData) -> Foundation::Data
+  @_spi(MdocInternal) public static func decodeData(_ bytes: Foundation::Data) throws -> MdocProximitySDK::SessionData
+}
+@_spi(MdocInternal) public struct CoseSign1 {
+  @_spi(MdocInternal) public let protectedBytes: Foundation::Data
+  @_spi(MdocInternal) public let unprotected: MdocProximitySDK::CborValue
+  @_spi(MdocInternal) public let payload: Foundation::Data?
+  @_spi(MdocInternal) public let signature: Foundation::Data
+  @_spi(MdocInternal) public init(protectedBytes: Foundation::Data, unprotected: MdocProximitySDK::CborValue, payload: Foundation::Data?, signature: Foundation::Data)
+  @_spi(MdocInternal) public var keyIdentifier: Swift::String? {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public var algorithm: Swift::Int? {
+    @_spi(MdocInternal) get
+  }
+}
+@_spi(MdocInternal) public struct CoseMac0 {
+  @_spi(MdocInternal) public let protectedBytes: Foundation::Data
+  @_spi(MdocInternal) public let unprotected: MdocProximitySDK::CborValue
+  @_spi(MdocInternal) public let payload: Foundation::Data?
+  @_spi(MdocInternal) public let tag: Foundation::Data
+  @_spi(MdocInternal) public var algorithm: Swift::Int? {
+    @_spi(MdocInternal) get
+  }
+}
+@_spi(MdocInternal) public enum CoseConstants {
+  @_spi(MdocInternal) public static let protectedES256: Foundation::Data
+  @_spi(MdocInternal) public static let protectedHMAC256: Foundation::Data
+  @_spi(MdocInternal) public static let externalAAD: Foundation::Data
+  @_spi(MdocInternal) public static let es256: Swift::Int
+  @_spi(MdocInternal) public static let hmac256: Swift::Int
+}
+@_spi(MdocInternal) public enum SigStructure {
+  @_spi(MdocInternal) public static func bytes(protected: Foundation::Data, payload: Foundation::Data) -> Foundation::Data
+}
+@_spi(MdocInternal) public enum MacStructure {
+  @_spi(MdocInternal) public static func bytes(protected: Foundation::Data, payload: Foundation::Data) -> Foundation::Data
+}
+@_spi(MdocInternal) public enum CoseKey {
+  @_spi(MdocInternal) public static func encode(x963: Foundation::Data) throws -> Foundation::Data
+  @_spi(MdocInternal) public static func keyBytes(x963: Foundation::Data) throws -> MdocProximitySDK::OpaqueCBOR
+  @_spi(MdocInternal) public static func x963(fromKeyBytes bytes: MdocProximitySDK::OpaqueCBOR) throws -> Foundation::Data
+}
+@_spi(MdocInternal) public struct EphemeralKeyPair {
+  @_spi(MdocInternal) public let keyBytes: MdocProximitySDK::OpaqueCBOR
+  @_spi(MdocInternal) public init()
+  @_spi(MdocInternal) public func sharedSecret(withPeerKeyBytes peer: MdocProximitySDK::OpaqueCBOR) throws -> Foundation::Data
+  @_spi(MdocInternal) public func sharedSecret(withPeerX963 sec1: Foundation::Data) throws -> Foundation::Data
+}
+@_spi(MdocInternal) public enum DeviceAuthenticationBuilder {
+  @_spi(MdocInternal) public static func bytes(transcript: MdocProximitySDK::SessionTranscriptBytes, docType: MdocProximitySDK::DocType, deviceNameSpacesBytes: MdocProximitySDK::OpaqueCBOR) throws -> Foundation::Data
+  @_spi(MdocInternal) public static func taggedBytes(transcript: MdocProximitySDK::SessionTranscriptBytes, docType: MdocProximitySDK::DocType, deviceNameSpacesBytes: MdocProximitySDK::OpaqueCBOR) throws -> Foundation::Data
+}
+public enum MdocProximityError : Swift::Error, Swift::Equatable {
+  case bleUnavailable(reason: MdocProximitySDK::CapabilityReason)
+  case nfcUnavailable(reason: MdocProximitySDK::CapabilityReason)
+  case wifiAwareUnavailable(reason: MdocProximitySDK::CapabilityReason)
+  case configurationRequired(action: MdocProximitySDK::RequiredAction)
+  case malformedEngagement(detail: Swift::String)
+  case unsupportedTransmissionTechnology
+  case engagementTimeout
+  case connectionFailed(detail: Swift::String)
+  case peerDisconnected
+  case transferTimeout
+  case sessionEncryptionFailed
+  case counterMismatch
+  case terminatedByPeer(status: Swift::UInt64)
+  case decodeFailed(detail: Swift::String)
+  case validationFailed(detail: Swift::String)
+  case responseTimeout
+  case invalidState(current: Swift::String, attempted: Swift::String)
+  public static func == (a: MdocProximitySDK::MdocProximityError, b: MdocProximitySDK::MdocProximityError) -> Swift::Bool
+}
+public enum CapabilityReason : Swift::Equatable {
+  case noHardware
+  case osVersion
+  case vendorPolicy
+  public static func == (a: MdocProximitySDK::CapabilityReason, b: MdocProximitySDK::CapabilityReason) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public enum RequiredAction : Swift::Equatable {
+  case enableBluetooth
+  case enableNfc
+  case enableWifi
+  case enableLocationServices
+  case grantPermission(Swift::String)
+  case addEntitlement(Swift::String)
+  public static func == (a: MdocProximitySDK::RequiredAction, b: MdocProximitySDK::RequiredAction) -> Swift::Bool
+}
+public typealias DocType = Swift::String
+public typealias NameSpace = Swift::String
+public typealias DataElementIdentifier = Swift::String
+public struct MdocDeviceConfiguration {
+  public var engagementTimeout: Swift::Double
+  public var responseTimeout: Swift::Double
+  public var bleAdvertiseMode: MdocProximitySDK::BleAdvertiseMode
+  public var l2capUpgrade: Swift::Bool
+  public var callbackQueue: Dispatch::DispatchQueue
+  public init()
+}
+public struct MdocReaderConfiguration {
+  public var transmissionPriority: [MdocProximitySDK::TransmissionKind]
+  public var blePreferredMode: MdocProximitySDK::BleModePreference
+  public var skipIssuerAuth: Swift::Bool
+  public var l2capUpgrade: Swift::Bool
+  public var connectTimeout: Swift::Double
+  public var responseTimeout: Swift::Double
+  public var callbackQueue: Dispatch::DispatchQueue
+  public init()
+}
+@_spi(MdocInternal) public enum CallbackDispatch {
+  @_spi(MdocInternal) public static func run(on queue: Dispatch::DispatchQueue, _ body: @escaping () -> Swift::Void)
+}
+public enum TransportCapability : Swift::Equatable {
+  case supported
+  case unsupported(reason: MdocProximitySDK::CapabilityReason)
+  case configurationRequired(action: MdocProximitySDK::RequiredAction)
+  public static func == (a: MdocProximitySDK::TransportCapability, b: MdocProximitySDK::TransportCapability) -> Swift::Bool
+}
+@_spi(MdocInternal) extension MdocProximitySDK::TransportCapability {
+  @_spi(MdocInternal) public func blockingError(for kind: MdocProximitySDK::TransmissionKind) -> MdocProximitySDK::MdocProximityError?
+}
+public struct RoleCapabilities : Swift::Equatable {
+  public let ble: MdocProximitySDK::TransportCapability
+  public let nfc: MdocProximitySDK::TransportCapability
+  public let wifiAware: MdocProximitySDK::TransportCapability
+  @_spi(MdocInternal) public func blockingError(among kinds: [MdocProximitySDK::TransmissionKind]) -> MdocProximitySDK::MdocProximityError?
+  public static func == (a: MdocProximitySDK::RoleCapabilities, b: MdocProximitySDK::RoleCapabilities) -> Swift::Bool
+}
+public struct MdocCapabilities : Swift::Equatable {
+  public let mdoc: MdocProximitySDK::RoleCapabilities
+  public let mdocReader: MdocProximitySDK::RoleCapabilities
+  @_spi(MdocInternal) public static var provider: (() -> MdocProximitySDK::MdocCapabilities)?
+  @_spi(MdocInternal) public static func assumeAllSupportedForTests()
+  public static func current() -> MdocProximitySDK::MdocCapabilities
+  public static func == (a: MdocProximitySDK::MdocCapabilities, b: MdocProximitySDK::MdocCapabilities) -> Swift::Bool
+}
+@_spi(MdocInternal) public enum BleCapabilityProbe {
+  @_spi(MdocInternal) public static func current() -> MdocProximitySDK::TransportCapability
+}
+@_spi(MdocInternal) public struct DeviceEngagement {
+  @_spi(MdocInternal) public let version: Swift::String
+  @_spi(MdocInternal) public let cipherSuiteIdentifier: Swift::Int64
+  @_spi(MdocInternal) public let eDeviceKeyBytes: MdocProximitySDK::OpaqueCBOR
+  @_spi(MdocInternal) public let retrievalMethods: [MdocProximitySDK::DeviceRetrievalMethod]
+  @_spi(MdocInternal) public let unknownKeys: [Swift::UInt64]
+  @_spi(MdocInternal) public let raw: MdocProximitySDK::OpaqueCBOR
+}
+@_spi(MdocInternal) public struct DeviceRetrievalMethod {
+  @_spi(MdocInternal) public let type: Swift::UInt64
+  @_spi(MdocInternal) public let version: Swift::UInt64
+  @_spi(MdocInternal) public let options: MdocProximitySDK::CborValue
+  @_spi(MdocInternal) public init(type: Swift::UInt64, version: Swift::UInt64, options: MdocProximitySDK::CborValue)
+}
+@_spi(MdocInternal) public struct BleOptions {
+  @_spi(MdocInternal) public let peripheralServerMode: Swift::Bool
+  @_spi(MdocInternal) public let centralClientMode: Swift::Bool
+  @_spi(MdocInternal) public let peripheralServerUUID: Foundation::Data?
+  @_spi(MdocInternal) public let centralClientUUID: Foundation::Data?
+  @_spi(MdocInternal) public let deviceAddress: Foundation::Data?
+  @_spi(MdocInternal) public let l2capPSM: Swift::UInt64?
+  @_spi(MdocInternal) public init?(_ v: MdocProximitySDK::CborValue)
+}
+@_spi(MdocInternal) public struct WifiOptions : Swift::Equatable {
+  @_spi(MdocInternal) public let passphrase: Swift::String?
+  @_spi(MdocInternal) public let operatingClass: Swift::UInt64?
+  @_spi(MdocInternal) public let channelNumber: Swift::UInt64?
+  @_spi(MdocInternal) public let supportedBands: Foundation::Data?
+  @_spi(MdocInternal) public init(passphrase: Swift::String? = nil, operatingClass: Swift::UInt64? = nil, channelNumber: Swift::UInt64? = nil, supportedBands: Foundation::Data?)
+  @_spi(MdocInternal) public init?(_ v: MdocProximitySDK::CborValue)
+  @_spi(MdocInternal) public var cbor: MdocProximitySDK::CborValue {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public static func == (a: MdocProximitySDK::WifiOptions, b: MdocProximitySDK::WifiOptions) -> Swift::Bool
+}
+@_spi(MdocInternal) public struct NfcOptions {
+  @_spi(MdocInternal) public let maxCommandDataLength: Swift::UInt64
+  @_spi(MdocInternal) public let maxResponseDataLength: Swift::UInt64
+  @_spi(MdocInternal) public init?(_ v: MdocProximitySDK::CborValue)
+}
+public struct EngagementPayload {
+  public let qrString: Swift::String?
+  public let technology: MdocProximitySDK::EngagementTechnology
+  public let transmissions: [MdocProximitySDK::TransmissionTechnology]
+  @_spi(MdocInternal) public let deviceEngagement: MdocProximitySDK::DeviceEngagement
+  @_spi(MdocInternal) public let handover: MdocProximitySDK::EngagementArtifacts?
+  @_spi(MdocInternal) public var nfcMaxCommandDataLength: Swift::UInt64? {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public var nfcMaxResponseDataLength: Swift::UInt64? {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public func sessionTranscript(eReaderKeyBytes: MdocProximitySDK::OpaqueCBOR) -> MdocProximitySDK::SessionTranscriptBytes
+  public static func parse(qrString: Swift::String) throws -> MdocProximitySDK::EngagementPayload
+  @_spi(MdocInternal) public static func make(_ engagement: Foundation::Data, technology: MdocProximitySDK::EngagementTechnology = .qr, handover: MdocProximitySDK::EngagementArtifacts? = nil) throws -> MdocProximitySDK::EngagementPayload
+  @_spi(MdocInternal) public var bleOptions: MdocProximitySDK::BleOptions? {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public var wifiOptions: MdocProximitySDK::WifiOptions? {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public var nfcOptions: MdocProximitySDK::NfcOptions? {
+    @_spi(MdocInternal) get
+  }
+}
+public enum MdocDocTypes {
+  public static let mDL: Swift::String
+  public static let mDLNameSpace: Swift::String
+}
+public enum ItemsRequestPresets {
+  public static func ageOver(_ age: Swift::Int, includePortrait: Swift::Bool = false) -> MdocProximitySDK::ItemsRequestSpec
+  public static var identity: MdocProximitySDK::ItemsRequestSpec {
+    get
+  }
+  public static var drivingPrivileges: MdocProximitySDK::ItemsRequestSpec {
+    get
+  }
+}
+extension MdocProximitySDK::ItemsRequestSpec {
+  public func jsonData() throws -> Foundation::Data
+  public static func from(jsonData: Foundation::Data) throws -> MdocProximitySDK::ItemsRequestSpec
+}
+public struct ItemsRequestSpec : Swift::Equatable {
+  public let docType: MdocProximitySDK::DocType
+  public let items: [MdocProximitySDK::NameSpace : [MdocProximitySDK::DataElementIdentifier : Swift::Bool]]
+  public init(docType: MdocProximitySDK::DocType, items: [MdocProximitySDK::NameSpace : [MdocProximitySDK::DataElementIdentifier : Swift::Bool]])
+  public static func == (a: MdocProximitySDK::ItemsRequestSpec, b: MdocProximitySDK::ItemsRequestSpec) -> Swift::Bool
+}
+@_spi(MdocInternal) public struct DeviceRequest {
+  @_spi(MdocInternal) public let version: Swift::String
+  @_spi(MdocInternal) public let docRequests: [MdocProximitySDK::ItemsRequestSpec]
+  @_spi(MdocInternal) public init(version: Swift::String = "1.0", docRequests: [MdocProximitySDK::ItemsRequestSpec])
+}
+@_spi(MdocInternal) public struct DeviceResponse {
+  @_spi(MdocInternal) public let version: Swift::String
+  @_spi(MdocInternal) public let documents: [MdocProximitySDK::Document]
+  @_spi(MdocInternal) public let documentErrors: [MdocProximitySDK::DocType : Swift::Int64]
+  @_spi(MdocInternal) public let status: Swift::UInt64
+}
+@_spi(MdocInternal) public struct Document {
+  @_spi(MdocInternal) public let docType: MdocProximitySDK::DocType
+  @_spi(MdocInternal) public let issuerSigned: MdocProximitySDK::IssuerSigned
+  @_spi(MdocInternal) public let deviceSigned: MdocProximitySDK::DeviceSigned
+  @_spi(MdocInternal) public let errors: [MdocProximitySDK::NameSpace : [MdocProximitySDK::DataElementIdentifier : Swift::Int64]]
+}
+@_spi(MdocInternal) public struct IssuerSigned {
+  @_spi(MdocInternal) public let nameSpaces: [MdocProximitySDK::NameSpace : [MdocProximitySDK::IssuerSignedItemEntry]]
+  @_spi(MdocInternal) public let issuerAuth: MdocProximitySDK::CoseSign1
+}
+@_spi(MdocInternal) public struct IssuerSignedItemEntry {
+  @_spi(MdocInternal) public let raw: MdocProximitySDK::OpaqueCBOR
+  @_spi(MdocInternal) public let digestID: Swift::UInt64
+  @_spi(MdocInternal) public let elementIdentifier: MdocProximitySDK::DataElementIdentifier
+  @_spi(MdocInternal) public let elementValue: MdocProximitySDK::CborValue
+}
+@_spi(MdocInternal) public struct DeviceSigned {
+  @_spi(MdocInternal) public let nameSpacesBytes: MdocProximitySDK::OpaqueCBOR
+  @_spi(MdocInternal) public let deviceAuth: MdocProximitySDK::DeviceAuth
+}
+@_spi(MdocInternal) public enum DeviceAuth {
+  @_spi(MdocInternal) case deviceSignature(MdocProximitySDK::CoseSign1)
+  @_spi(MdocInternal) case deviceMac(MdocProximitySDK::CoseMac0)
+}
+@_spi(MdocInternal) public struct MobileSecurityObject {
+  @_spi(MdocInternal) public let version: Swift::String
+  @_spi(MdocInternal) public let digestAlgorithm: Swift::String
+  @_spi(MdocInternal) public let valueDigests: [MdocProximitySDK::NameSpace : [Swift::UInt64 : Foundation::Data]]
+  @_spi(MdocInternal) public let deviceKeyBytes: Foundation::Data
+  @_spi(MdocInternal) public let docType: MdocProximitySDK::DocType
+  @_spi(MdocInternal) public let signed: Foundation::Date
+  @_spi(MdocInternal) public let validFrom: Foundation::Date
+  @_spi(MdocInternal) public let validUntil: Foundation::Date
+  @_spi(MdocInternal) public var keyAuthorizations: MdocProximitySDK::KeyAuthorizations
+}
+@_spi(MdocInternal) public struct KeyAuthorizations : Swift::Equatable {
+  @_spi(MdocInternal) public var nameSpaces: Swift::Set<MdocProximitySDK::NameSpace>
+  @_spi(MdocInternal) public var dataElements: [MdocProximitySDK::NameSpace : Swift::Set<MdocProximitySDK::DataElementIdentifier>]
+  @_spi(MdocInternal) public init()
+  @_spi(MdocInternal) public func allows(_ nameSpace: MdocProximitySDK::NameSpace, _ id: MdocProximitySDK::DataElementIdentifier) -> Swift::Bool
+  @_spi(MdocInternal) public static func == (a: MdocProximitySDK::KeyAuthorizations, b: MdocProximitySDK::KeyAuthorizations) -> Swift::Bool
+}
+@_spi(MdocInternal) public struct SessionEstablishment {
+  @_spi(MdocInternal) public let eReaderKeyBytes: MdocProximitySDK::OpaqueCBOR
+  @_spi(MdocInternal) public let data: Foundation::Data
+  @_spi(MdocInternal) public init(eReaderKeyBytes: MdocProximitySDK::OpaqueCBOR, data: Foundation::Data)
+}
+@_spi(MdocInternal) public struct SessionData {
+  @_spi(MdocInternal) public let data: Foundation::Data?
+  @_spi(MdocInternal) public let status: Swift::UInt64?
+  @_spi(MdocInternal) public init(data: Foundation::Data? = nil, status: Swift::UInt64? = nil)
+  @_spi(MdocInternal) public static let terminate: MdocProximitySDK::SessionData
+}
+@_spi(MdocInternal) public enum SessionRole {
+  @_spi(MdocInternal) case mdoc
+  @_spi(MdocInternal) case mdocReader
+  @_spi(MdocInternal) public static func == (a: MdocProximitySDK::SessionRole, b: MdocProximitySDK::SessionRole) -> Swift::Bool
+  @_spi(MdocInternal) public func hash(into hasher: inout Swift::Hasher)
+  @_spi(MdocInternal) public var hashValue: Swift::Int {
+    @_spi(MdocInternal) get
+  }
+}
+public enum MdocValue : Swift::Equatable {
+  case text(Swift::String)
+  case integer(Swift::Int64)
+  case boolean(Swift::Bool)
+  case bytes(Foundation::Data)
+  case fullDate(Swift::String)
+  case dateTime(Swift::String)
+  case array([MdocProximitySDK::MdocValue])
+  case map([Swift::String : MdocProximitySDK::MdocValue])
+  case null
+  case unsupported
+  @_spi(MdocInternal) public init(_ v: MdocProximitySDK::CborValue)
+  public var asBoolean: Swift::Bool? {
+    get
+  }
+  public var asText: Swift::String? {
+    get
+  }
+  public static func == (a: MdocProximitySDK::MdocValue, b: MdocProximitySDK::MdocValue) -> Swift::Bool
+}
+public enum ElementProvenance : Swift::Equatable {
+  case issuerSigned
+  case deviceSigned
+  public static func == (a: MdocProximitySDK::ElementProvenance, b: MdocProximitySDK::ElementProvenance) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public enum VerificationVerdict : Swift::Equatable {
+  case valid
+  case invalid
+  case unverified
+  public static func == (a: MdocProximitySDK::VerificationVerdict, b: MdocProximitySDK::VerificationVerdict) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public enum EngagementTechnology : Swift::Equatable {
+  case qr
+  case nfcStaticHandover
+  case nfcNegotiatedHandover
+  public var isNFC: Swift::Bool {
+    get
+  }
+  public static func == (a: MdocProximitySDK::EngagementTechnology, b: MdocProximitySDK::EngagementTechnology) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public enum TransmissionTechnology : Swift::Equatable {
+  case ble(MdocProximitySDK::BleMode)
+  case nfc
+  case wifiAware
+  public static func == (a: MdocProximitySDK::TransmissionTechnology, b: MdocProximitySDK::TransmissionTechnology) -> Swift::Bool
+}
+public enum BleAdvertiseMode : Swift::Equatable {
+  case peripheralServer
+  case centralClient
+  case both
+  public func allows(_ technology: MdocProximitySDK::TransmissionTechnology) -> Swift::Bool
+  public static func == (a: MdocProximitySDK::BleAdvertiseMode, b: MdocProximitySDK::BleAdvertiseMode) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public enum BleMode : Swift::Equatable {
+  case peripheralServer, centralClient
+  public static func == (a: MdocProximitySDK::BleMode, b: MdocProximitySDK::BleMode) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public enum TransmissionKind : Swift::Equatable {
+  case ble
+  case nfc
+  case wifiAware
+  public static func == (a: MdocProximitySDK::TransmissionKind, b: MdocProximitySDK::TransmissionKind) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public enum BleModePreference : Swift::Equatable {
+  case central
+  case peripheral
+  public static func == (a: MdocProximitySDK::BleModePreference, b: MdocProximitySDK::BleModePreference) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+@_spi(MdocInternal) public enum KeyDerivation {
+  @_spi(MdocInternal) public static func salt(_ transcript: MdocProximitySDK::SessionTranscriptBytes) -> Foundation::Data
+  @_spi(MdocInternal) public static func sessionKeys(zab: Foundation::Data, transcript: MdocProximitySDK::SessionTranscriptBytes) -> (skReader: Foundation::Data, skDevice: Foundation::Data)
+  @_spi(MdocInternal) public static func eMacKey(zabPrime: Foundation::Data, transcript: MdocProximitySDK::SessionTranscriptBytes) -> Foundation::Data
+  @_spi(MdocInternal) public static func bleIdent(eDeviceKeyBytes: Foundation::Data) -> Foundation::Data
+  @_spi(MdocInternal) public static func nanServiceName(eDeviceKeyBytes: Foundation::Data) -> Foundation::Data
+  @_spi(MdocInternal) public static func nanPassphrase(eDeviceKeyBytes: Foundation::Data) -> Foundation::Data
+}
+@_spi(MdocInternal) final public class SessionCipher {
+  @_spi(MdocInternal) public static func iv(role: MdocProximitySDK::SessionRole, counter: Swift::UInt32) -> Foundation::Data
+  @_spi(MdocInternal) public init(role: MdocProximitySDK::SessionRole, sharedSecret zab: Foundation::Data, transcript: MdocProximitySDK::SessionTranscriptBytes)
+  @_spi(MdocInternal) final public func encrypt(_ plaintext: Foundation::Data) throws -> Foundation::Data
+  @_spi(MdocInternal) final public func decrypt(_ payload: Foundation::Data) throws -> Foundation::Data
+  @_spi(MdocInternal) final public func decrypt(_ payload: Foundation::Data, counter: Swift::UInt32) throws -> Foundation::Data
+  @_spi(MdocInternal) @objc deinit
+}
+@_spi(MdocInternal) public enum SessionRegistry {
+  @_spi(MdocInternal) public struct Claim : Swift::Equatable, Swift::Sendable {
+    @_spi(MdocInternal) public static func == (a: MdocProximitySDK::SessionRegistry.MdocProximitySDK::Claim, b: MdocProximitySDK::SessionRegistry.MdocProximitySDK::Claim) -> Swift::Bool
+  }
+  @_spi(MdocInternal) @discardableResult
+  public static func claim(_ who: Swift::String) throws -> MdocProximitySDK::SessionRegistry.MdocProximitySDK::Claim
+  @_spi(MdocInternal) public static func release(_ claim: MdocProximitySDK::SessionRegistry.MdocProximitySDK::Claim)
+  @_spi(MdocInternal) public static func release()
+  @_spi(MdocInternal) public static var isActive: Swift::Bool {
+    @_spi(MdocInternal) get
+  }
+}
+@_spi(MdocInternal) public struct SessionTranscriptBytes : Swift::Equatable {
+  @_spi(MdocInternal) public let raw: Foundation::Data
+  @_spi(MdocInternal) public static func == (a: MdocProximitySDK::SessionTranscriptBytes, b: MdocProximitySDK::SessionTranscriptBytes) -> Swift::Bool
+}
+@_spi(MdocInternal) public enum SessionTranscriptBuilder {
+  @_spi(MdocInternal) public static func qr(deviceEngagementBytes: MdocProximitySDK::OpaqueCBOR, eReaderKeyBytes: MdocProximitySDK::OpaqueCBOR) -> MdocProximitySDK::SessionTranscriptBytes
+  @_spi(MdocInternal) public static func nfc(deviceEngagementBytes: MdocProximitySDK::OpaqueCBOR, eReaderKeyBytes: MdocProximitySDK::OpaqueCBOR, handoverSelect: Foundation::Data, handoverRequest: Foundation::Data?) -> MdocProximitySDK::SessionTranscriptBytes
+  @_spi(MdocInternal) public static func transcriptArray(_ bytes: MdocProximitySDK::SessionTranscriptBytes) throws -> Foundation::Data
+}
+@_spi(MdocInternal) public enum Deadline {
+  @_spi(MdocInternal) public static func run<T>(seconds: Foundation::TimeInterval, onTimeout: MdocProximitySDK::MdocProximityError, _ work: @escaping @Sendable () async throws -> T) async throws -> T where T : Swift::Sendable
+}
+@_spi(MdocInternal) public enum BleFraming {
+  @_spi(MdocInternal) public static func partSizes(mtu: Swift::Int) throws -> (partTotal: Swift::Int, partPayload: Swift::Int)
+  @_spi(MdocInternal) public static func split(_ message: Foundation::Data, mtu: Swift::Int) throws -> [Foundation::Data]
+}
+@_spi(MdocInternal) public enum L2capFraming {
+  @_spi(MdocInternal) public static func lengthHeader(_ length: Swift::UInt32) -> Foundation::Data
+  @_spi(MdocInternal) public static func frame(_ message: Foundation::Data) -> Foundation::Data
+  @_spi(MdocInternal) final public class Reassembler {
+    @_spi(MdocInternal) public static let maxMessageBytes: Swift::Int
+    @_spi(MdocInternal) public init()
+    @_spi(MdocInternal) final public func append(_ chunk: Foundation::Data) throws -> [Foundation::Data]
+    @_spi(MdocInternal) final public func discard()
+    @_spi(MdocInternal) @objc deinit
+  }
+}
+@_spi(MdocInternal) public enum L2capPsmCodec {
+  @_spi(MdocInternal) public static func encode(_ psm: Swift::UInt16) -> Foundation::Data
+  @_spi(MdocInternal) public static func decode(_ value: Foundation::Data) -> Swift::UInt16?
+}
+@_spi(MdocInternal) final public class LoopbackTransport : MdocProximitySDK::DataRetrievalTransportProtocol {
+  @_spi(MdocInternal) final public let events: _Concurrency::AsyncStream<MdocProximitySDK::TransportEvent>
+  @_spi(MdocInternal) public init()
+  @_spi(MdocInternal) public static func pair() -> (MdocProximitySDK::LoopbackTransport, MdocProximitySDK::LoopbackTransport)
+  @_spi(MdocInternal) final public func open(_ config: MdocProximitySDK::TransportConfig) async throws
+  @_spi(MdocInternal) final public func send(_ message: Foundation::Data) async throws
+  @_spi(MdocInternal) final public func close(_ reason: MdocProximitySDK::TransportCloseReason)
+  @_spi(MdocInternal) final public func nextMessage() async -> Foundation::Data?
+  @_spi(MdocInternal) @objc deinit
+}
+@_spi(MdocInternal) public protocol DataRetrievalTransportProtocol : AnyObject {
+  @_spi(MdocInternal) var events: _Concurrency::AsyncStream<MdocProximitySDK::TransportEvent> { get }
+  @_spi(MdocInternal) func open(_ config: MdocProximitySDK::TransportConfig) async throws
+  @_spi(MdocInternal) func send(_ message: Foundation::Data) async throws
+  @_spi(MdocInternal) func close(_ reason: MdocProximitySDK::TransportCloseReason)
+}
+@_spi(MdocInternal) public struct TransportConfig {
+  @_spi(MdocInternal) public let role: MdocProximitySDK::SessionRole
+  @_spi(MdocInternal) public init(role: MdocProximitySDK::SessionRole)
+}
+@_spi(MdocInternal) public enum TransportEvent {
+  @_spi(MdocInternal) case ready
+  @_spi(MdocInternal) case message(Foundation::Data)
+  @_spi(MdocInternal) case progress(sent: Swift::Int, total: Swift::Int)
+  @_spi(MdocInternal) case downgradedToGatt(reason: Swift::String)
+  @_spi(MdocInternal) case peerClosed(MdocProximitySDK::TransportCloseReason)
+  @_spi(MdocInternal) case failed(MdocProximitySDK::MdocProximityError)
+}
+@_spi(MdocInternal) public enum TransportCloseReason {
+  @_spi(MdocInternal) case normal
+  @_spi(MdocInternal) case remote
+  @_spi(MdocInternal) case protocolError
+  @_spi(MdocInternal) case timeout
+  @_spi(MdocInternal) public static func == (a: MdocProximitySDK::TransportCloseReason, b: MdocProximitySDK::TransportCloseReason) -> Swift::Bool
+  @_spi(MdocInternal) public func hash(into hasher: inout Swift::Hasher)
+  @_spi(MdocInternal) public var hashValue: Swift::Int {
+    @_spi(MdocInternal) get
+  }
+}
+@_spi(MdocInternal) public struct EngagementArtifacts {
+  @_spi(MdocInternal) public let handoverSelectBytes: Foundation::Data?
+  @_spi(MdocInternal) public let handoverRequestBytes: Foundation::Data?
+  @_spi(MdocInternal) public var carriers: [MdocProximitySDK::TransmissionTechnology]
+  @_spi(MdocInternal) public var nfcMaxCommandDataLength: Swift::UInt64?
+  @_spi(MdocInternal) public var nfcMaxResponseDataLength: Swift::UInt64?
+  @_spi(MdocInternal) public var bleServiceUUID: Foundation::Data?
+  @_spi(MdocInternal) public init(handoverSelectBytes: Foundation::Data?, handoverRequestBytes: Foundation::Data?)
+}
+@_spi(MdocInternal) final public class TransportEventRouter : @unchecked Swift::Sendable {
+  @_spi(MdocInternal) final public var onEvent: ((MdocProximitySDK::TransportEvent) -> Swift::Void)?
+  @_spi(MdocInternal) public init(_ transport: any MdocProximitySDK::DataRetrievalTransportProtocol)
+  @_spi(MdocInternal) final public func start()
+  @_spi(MdocInternal) final public func stop()
+  @_spi(MdocInternal) final public func waitReady() async throws
+  @_spi(MdocInternal) final public func nextMessage() async -> Foundation::Data?
+  @_spi(MdocInternal) @objc deinit
+}
+@_spi(MdocInternal) public struct TransportParameters {
+  @_spi(MdocInternal) public let technology: MdocProximitySDK::TransmissionTechnology
+  @_spi(MdocInternal) public let role: MdocProximitySDK::SessionRole
+  @_spi(MdocInternal) public let l2cap: Swift::Bool
+  @_spi(MdocInternal) public let serviceUUID: Foundation::Data?
+  @_spi(MdocInternal) public let ident: Foundation::Data?
+  @_spi(MdocInternal) public let l2capPSM: Swift::UInt64?
+  @_spi(MdocInternal) public let maxCommandDataLength: Swift::UInt64?
+  @_spi(MdocInternal) public let maxResponseDataLength: Swift::UInt64?
+  @_spi(MdocInternal) public init(technology: MdocProximitySDK::TransmissionTechnology, role: MdocProximitySDK::SessionRole, l2cap: Swift::Bool = false, serviceUUID: Foundation::Data? = nil, ident: Foundation::Data? = nil, l2capPSM: Swift::UInt64? = nil, maxCommandDataLength: Swift::UInt64? = nil, maxResponseDataLength: Swift::UInt64? = nil)
+}
+@_spi(MdocInternal) public protocol TransportFactoryProtocol {
+  @_spi(MdocInternal) var availableTechnologies: [MdocProximitySDK::TransmissionTechnology] { get }
+  @_spi(MdocInternal) func makeTransport(_ parameters: MdocProximitySDK::TransportParameters) throws -> any MdocProximitySDK::DataRetrievalTransportProtocol
+}
+@_spi(MdocInternal) public enum TransportSelection {
+  @_spi(MdocInternal) public static func select(advertised: [MdocProximitySDK::TransmissionTechnology], priority: [MdocProximitySDK::TransmissionKind], blePreferredMode: MdocProximitySDK::BleModePreference, available: [MdocProximitySDK::TransmissionTechnology]) -> MdocProximitySDK::TransmissionTechnology?
+}
+@_spi(MdocInternal) public enum DigestChecker {
+  @_spi(MdocInternal) public static func check(_ issuerSigned: MdocProximitySDK::IssuerSigned, valueDigests: [MdocProximitySDK::NameSpace : [Swift::UInt64 : Foundation::Data]], digestAlgorithm: Swift::String = "SHA-256") -> MdocProximitySDK::DigestCheckResult
+}
+@_spi(MdocInternal) public struct IssuerAuthCryptoCheck {
+  @_spi(MdocInternal) public let signatureValid: Swift::Bool
+  @_spi(MdocInternal) public var verificationSkipped: Swift::Bool
+  @_spi(MdocInternal) public var signatureChecked: Swift::Bool
+  @_spi(MdocInternal) public let docTypeChecked: Swift::Bool
+  @_spi(MdocInternal) public let docTypeMatches: Swift::Bool
+  @_spi(MdocInternal) public let validity: MdocProximitySDK::ValidityCheck?
+  @_spi(MdocInternal) public let digests: MdocProximitySDK::DigestCheckResult?
+  @_spi(MdocInternal) public let deviceKeySEC1: Foundation::Data?
+  @_spi(MdocInternal) public var keyAuthorizations: MdocProximitySDK::KeyAuthorizations?
+}
+@_spi(MdocInternal) public enum IssuerDataAuthVerifier {
+  @_spi(MdocInternal) public static func verifyCryptographic(_ issuerSigned: MdocProximitySDK::IssuerSigned, docType: MdocProximitySDK::DocType, issuerPublicKeySEC1: Foundation::Data?, at now: Foundation::Date, skippingSignature: Swift::Bool = false) -> MdocProximitySDK::IssuerAuthCryptoCheck
+  @_spi(MdocInternal) public static func verifySignature(_ issuerAuth: MdocProximitySDK::CoseSign1, issuerPublicKeySEC1: Foundation::Data) -> Swift::Bool?
+}
+@_spi(MdocInternal) public enum MdocAuthVerifier {
+  @_spi(MdocInternal) public static func verify(_ auth: MdocProximitySDK::DeviceAuth, transcript: MdocProximitySDK::SessionTranscriptBytes, docType: MdocProximitySDK::DocType, deviceNameSpacesBytes: MdocProximitySDK::OpaqueCBOR, deviceKeySEC1: Foundation::Data?, eMacKey: Foundation::Data?) -> MdocProximitySDK::MdocAuthResult
+}
+public struct MdocAuthResult : Swift::Equatable {
+  public enum Method : Swift::Equatable {
+    case ecdsa, mac
+    public static func == (a: MdocProximitySDK::MdocAuthResult.MdocProximitySDK::Method, b: MdocProximitySDK::MdocAuthResult.MdocProximitySDK::Method) -> Swift::Bool
+    public func hash(into hasher: inout Swift::Hasher)
+    public var hashValue: Swift::Int {
+      get
+    }
+  }
+  public let method: MdocProximitySDK::MdocAuthResult.MdocProximitySDK::Method
+  public let valid: Swift::Bool
+  public let boundToIssuerDeviceKey: Swift::Bool
+  public static func == (a: MdocProximitySDK::MdocAuthResult, b: MdocProximitySDK::MdocAuthResult) -> Swift::Bool
+}
+public struct ValidityCheck : Swift::Equatable {
+  public let signed: Foundation::Date
+  public let validFrom: Foundation::Date
+  public let validUntil: Foundation::Date
+  public let isCurrentlyValid: Swift::Bool
+  public static func == (a: MdocProximitySDK::ValidityCheck, b: MdocProximitySDK::ValidityCheck) -> Swift::Bool
+}
+public struct DigestCheckResult : Swift::Equatable {
+  public let matches: [MdocProximitySDK::NameSpace : [MdocProximitySDK::DataElementIdentifier : Swift::Bool]]
+  public var allMatch: Swift::Bool {
+    get
+  }
+  public static func == (a: MdocProximitySDK::DigestCheckResult, b: MdocProximitySDK::DigestCheckResult) -> Swift::Bool
+}
+public enum MdocReaderState : Swift::String {
+  case idle, connecting, connected, awaitingResponse, verifying, completed, terminated, failed
+  public init?(rawValue: Swift::String)
+  public typealias RawValue = Swift::String
+  public var rawValue: Swift::String {
+    get
+  }
+}
+public struct IssuerDataAuthResult {
+  public let signatureValid: Swift::Bool
+  public let verificationSkipped: Swift::Bool
+  public let trust: MdocProximitySDK::TrustVerdict
+  public let source: MdocProximitySDK::TrustSource
+  public let docTypeChecked: Swift::Bool
+  public let docTypeMatches: Swift::Bool
+  public let validity: MdocProximitySDK::ValidityCheck?
+}
+public enum DocumentWarning : Swift::Equatable {
+  case unrequestedElement(MdocProximitySDK::NameSpace, MdocProximitySDK::DataElementIdentifier)
+  case unauthorizedDeviceSignedElement(MdocProximitySDK::NameSpace, MdocProximitySDK::DataElementIdentifier)
+  public static func == (a: MdocProximitySDK::DocumentWarning, b: MdocProximitySDK::DocumentWarning) -> Swift::Bool
+}
+public struct VerifiedDocument {
+  public let docType: MdocProximitySDK::DocType
+  public let issuerSignedElements: [MdocProximitySDK::NameSpace : [MdocProximitySDK::DataElementIdentifier : MdocProximitySDK::MdocValue]]
+  public let deviceSignedElements: [MdocProximitySDK::NameSpace : [MdocProximitySDK::DataElementIdentifier : MdocProximitySDK::MdocValue]]
+  public var allElements: [MdocProximitySDK::NameSpace : [MdocProximitySDK::DataElementIdentifier : MdocProximitySDK::MdocValue]] {
+    get
+  }
+  public let issuerDataAuth: MdocProximitySDK::IssuerDataAuthResult
+  public let mdocAuth: MdocProximitySDK::MdocAuthResult
+  public let digests: MdocProximitySDK::DigestCheckResult?
+  public let warnings: [MdocProximitySDK::DocumentWarning]
+  public let notReturned: [MdocProximitySDK::NameSpace : [MdocProximitySDK::DataElementIdentifier]]
+  public let elementErrors: [MdocProximitySDK::NameSpace : [MdocProximitySDK::DataElementIdentifier : Swift::Int64]]
+  public var verdict: MdocProximitySDK::VerificationVerdict {
+    get
+  }
+  public func provenance(_ nameSpace: MdocProximitySDK::NameSpace, _ id: MdocProximitySDK::DataElementIdentifier) -> MdocProximitySDK::ElementProvenance?
+  public var retainable: [MdocProximitySDK::NameSpace : [MdocProximitySDK::DataElementIdentifier]] {
+    get
+  }
+  public func retainableElements(requiringValidDigest: Swift::Bool = true) -> [MdocProximitySDK::NameSpace : [MdocProximitySDK::DataElementIdentifier : MdocProximitySDK::MdocValue]]
+}
+public struct VerifiedResponse {
+  public let documents: [MdocProximitySDK::VerifiedDocument]
+  public let documentErrors: [MdocProximitySDK::DocType : Swift::Int64]
+  public let status: Swift::UInt64
+}
+public protocol MdocReaderSessionDelegate : AnyObject {
+  func readerSession(_ s: MdocProximitySDK::MdocReaderSession, didChangeState state: MdocProximitySDK::MdocReaderState)
+  func readerSessionDidConnect(_ s: MdocProximitySDK::MdocReaderSession)
+  func readerSession(_ s: MdocProximitySDK::MdocReaderSession, didProgress received: Swift::Int, of total: Swift::Int)
+  func readerSession(_ s: MdocProximitySDK::MdocReaderSession, didFailWith error: MdocProximitySDK::MdocProximityError)
+}
+extension MdocProximitySDK::MdocReaderSessionDelegate {
+  public func readerSession(_ s: MdocProximitySDK::MdocReaderSession, didProgress received: Swift::Int, of total: Swift::Int)
+}
+final public class MdocReaderSession {
+  final public var state: MdocProximitySDK::MdocReaderState {
+    get
+  }
+  weak final public var delegate: (any MdocProximitySDK::MdocReaderSessionDelegate)?
+  final public let configuration: MdocProximitySDK::MdocReaderConfiguration
+  @_spi(MdocInternal) final public var onTransportEvent: ((MdocProximitySDK::TransportEvent) -> Swift::Void)?
+  convenience public init(configuration: MdocProximitySDK::MdocReaderConfiguration = MdocReaderConfiguration(), trust: any MdocProximitySDK::TrustEvaluatorProtocol)
+  @_spi(MdocInternal) public init(configuration: MdocProximitySDK::MdocReaderConfiguration = MdocReaderConfiguration(), trust: any MdocProximitySDK::TrustEvaluatorProtocol, transportFactory: any MdocProximitySDK::TransportFactoryProtocol, nfcTagSource: any MdocProximitySDK::NfcTagSource)
+  @_spi(MdocInternal) public init(configuration: MdocProximitySDK::MdocReaderConfiguration = MdocReaderConfiguration(), transport: any MdocProximitySDK::DataRetrievalTransportProtocol, trust: any MdocProximitySDK::TrustEvaluatorProtocol)
+  final public func connect(to engagement: MdocProximitySDK::EngagementPayload) async throws
+  @discardableResult
+  final public func connectViaNFC() async throws -> MdocProximitySDK::EngagementPayload
+  public static func resolveTrust(for document: MdocProximitySDK::VerifiedDocument, using trust: any MdocProximitySDK::TrustEvaluatorProtocol, at now: Foundation::Date) async -> MdocProximitySDK::VerifiedDocument
+  @_spi(MdocInternal) final public func begin(transcript: MdocProximitySDK::SessionTranscriptBytes, sharedSecret: Foundation::Data, eReaderKeyBytes: MdocProximitySDK::OpaqueCBOR)
+  final public func request(_ specs: [MdocProximitySDK::ItemsRequestSpec], at now: Foundation::Date) async throws -> MdocProximitySDK::VerifiedResponse
+  final public func terminate()
+  @objc deinit
+}
+@_spi(MdocInternal) public protocol NfcTagSource {
+  @_spi(MdocInternal) func openChannel() async throws -> any MdocProximitySDK::Iso7816Channel
+  @_spi(MdocInternal) func cancel()
+}
+@_spi(MdocInternal) extension MdocProximitySDK::NfcTagSource {
+  @_spi(MdocInternal) public func cancel()
+}
+@_spi(MdocInternal) public struct UnavailableNfcTagSource : MdocProximitySDK::NfcTagSource {
+  @_spi(MdocInternal) public init()
+  @_spi(MdocInternal) public func openChannel() async throws -> any MdocProximitySDK::Iso7816Channel
+}
+@_spi(MdocInternal) public enum NfcSessionInvalidation {
+  @_spi(MdocInternal) public static let errorDomain: Swift::String
+  @_spi(MdocInternal) public static let userCanceledCode: Swift::Int
+  @_spi(MdocInternal) public static func error(domain: Swift::String, code: Swift::Int, description: Swift::String) -> any Swift::Error
+}
+@_spi(MdocInternal) public enum NfcTransceiveFailure {
+  @_spi(MdocInternal) public static let linkLostCodes: Swift::Set<Swift::Int>
+  @_spi(MdocInternal) public static func error(domain: Swift::String, code: Swift::Int, description: Swift::String) -> MdocProximitySDK::MdocProximityError
+}
+@_spi(MdocInternal) @objc @_inheritsConvenienceInitializers final public class CoreNfcTagSource : ObjectiveC::NSObject, MdocProximitySDK::NfcTagSource, CoreNFC::NFCTagReaderSessionDelegate {
+  @_spi(MdocInternal) final public var onTagSeen: ((Swift::String) -> Swift::Void)?
+  @_spi(MdocInternal) @objc override dynamic public init()
+  @_spi(MdocInternal) final public func openChannel() async throws -> any MdocProximitySDK::Iso7816Channel
+  @_spi(MdocInternal) final public func cancel()
+  @_spi(MdocInternal) final public func tagReaderSessionDidBecomeActive(_ session: CoreNFC::NFCTagReaderSession)
+  @_spi(MdocInternal) final public func tagReaderSession(_ session: CoreNFC::NFCTagReaderSession, didInvalidateWithError error: any Swift::Error)
+  @_spi(MdocInternal) final public func tagReaderSession(_ session: CoreNFC::NFCTagReaderSession, didDetect tags: [CoreNFC::NFCTag])
+  @_spi(MdocInternal) @objc deinit
+}
+@_spi(MdocInternal) public enum DefaultNfcTagSource {
+  @_spi(MdocInternal) public static func make() -> any MdocProximitySDK::NfcTagSource
+}
+@_spi(MdocInternal) public struct ReaderTransportFactory : MdocProximitySDK::TransportFactoryProtocol {
+  @_spi(MdocInternal) public init()
+  @_spi(MdocInternal) public var availableTechnologies: [MdocProximitySDK::TransmissionTechnology] {
+    @_spi(MdocInternal) get
+  }
+  @_spi(MdocInternal) public func makeTransport(_ p: MdocProximitySDK::TransportParameters) throws -> any MdocProximitySDK::DataRetrievalTransportProtocol
+}
+final public class DIDIssuerKeyResolver : MdocProximitySDK::TrustEvaluatorProtocol {
+  public init(trustedIssuers: [Swift::String], resolve: @escaping (_ did: Swift::String, _ versionId: Swift::String?) async throws -> Foundation::Data)
+  final public func evaluate(header: MdocProximitySDK::COSEHeaderSummary, purpose: MdocProximitySDK::TrustPurpose, at date: Foundation::Date) async -> MdocProximitySDK::IssuerKeyResolution
+  @objc deinit
+}
+public enum TrustVerdict : Swift::Equatable {
+  case trusted
+  case untrusted(reason: Swift::String)
+  case unknown
+  public static func == (a: MdocProximitySDK::TrustVerdict, b: MdocProximitySDK::TrustVerdict) -> Swift::Bool
+}
+public enum TrustSource : Swift::Equatable {
+  case did(method: Swift::String)
+  case none
+  public static func == (a: MdocProximitySDK::TrustSource, b: MdocProximitySDK::TrustSource) -> Swift::Bool
+}
+public struct COSEHeaderSummary : Swift::Equatable {
+  public let kid: Swift::String?
+  public let algorithm: Swift::Int
+  public init(kid: Swift::String?, algorithm: Swift::Int)
+  public static func == (a: MdocProximitySDK::COSEHeaderSummary, b: MdocProximitySDK::COSEHeaderSummary) -> Swift::Bool
+}
+public enum TrustPurpose {
+  case issuerDataAuthentication
+  case mdocReaderAuthentication
+  public static func == (a: MdocProximitySDK::TrustPurpose, b: MdocProximitySDK::TrustPurpose) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+public struct IssuerKeyResolution {
+  public let publicKey: Foundation::Data?
+  public let trust: MdocProximitySDK::TrustVerdict
+  public let source: MdocProximitySDK::TrustSource
+  public init(publicKey: Foundation::Data?, trust: MdocProximitySDK::TrustVerdict, source: MdocProximitySDK::TrustSource)
+  public static let notResolved: MdocProximitySDK::IssuerKeyResolution
+}
+public protocol TrustEvaluatorProtocol : AnyObject {
+  func evaluate(header: MdocProximitySDK::COSEHeaderSummary, purpose: MdocProximitySDK::TrustPurpose, at date: Foundation::Date) async -> MdocProximitySDK::IssuerKeyResolution
+}
+extension MdocProximitySDK::MdocDeviceState : Swift::Equatable {}
+extension MdocProximitySDK::MdocDeviceState : Swift::Hashable {}
+extension MdocProximitySDK::MdocDeviceState : Swift::RawRepresentable {}
+extension MdocProximitySDK::CapabilityReason : Swift::Hashable {}
+@_spi(MdocInternal) extension MdocProximitySDK::SessionRole : Swift::Equatable {}
+@_spi(MdocInternal) extension MdocProximitySDK::SessionRole : Swift::Hashable {}
+extension MdocProximitySDK::ElementProvenance : Swift::Hashable {}
+extension MdocProximitySDK::VerificationVerdict : Swift::Hashable {}
+extension MdocProximitySDK::EngagementTechnology : Swift::Hashable {}
+extension MdocProximitySDK::BleAdvertiseMode : Swift::Hashable {}
+extension MdocProximitySDK::BleMode : Swift::Hashable {}
+extension MdocProximitySDK::TransmissionKind : Swift::Hashable {}
+extension MdocProximitySDK::BleModePreference : Swift::Hashable {}
+@_spi(MdocInternal) extension MdocProximitySDK::TransportCloseReason : Swift::Equatable {}
+@_spi(MdocInternal) extension MdocProximitySDK::TransportCloseReason : Swift::Hashable {}
+extension MdocProximitySDK::MdocAuthResult.MdocProximitySDK::Method : Swift::Hashable {}
+extension MdocProximitySDK::MdocReaderState : Swift::Equatable {}
+extension MdocProximitySDK::MdocReaderState : Swift::Hashable {}
+extension MdocProximitySDK::MdocReaderState : Swift::RawRepresentable {}
+extension MdocProximitySDK::TrustPurpose : Swift::Equatable {}
+extension MdocProximitySDK::TrustPurpose : Swift::Hashable {}

@@ -104,9 +104,9 @@ struct PINView: View {
             .safeAreaPadding(.bottom)
             .padding()
             .onChange(of: viewModel.completionToken) { _, newValue in
-                // 토큰은 완료 때마다 새 UUID 라, 호출 측이 화면을 유지한 채 실패를 알린 뒤
-                // 사용자가 다시 완료해도 매번 울린다. 여기서 dismiss() 를 부르면 코디네이터의
-                // 모달 content swap 이 깨지므로 닫기는 계속 호출 측 몫이다.
+                // The token is a new UUID on every completion, so even if the caller keeps the screen and reports a failure,
+                // it fires every time the user completes again. Calling dismiss() here would break the coordinator's
+                // modal content swap, so closing remains the caller's job.
                 if newValue != nil {
                     onSuccess(viewModel.currentPIN, viewModel.newPIN)
                 }

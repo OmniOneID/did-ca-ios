@@ -19,7 +19,7 @@
 import SwiftUI
 
 struct DigitBoxView: View {
-    /// true 면 채워진 칸을 점으로 가린다(PIN). false 면 입력한 숫자를 그대로 보여 준다(TX Code).
+    /// If true, filled boxes are masked with dots (PIN). If false, the entered digits are shown as is (TX Code).
     var maskDigits: Bool = false
     @Binding var digits: String
     var maxDigits: Int = 6

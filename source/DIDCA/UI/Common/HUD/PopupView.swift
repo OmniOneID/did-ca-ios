@@ -23,6 +23,9 @@ struct Popup: Identifiable, Equatable {
     let message: String
     let primaryButton: PopupButton
     let secondaryButton: PopupButton?
+    /// Text link placed **below** the button row (design spec DLG-05 · artboard 31a).
+    /// Meant only as an escape route that closes the dialog and sends to another screen, so not used for destructive actions.
+    let linkButton: PopupButton?
     
     struct PopupButton: Equatable {
         let title: String
@@ -110,7 +113,20 @@ struct PopupView: View {
                 }
 ////                .padding(.horizontal, 8)
 //                .padding(.bottom, 8)
-                
+
+                // DLG-05 — OK is the default action and the link is reachable only via this path (never auto-selected).
+                if let link = popup.linkButton {
+                    Button {
+                        link.action()
+                        onDismiss()
+                    } label: {
+                        Text(LocalizedStringResource(stringLiteral: link.title))
+                            .font(.pretendard(size: 14, weight: .semibold))
+                            .foregroundStyle(.customPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 40)
+                    }
+                }
             }
             .padding(24)
             .background(.white)
@@ -135,7 +151,8 @@ struct PopupView: View {
                     ()
                 }
             ),
-            secondaryButton: nil)) {
+            secondaryButton: nil,
+            linkButton: nil)) {
         ()
     }
     
@@ -153,7 +170,8 @@ struct PopupView: View {
                 title: "Cancel", action: {
                     ()
                 }
-            )
+            ),
+            linkButton: nil
         )
     )
     {

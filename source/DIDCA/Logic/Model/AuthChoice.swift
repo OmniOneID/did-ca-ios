@@ -18,10 +18,10 @@
 
 import Foundation
 
-// 발급 흐름 등에서 사용자가 어떤 인증 방식으로 서명할지를 표현.
-//   .pin(_) : PIN 인증 완료 — 입력된 passcode 동봉
-//   .bio    : 바이오 인증 선택 — passcode 없음. SDK 가 getSignedDidAuth(passcode: nil) 호출 시점에
-//             bio 키 사용하면서 iOS 가 FaceID/TouchID prompt 자동 표시.
+// Represents which authentication method the user signs with, e.g. in the issuance flow.
+//   .pin(_) : PIN authentication done — carries the entered passcode
+//   .bio    : biometric authentication chosen — no passcode. When the SDK calls getSignedDidAuth(passcode: nil)
+//             and uses the bio key, iOS shows the FaceID/TouchID prompt automatically.
 enum AuthChoice {
     case pin(String)
     case bio
@@ -32,8 +32,8 @@ enum AuthChoice {
     }
 }
 
-// 선택 시트가 사용자 픽을 결과로 돌려줄 때만 쓰는 중간 타입.
-// presentAuth 내부에서 이 픽을 받아 PIN 모달로 체이닝하거나 .bio 로 그대로 매핑.
+// Intermediate type used only when the selection sheet returns the user's pick as its result.
+// Inside presentAuth this pick is chained into the PIN modal or mapped straight to .bio.
 enum AuthSelectionPick {
     case pin
     case bio

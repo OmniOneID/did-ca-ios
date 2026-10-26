@@ -19,12 +19,12 @@
 import Foundation
 import DIDWalletSDK
 
-// 사용자에게 보여줄 에러를 발생 위치 기준으로 정규화. 설계서 공통 명세 COM-02/03/04 와 매핑.
-//   .server  : non-2xx 응답 — 백엔드 code/description 보존. (COM-04) `HttpClient` 의 `ServerError` 와,
-//              SDK `CommunicationClient` 가 body 원문을 담아 던지는 `CommunicationSDKError` 를 모두 받는다.
-//   .network : URLError — 네트워크 미연결·타임아웃·도달 불가 등 전송 계층 실패. 고정 문구 노출. (COM-02)
-//   .other   : 그 외 모두 (DIDWalletSDK 에러, TokenGeneratorError, DecodingError, NSError validation 등). (COM-03)
-//              Swift 의 기본 문자열 표현으로 노출되므로 enum case / domain 이 그대로 보임.
+// Normalizes user-facing errors by where they originate. Mapped to the design spec common items COM-02/03/04.
+//   .server  : non-2xx response — preserves backend code/description. (COM-04) Accepts both `HttpClient`'s `ServerError`
+//              and the `CommunicationSDKError` that SDK `CommunicationClient` throws carrying the raw body.
+//   .network : URLError — transport-layer failures such as no connection, timeout, unreachable. Shows a fixed message. (COM-02)
+//   .other   : everything else (DIDWalletSDK errors, TokenGeneratorError, DecodingError, NSError validation, etc.). (COM-03)
+//              Shown via Swift's default string representation, so the enum case / domain is visible as-is.
 enum AppError: Error {
     case server(code: String, description: String)
     case network
@@ -38,7 +38,7 @@ enum AppError: Error {
             self = .server(code: response.code, description: response.description)
         } else if let sdkError = error as? CommunicationSDKError,
                   let response = Self.serverResponse(embeddedIn: sdkError) {
-            // SDK 는 non-2xx body 를 문자열로 감싸 던진다 — 백엔드 code/description 이면 꺼내 쓴다.
+            // The SDK wraps a non-2xx body in a string and throws — if it's a backend code/description, extract and use it.
             self = .server(code: response.code, description: response.description)
         } else if error is URLError {
             self = .network
@@ -47,13 +47,13 @@ enum AppError: Error {
         }
     }
 
-    /// `CommunicationSDKError.message` 에 실린 응답 body 가 에러 형식이면 파싱해 돌려준다.
-    /// SDK 자체 오류(URL 오류·파라미터 오류 등)는 body 가 없으므로 nil → `.other` 로 떨어진다.
+    /// If the response body carried in `CommunicationSDKError.message` is in an error format, parses and returns it.
+    /// SDK-internal errors (URL errors, parameter errors, etc.) have no body, so nil → falls through to `.other`.
     ///
-    /// **형식이 둘이다.** OpenDID 백엔드는 `{code, description}` 이지만, OID4VCI 엔드포인트
-    /// (`/token`·`/credential`·`/nonce`)는 OAuth 2.0 서버라 `{error, error_description}`(RFC 6749 §5.2)로
-    /// 답한다. 뒤엣것을 못 읽으면 서버가 준 실패 이유가 통째로 버려진다 — tx_code 오류의
-    /// `invalid_grant` 설명이 화면에 못 뜨던 원인이다(COM-04·TXC-E-01).
+    /// **There are two formats.** The OpenDID backend uses `{code, description}`, but the OID4VCI endpoints
+    /// (`/token` · `/credential` · `/nonce`) are an OAuth 2.0 server and answer with `{error, error_description}` (RFC 6749 §5.2).
+    /// Failing to read the latter discards the server's failure reason entirely — this is why the tx_code error's
+    /// `invalid_grant` description didn't appear on screen (COM-04 · TXC-E-01).
     private static func serverResponse(embeddedIn error: CommunicationSDKError) -> ServerErrorResponse? {
         guard let data = error.message.data(using: .utf8) else { return nil }
         if let response = try? ServerErrorResponse(from: data) {
@@ -62,15 +62,15 @@ enum AppError: Error {
         return oauthResponse(from: data)
     }
 
-    /// OAuth 2.0 오류 응답 → `ServerErrorResponse`.
+    /// OAuth 2.0 error response → `ServerErrorResponse`.
     ///
-    /// `error_description` 이 없으면 **nil 을 돌려준다** — `error` 는 기계용 코드(`invalid_grant`)이지
-    /// 사용자에게 보일 문장이 아니다. 설계서가 "응답에 메시지가 없을 경우" 폴백을 쓰라고 하는 갈래가
-    /// 정확히 이 경우이므로, 여기서 `.other` 로 떨어뜨려 호출측 폴백이 살아나게 한다.
+    /// **Returns nil** if `error_description` is missing — `error` is a machine code (`invalid_grant`),
+    /// not a sentence to show the user. This is exactly the branch where the design spec says to use the fallback
+    /// "when the response has no message", so it falls through to `.other` here to let the caller's fallback apply.
     private static func oauthResponse(from data: Data) -> ServerErrorResponse? {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let code = json["error"] as? String, !code.isEmpty,
-              // verifier 의 OID4VP 오류 응답은 같은 형식을 camelCase 로 적는다(`errorDescription`).
+              // The verifier's OID4VP error response writes the same format in camelCase (`errorDescription`).
               let description = (json["error_description"] ?? json["errorDescription"]) as? String,
               !description.isEmpty
         else {
@@ -79,13 +79,13 @@ enum AppError: Error {
         return ServerErrorResponse(code: code, description: description)
     }
 
-    /// 응답 body 를 직접 쥔 호출측이 서버가 준 실패 이유를 살릴 때 쓴다.
+    /// Used by callers that hold the response body directly, to preserve the server's failure reason.
     ///
-    /// SDK `CommunicationClient` 를 거치는 경로는 body 가 `CommunicationSDKError` 에 실려 오지만,
-    /// 응답을 그대로 돌려받는 경로(OID4VP 제출)는 호출측이 버리지 않는 한 아무 데도 남지 않는다.
-    /// 상태코드만 남으면 "왜 거절됐는지"가 통째로 사라지므로 여기서 같은 두 형식을 그대로 읽는다 —
-    /// OpenDID `{code, description}` 과 OAuth 2.0 `{error, error_description}`.
-    /// 어느 쪽도 아니면 nil 이라 호출측의 상태코드 폴백이 살아난다.
+    /// Paths through SDK `CommunicationClient` get the body carried in `CommunicationSDKError`, but
+    /// on paths that receive the response as-is (OID4VP submission) it isn't kept anywhere unless the caller keeps it.
+    /// With only the status code left, "why it was rejected" is lost entirely, so the same two formats are read here —
+    /// OpenDID `{code, description}` and OAuth 2.0 `{error, error_description}`.
+    /// If it's neither, nil, so the caller's status-code fallback applies.
     static func server(from data: Data) -> AppError? {
         if let response = try? ServerErrorResponse(from: data) {
             return .server(code: response.code, description: response.description)
@@ -109,11 +109,18 @@ enum AppError: Error {
 }
 
 extension OverlayManager {
-    /// 에러 팝업. fallback 이 주어지면 SDK/unknown 오류(.other — raw 문자열이 사용자 친화적이지 않음)에 한해
-    /// 그 fallback 문구를 대신 노출한다 (예: VC-E-01 "Failed to delete. Try again."). 서버 응답 오류(.server)는
-    /// 백엔드 메시지를, 네트워크 오류(.network)는 COM-02 고정 문구를 항상 우선한다 (fallback 무시).
+    /// Error popup. If a fallback is given, that fallback text is shown instead only for SDK/unknown errors (.other — the raw
+    /// string isn't user-friendly) (e.g. VC-E-01 "Failed to delete. Try again."). Server response errors (.server) always
+    /// prefer the backend message, and network errors (.network) the COM-02 fixed message (fallback ignored).
+    /// - parameter onServerSettings: if given, attaches a `Server settings` link at the bottom **only when the server is
+    ///   unreachable (.network — COM-02 family)** (DLG-05 · ONB-E-01 · ONB-E-04). SDK-internal errors (COM-03) and
+    ///   server response errors (COM-04) occur after reaching the server, so the address isn't the cause and no link is shown.
     @MainActor
-    func showErrorPopup(title: String, error: Error, fallback: String? = nil, primaryAction: @escaping () -> Void = {}) {
+    func showErrorPopup(title: String,
+                        error: Error,
+                        fallback: String? = nil,
+                        primaryAction: @escaping () -> Void = {},
+                        onServerSettings: (() -> Void)? = nil) {
         let appError = AppError(error)
         let message: String
         if case .other = appError, let fallback {
@@ -121,11 +128,15 @@ extension OverlayManager {
         } else {
             message = appError.message
         }
+        var link: (() -> Void)?
+        if case .network = appError { link = onServerSettings }
         showPopup(
             title: title,
             message: message,
             primaryButtonTitle: "OK",
-            primaryAction: primaryAction
+            primaryAction: primaryAction,
+            linkButtonTitle: link == nil ? nil : "Server settings",
+            linkAction: link
         )
     }
 }

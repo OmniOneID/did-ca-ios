@@ -17,135 +17,70 @@
 
 import SwiftUI
 
+/// Proximity presentation (design spec 25a · Present · Proximity (iOS)).
+///
+/// iOS doesn't support holder-side NFC Device Engagement, so the bottom "Or share via NFC" area is
+/// **not rendered at all** (PRES-B-08). No disabled state or unsupported notice either; proximity presentation
+/// is a single QR Device Engagement path. For the same reason Settings has no Proximity group (NFC-E-03).
+///
+/// The QR text is the communication SDK's engagement — the coordinator opens the session (`startProximity`) and this screen
+/// only draws its result (`qrString`). When a reader attaches and sends a request, the coordinator stacks the consent screen on top.
 struct ProximityView: View {
+    /// Engagement QR text. nil until the session opens — only an empty card is shown meanwhile.
+    var qrString: String?
     var onBack: () -> Void = {}
+    var onStart: () async -> Void = {}
 
     var body: some View {
         VStack(spacing: 0) {
+            // PRES-B-07 — the primary-background title bar serves as the screen title, so no large title in the body.
             HStack {
                 Button(action: onBack) {
                     Image(.icBack)
+                        .renderingMode(.template)
+                        .foregroundStyle(.white)
                         .padding()
                 }
-                Spacer()
+                Text("Present in Person")
+                    .font(.pretendard(size: 17, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                Image(.icBack).padding().hidden()
             }
             .frame(height: 56)
-            .background(Color.backgroundGray.ignoresSafeArea(edges: .top))
+            .background(Color.customPrimary.ignoresSafeArea(edges: .top))
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Present certificate in person")
-                    .font(.pretendard(size: 22, weight: .bold))
-                    .foregroundStyle(.black)
-                Text("Show this QR code to the Relying Party to present your digital certificate.")
-                    .font(.pretendard(size: 13, weight: .regular))
-                    .foregroundStyle(.customGray)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 16)
+            Text("Show this QR code to the Relying Party to present your digital certificate.")
+                .font(.pretendard(size: 13, weight: .regular))
+                .foregroundStyle(.customGray)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 16)
 
+            // With no bottom NFC area, the QR is centered within the remaining space (PRES-B-08).
             Spacer()
-            FakeQRView(size: 240)
-            Spacer()
-
-            VStack(spacing: 16) {
-                Text("Or share via NFC")
-                    .font(.pretendard(size: 12, weight: .semibold))
-                    .foregroundStyle(.customGray)
-                    .kerning(0.5)
-
-                Image(.icNfcBadge)
-                    .frame(width: 56, height: 56)
-                    .background(
-                        Circle()
-                            .fill(.paleOrange)
-                    )
-
-                Text("Hold your phone near the reader to scan.")
-                    .font(.pretendard(size: 12, weight: .regular))
-                    .foregroundStyle(.customGray)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 240)
+            Group {
+                if let qrString {
+                    QRCodeView(content: qrString, size: 240)
+                } else {
+                    Color.clear.frame(width: 240, height: 240)
+                }
             }
-            .padding(.vertical, 20)
-            .frame(maxWidth: .infinity)
-            .overlay(
-                Rectangle().frame(height: 1).foregroundStyle(.borderGray),
-                alignment: .top
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.white)
+                    .stroke(.borderGray, lineWidth: 1)
             )
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.backgroundGray)
-    }
-}
-
-private struct FakeQRView: View {
-    let size: CGFloat
-
-    var body: some View {
-        let cells = Self.cells
-        return ZStack {
-            Canvas { ctx, _ in
-                let cell = size / 25
-                for (r, c) in cells {
-                    let isFinderArea = (r < 8 && c < 8) || (r < 8 && c > 16) || (r > 16 && c < 8)
-                    if isFinderArea { continue }
-                    let rect = CGRect(
-                        x: CGFloat(c) * cell,
-                        y: CGFloat(r) * cell,
-                        width: cell, height: cell
-                    )
-                    ctx.fill(Path(rect), with: .color(.black))
-                }
-            }
-            .frame(width: size, height: size)
-
-            VStack {
-                HStack {
-                    Finder(cell: size / 25)
-                    Spacer()
-                    Finder(cell: size / 25)
-                }
-                Spacer()
-                HStack {
-                    Finder(cell: size / 25)
-                    Spacer()
-                }
-            }
-            .frame(width: size, height: size)
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.white)
-                .stroke(.borderGray, lineWidth: 1)
-        )
-    }
-
-    private static let cells: [(Int, Int)] = {
-        var out: [(Int, Int)] = []
-        for r in 0..<25 {
-            for c in 0..<25 {
-                let v = sin(Double(r) * 7.3 + Double(c) * 3.1) + cos(Double(r) * 1.7 + Double(c) * 5.9)
-                if v > 0.2 { out.append((r, c)) }
-            }
-        }
-        return out
-    }()
-}
-
-private struct Finder: View {
-    let cell: CGFloat
-    var body: some View {
-        ZStack {
-            Rectangle().fill(.black).frame(width: cell * 7, height: cell * 7)
-            Rectangle().fill(.white).frame(width: cell * 5, height: cell * 5)
-            Rectangle().fill(.black).frame(width: cell * 3, height: cell * 3)
-        }
+        .task { await onStart() }
     }
 }
 
 #Preview {
-    ProximityView()
+    ProximityView(qrString: "mdoc:owBjMS4wAYIB2BhYS6QBAiABIVggWojRgrzl")
 }

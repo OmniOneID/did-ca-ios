@@ -17,18 +17,18 @@
 
 import SwiftUI
 
-/// ZKP attribute 값 선택 화면 — VPRequestZkpView 의 attribute 행에서 "Tap to select >"
-/// 를 누르면 진입. 주어진 referent key 에 대한 후보 raw 값 리스트(`availableValues`)를
-/// 표시하고 사용자가 하나를 고르면 `onSelect(index:)` 콜백으로 결과를 반환.
+/// ZKP attribute value selection screen — entered by tapping "Tap to select >" on an attribute row
+/// of VPRequestZkpView. Shows the list of candidate raw values (`availableValues`) for the given referent key
+/// and returns the result via the `onSelect(index:)` callback when the user picks one.
 ///
-/// 후보 값은 사전에 preProcess 단계에서 `searchZKPCredentials` 로 캐시된 sub-referent
-/// 들의 raw 문자열. 인덱스가 그대로 `UserReferent(attrReferent:selectedIndex:...)` 에
-/// 전달돼 SDK 에서 사용된다.
+/// Candidate values are the raw strings of sub-referents cached earlier by `searchZKPCredentials`
+/// in the preProcess step. The index is passed as-is into `UserReferent(attrReferent:selectedIndex:...)`
+/// and used by the SDK.
 struct ZkpAttrSelectView: View {
     let label: String
     let availableValues: [ZkpAvailableValue]
-    /// 외부(coordinator) 가 단일 소스. @State 로 두면 SwiftUI 가 view identity 유지 시 이전
-    /// 화면의 선택값이 남거나 초기화 안 됨 — let 으로 받아 매 진입마다 깨끗한 값으로 표시.
+    /// The external coordinator is the single source. As @State, SwiftUI keeping view identity could leave the previous
+    /// screen's selection or fail to reset — taking it as let shows a clean value on every entry.
     let selectedIndex: Int?
     var onBack: () -> Void = {}
     var onSelect: (_ index: Int) -> Void = { _ in }

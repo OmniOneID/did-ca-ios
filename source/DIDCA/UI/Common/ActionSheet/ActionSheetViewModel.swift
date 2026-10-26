@@ -21,8 +21,12 @@ import Observation
 struct ActionSheetContent : Identifiable
 {
     let id : UUID = UUID()
-    var icon : ImageResource
+    /// Icon row (`icon` + right chevron). Not used for selection rows (`selected != nil`).
+    var icon : ImageResource? = nil
     var title : String
+    /// nil means an icon row, otherwise a **selection row** — design spec BottomSheet `select` mode. Only the current-value row
+    /// has a paleOrange background and a check on the right (BLE-02).
+    var selected : Bool? = nil
     var action : () -> Void
 }
 

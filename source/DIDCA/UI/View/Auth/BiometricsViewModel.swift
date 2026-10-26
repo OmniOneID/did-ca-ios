@@ -18,16 +18,16 @@
 
 import Foundation
 import Observation
-import DIDWalletSDK   // requestWalletToken(purpose: .CREATE_DID) 의 SDK enum
+import DIDWalletSDK   // SDK enum for requestWalletToken(purpose: .CREATE_DID)
 
 @Observable
 final class BiometricsViewModel {
 
-    // Enable 버튼 액션. 토큰 요청 동안만 로딩 표시 (생체인증 prompt 는 iOS 가 띄움).
+    // Enable button action. Shows loading only during the token request (iOS shows the biometric prompt).
     func enable(onSuccess: @escaping () -> Void) async {
-        // 이미 등록됨(SET-E-03) / 생체 미등록·미지원·잠김(BIO-E-01/02/03) 사전 점검.
-        // 키 생성 전에 막고, 안내 다이얼로그만 띄운 채 화면을 유지한다
-        // (onSuccess 미호출 → 모달 닫지 않음).
+        // Pre-check for already registered (SET-E-03) / biometrics not enrolled · unsupported · locked (BIO-E-01/02/03).
+        // Block before key generation and keep the screen with only a notice dialog
+        // (onSuccess not called → modal not closed).
         if let blocked = Biometrics.enrollmentBlock() {
             OverlayManager.shared.showPopup(
                 title: "Notification",
@@ -41,7 +41,7 @@ final class BiometricsViewModel {
             let hWalletToken = try await TokenGenerator.requestWalletToken(purpose: .CREATE_DID)
             OverlayManager.shared.hideLoading()
 
-            // 생체 prompt 실패(BIO-E-04/05)는 BiometricError 로 던져진다.
+            // Biometric prompt failures (BIO-E-04/05) are thrown as BiometricError.
             try WalletKeys.generateBio(hWalletToken: hWalletToken)
             onSuccess()
         } catch let bioErr as BiometricError {

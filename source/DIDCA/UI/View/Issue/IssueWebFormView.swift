@@ -17,15 +17,15 @@
 
 import SwiftUI
 
-/// 발급 추가정보 입력 웹 폼 (`DEMO_URL/addVcInfo`).
-/// 범용 `WebView` 를 조합하고, addVcInfo 페이지가 약속한 JS 콜백만 여기서 결과로 매핑한다.
-/// - `onCompletedAddVcUpload` → 업로드 성공 → `onResult(true)`
-/// - `onFailedAddVcUpload`    → 업로드 실패 → `onResult(false)`
-/// - X 버튼으로 닫으면        → `onResult(false)`
+/// Web form for additional issuance info (`DEMO_URL/addVcInfo`).
+/// Composes the generic `WebView`, and maps only the JS callbacks the addVcInfo page promises into results here.
+/// - `onCompletedAddVcUpload` → upload succeeded → `onResult(true)`
+/// - `onFailedAddVcUpload`    → upload failed → `onResult(false)`
+/// - Closed with the X button → `onResult(false)`
 struct IssueWebFormView: View {
 
     let url: URL
-    /// 폼 완료 여부. true 면 발급 진행, false 면 발급 중단.
+    /// Whether the form completed. true continues issuance, false aborts it.
     let onResult: (Bool) -> Void
 
     @State private var isLoading = true
@@ -35,7 +35,7 @@ struct IssueWebFormView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 모달이므로 좌측은 X — 닫으면 폼 취소(발급 중단).
+            // It's a modal, so the left is X — closing cancels the form (aborts issuance).
             NavBar(title: "Add certificate information", icon: .icCloseWhite) {
                 onResult(false)
             }
@@ -48,8 +48,8 @@ struct IssueWebFormView: View {
                         onResult(name == Self.completedHandler)
                     },
                     onLoadingChanged: { isLoading = $0 },
-                    // 발급 결과는 위 JS 브리지가 권위. 페이지가 부수적으로 쏘는 alert/confirm/prompt 는
-                    // 팝업으로 띄우지 않고 즉시 ack 한다 — did-ca 와 동일한 동작.
+                    // The JS bridge above is authoritative for the issuance result. Incidental alert/confirm/prompt from the page
+                    // are not shown as popups but acked immediately — same behavior as did-ca.
                     silenceJSDialogs: true
                 )
 

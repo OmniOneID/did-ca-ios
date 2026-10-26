@@ -18,9 +18,9 @@
 
 import Foundation
 
-// 불변 키 식별자 상수 — 값 타입 String 이라 어느 액터에서 읽어도 안전.
-// 기본 MainActor 격리(SWIFT_DEFAULT_ACTOR_ISOLATION)를 벗어나 nonisolated 발급/인증
-// 경로(BiometricError, UpdateUserProtocol, PINViewModel)에서 경고 없이 참조하도록 한다.
+// Immutable key identifier constants — value type String, so safe to read from any actor.
+// Lets them be referenced without warnings from nonisolated issuance/auth paths outside the default MainActor
+// isolation (SWIFT_DEFAULT_ACTOR_ISOLATION) (BiometricError, UpdateUserProtocol, PINViewModel).
 nonisolated struct KeyIdName {
     static let pin:      String = "pin"
     static let bio:      String = "bio"

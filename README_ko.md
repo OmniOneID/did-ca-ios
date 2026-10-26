@@ -179,3 +179,5 @@ Contributing 및 pull request 제출 절차에 대한 자세한 내용은 [CONTR
 
 ## 라이선스
 [Apache 2.0](LICENSE)
+
+앱에 포함된 Pretendard 폰트는 Apache 2.0 이 아닌 [SIL Open Font License 1.1](source/DIDCA/Assets/PretendardVariable-OFL.txt) 을 따릅니다. 자세한 내용은 [dependencies-license.md](dependencies-license.md) 를 참고해주세요.

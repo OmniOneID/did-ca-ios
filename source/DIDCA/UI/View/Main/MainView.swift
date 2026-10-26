@@ -90,14 +90,14 @@ struct MainView: View {
         }
     }
 
-    // "Scan QR" — 액션시트가 내려간 뒤 QR 스캔 모달을 띄우고 결과를 메인으로 받는다.
-    // 스캐너 화면은 + 버튼 / Present 버튼이 공유하고, 받은 QR 의 종류를 어느 쪽에서 눌렀는지로
-    // 한정한다(`intent`) — 다른 종류면 흐름을 시작하지 않고 안내만 한다.
+    // "Scan QR" — after the action sheet goes down, show the QR scan modal and receive the result in main.
+    // The scanner screen is shared by the + button / Present button, and the kind of QR received is restricted by
+    // which one was tapped (`intent`) — for a different kind, the flow isn't started and only a notice is shown.
     private func scanQR(intent: ScanIntent) {
         Task {
-            // 액션시트 dismiss 애니메이션이 끝난 뒤 모달이 올라오도록 잠깐 대기.
-            // 길이는 DraggableActionSheet 의 dismissDuration 을 따르고, 시트의 isPresented=false
-            // 처리와 같은 deadline 으로 겹치지 않도록 약간의 마진을 더한다.
+            // Wait briefly so the modal comes up after the action sheet dismiss animation finishes.
+            // The duration follows DraggableActionSheet's dismissDuration, plus a small margin so it doesn't coincide
+            // with the same deadline as the sheet's isPresented=false handling.
             try? await Task.sleep(for: .seconds(DraggableActionSheet.dismissDuration) + .milliseconds(30))
             guard let payload = await coordinator.presentQrScan() else { return }
             await coordinator.handleScannedQR(payload, intent: intent)

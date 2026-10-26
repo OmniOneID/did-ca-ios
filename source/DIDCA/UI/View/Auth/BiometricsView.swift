@@ -78,9 +78,9 @@ struct BiometricsView : View {
 
             VStack(spacing: 8) {
                 Button {
-                    // 설정 경로는 키 생성 + 문서 갱신을 coordinator(addBiometricsFromSettings →
-                    // UpdateUserProtocol.addBioKey) 가 담당하므로, 여기선 enable 신호만 보낸다.
-                    // 온보딩은 기존대로 ViewModel 에서 bio 키만 생성 (뒤이어 step2 가 문서 생성).
+                    // In the settings path, key generation + document update are handled by the coordinator (addBiometricsFromSettings →
+                    // UpdateUserProtocol.addBioKey), so only the enable signal is sent here.
+                    // Onboarding, as before, generates only the bio key in the ViewModel (step2 then generates the document).
                     if isFromSettings {
                         onEnable()
                     } else {

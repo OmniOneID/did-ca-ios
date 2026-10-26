@@ -18,37 +18,37 @@
 import SwiftUI
 import UIKit
 
-/// 이미지 클레임(portrait 등) 렌더링 — 설계서 VC-B-02 / PRES-B-04. 상세화면과 VP 제시화면이 공유한다.
+/// Image claim (portrait, etc.) rendering — design spec VC-B-02 / PRES-B-04. Shared by the detail screen and the VP presentation screen.
 ///
-/// - **원본 크기 그대로** 그린다. 확대하지 않는다.
-/// - 표시 가능 폭을 넘을 때만 가로세로 비율을 유지한 채 줄인다. 잘라내지 않는다.
-/// - **높이 상한은 두지 않는다** — 세로로 긴 이미지는 행 높이가 그만큼 늘어난다.
-/// - 좌측 정렬. 라운드 처리나 테두리는 적용하지 않는다.
+/// - Drawn **at original size**. Never enlarged.
+/// - Shrunk, preserving aspect ratio, only when it exceeds the available width. Never cropped.
+/// - **No height cap** — a tall image grows the row height accordingly.
+/// - Left-aligned. No rounding or border applied.
 ///
-/// 설계서의 px→dp 환산에 대응해 원본 픽셀을 화면 배율로 나눠 pt 로 옮긴다
-/// (예: 100×120px, 3x 화면 ≒ 33×40pt). 배율은 `UIScreen` 대신 환경값을 쓴다 —
-/// `UIScreen.main` 은 iOS 26 에서 deprecated 다.
+/// Mirroring the design spec's px→dp conversion, original pixels are divided by the screen scale to get pt
+/// (e.g. 100×120px on a 3x screen ≒ 33×40pt). The scale comes from the environment instead of `UIScreen` —
+/// `UIScreen.main` is deprecated in iOS 26.
 struct ClaimImageView: View {
     let data: Data
 
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
-        // 값은 매핑 단계(`ImageClaim.decode`)에서 이미 이미지로 열리는지 확인됐다.
-        // 그래도 실패하면 아무것도 그리지 않는다 — 오류 다이얼로그는 띄우지 않는다(VC-B-03).
+        // The value was already confirmed to open as an image at the mapping stage (`ImageClaim.decode`).
+        // If it still fails, nothing is drawn — no error dialog is shown (VC-B-03).
         if let uiImage = UIImage(data: data) {
             let natural = naturalSize(of: uiImage)
             Image(uiImage: uiImage)
                 .resizable()
                 .scaledToFit()
-                // 상한이 원본 크기라 확대는 일어나지 않고, 폭이 좁으면 비율을 유지한 채 줄어든다.
+                // The cap is the original size so no enlargement happens; if the width is narrow it shrinks preserving the ratio.
                 .frame(maxWidth: natural.width, maxHeight: natural.height)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    /// 원본 픽셀 크기 ÷ 화면 배율 = pt 크기.
-    /// `UIImage(data:)` 의 scale 은 1 이라 `size` 가 곧 픽셀이지만, 그 전제를 코드에 박지 않는다.
+    /// Original pixel size ÷ screen scale = pt size.
+    /// `UIImage(data:)` has scale 1 so `size` is pixels, but that assumption isn't baked into the code.
     private func naturalSize(of image: UIImage) -> CGSize {
         let pixels = CGSize(width: image.size.width * image.scale,
                             height: image.size.height * image.scale)

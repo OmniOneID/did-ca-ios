@@ -46,11 +46,17 @@ final class OverlayManager {
         primaryButtonTitle: String = "OK",
         primaryAction: @escaping () -> Void = {},
         secondaryButtonTitle: String? = nil,
-        secondaryAction: (() -> Void)? = nil
+        secondaryAction: (() -> Void)? = nil,
+        linkButtonTitle: String? = nil,
+        linkAction: (() -> Void)? = nil
     ) {
         let primary = Popup.PopupButton(title: primaryButtonTitle, action: primaryAction)
         let secondary = secondaryButtonTitle.map {
             Popup.PopupButton(title: $0, action: secondaryAction ?? {})
+        }
+        // DLG-05 — text link below the buttons. No action means no link (avoids a link with nothing to tap).
+        let link = linkButtonTitle.flatMap { title in
+            linkAction.map { Popup.PopupButton(title: title, action: $0) }
         }
         hideLoading()
         
@@ -59,7 +65,8 @@ final class OverlayManager {
                 title: title,
                 message: message,
                 primaryButton: primary,
-                secondaryButton: secondary
+                secondaryButton: secondary,
+                linkButton: link
             )
         }
     }
@@ -76,11 +83,11 @@ final class OverlayManager {
     func showToast(message: String, duration: TimeInterval = 2.0) {
         let toast = Toast(message: message, duration: duration)
 
-        // 로딩을 내리지 않는다 — 토스트는 흐름을 끝내지 않는 알림이라, 배경에서 뜬 토스트가
-        // (예: loadCredentials 중 SD-JWT 상태 조회 실패) 진행 중인 발급·폐기의 스피너를
-        // 걷어내면 안 된다. HUD 는 터치를 막지 않는 PassThroughWindow 라 스피너가 사라진
-        // 화면은 그대로 조작 가능해져 같은 동작이 두 번 시작될 수 있다.
-        // (showPopup 의 hideLoading 은 유지 — 에러 팝업은 흐름을 끝내는 게 맞다.)
+        // Doesn't dismiss loading — a toast is a notification that doesn't end the flow, so a toast raised in the background
+        // (e.g. SD-JWT status lookup failure during loadCredentials) must not remove the spinner of an in-progress
+        // issuance/revocation. The HUD is a PassThroughWindow that doesn't block touches, so a screen whose spinner
+        // disappeared becomes operable again and the same action could start twice.
+        // (showPopup's hideLoading stays — an error popup should end the flow.)
 
         withAnimation(.snappy) {
             activeToasts.append(toast)
@@ -103,8 +110,8 @@ final class OverlayManager {
     }
     
     // Loading
-    /// - parameter animated: false 면 페이드 없이 즉시 표시. 인증 모달 dismiss 와 같은
-    ///   프레임에 opaque 로 띄워, 슬라이드다운 중 맨 화면이 비치는 갭을 없앨 때 쓴다.
+    /// - parameter animated: if false, shown immediately without a fade. Used to show it opaque in the same frame as
+    ///   the auth modal dismiss, removing the gap where the bare screen shows through during the slide-down.
     @MainActor
     func showLoading(animated: Bool = true) {
 //        loadingCount += 1
@@ -125,7 +132,7 @@ final class OverlayManager {
                 isLoading = shoudShow
             }
         } else {
-            // 뷰단 `.animation(value: isLoading)` 까지 이 트랜잭션이 억제 → 페이드 없이 즉시.
+            // This transaction suppresses even the view-level `.animation(value: isLoading)` → shown immediately without a fade.
             var txn = Transaction()
             txn.disablesAnimations = true
             withTransaction(txn) {

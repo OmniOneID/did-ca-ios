@@ -17,25 +17,25 @@
 
 import SwiftUI
 
-/// VC 상세화면. ZKP 페어 크레덴셜이면 "Zero-Knowledge Proof" 섹션을
-/// 추가로 렌더 — 별도 화면이 아니라 한 뷰가 `credential.zkp` 로 분기한다.
+/// VC detail screen. For a ZKP-paired credential, additionally renders a "Zero-Knowledge Proof" section
+/// — not a separate screen; one view branches on `credential.zkp`.
 struct VCDetailView: View {
     let credential: Credential
     var onBack: () -> Void = {}
     var onConfirmDelete: () -> Void = {}
-    /// 진입 시 새로 조회한 상태를 밖으로 알린다 — 목록은 진입 때 만든 스냅샷을 그리므로,
-    /// 이걸 흘려보내지 않으면 상세에서만 최신 상태가 보이고 뒤로 나오면 옛 뱃지가 남는다.
+    /// Reports the status freshly fetched on entry to the outside — the list draws a snapshot made on entry,
+    /// so without passing this along the latest status shows only in detail and the old badge remains after going back.
     var onStatusRefreshed: (CredentialStatus) -> Void = { _ in }
 
     @State private var expandedGroups: Set<String> = []
-    // 진입 시 새로 조회한 상태. nil 이면 아직 미조회 → credential.status 표시.
+    // Status freshly fetched on entry. nil means not fetched yet → show credential.status.
     @State private var refreshedStatus: CredentialStatus?
 
     var body: some View {
         VStack(spacing: 0) {
             navBar
 
-            // 네비바 아래 — 컬러 히어로·카드·클레임이 함께 스크롤되는 영역.
+            // Below the nav bar — the area where the colored hero, card and claims scroll together.
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     CredentialHero(credential: credential, statusOverride: refreshedStatus)
@@ -52,8 +52,8 @@ struct VCDetailView: View {
                     .padding(.bottom, 24)
                 }
                 .background(alignment: .top) {
-                    // 위로 당겨 오버스크롤(바운스)할 때 콘텐츠 위 영역까지
-                    // 주황색이 끊기지 않도록 히어로 컬러를 위로 연장한다.
+                    // Extend the hero color upward so the orange doesn't break off above the content
+                    // when pulled down into overscroll (bounce).
                     Color.customPrimary
                         .frame(height: 1200)
                         .offset(y: -1200)
@@ -69,7 +69,7 @@ struct VCDetailView: View {
         }
     }
 
-    // 백/휴지통 — 상단 고정 네비바. 컬러 배경이 상태바 뒤까지 확장된다.
+    // Back/trash — fixed nav bar at the top. The colored background extends behind the status bar.
     private var navBar: some View {
         HStack {
             Button(action: onBack) {
@@ -171,8 +171,8 @@ struct ClaimRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // 라벨은 클레임 키 원형 그대로 — 대문자 변환 등 가공을 하지 않는다.
-            // 빈 라벨은 배열 원소(붙일 이름이 없는 행)라 값만 그린다.
+            // The label is the raw claim key — no processing such as uppercasing.
+            // An empty label is an array element (a row with no name to attach), so only the value is drawn.
             if !label.isEmpty {
                 Text(label)
                     .font(.pretendard(size: 13, weight: .regular))
@@ -192,8 +192,8 @@ struct ClaimRow: View {
         }
     }
 
-    // 이미지 클레임은 값 텍스트를 대신한다 — 둘을 함께 노출하지 않는다(VC-B-01).
-    // 크기 규칙(원본 크기·확대 금지·높이 상한 없음)은 `ClaimImageView` 가 갖는다.
+    // An image claim replaces the value text — the two are never shown together (VC-B-01).
+    // Sizing rules (original size · no upscaling · no height cap) belong to `ClaimImageView`.
     @ViewBuilder
     private var valueView: some View {
         switch value {
@@ -223,7 +223,7 @@ struct ClaimGroup: View {
                         .renderingMode(.template)
                         .foregroundStyle(.customPrimary)
                         .frame(width: 18, height: 18)
-                    // 그룹 제목 = SD-JWT disclosure 의 클레임 키 — 원형 그대로 그린다.
+                    // Group title = the SD-JWT disclosure's claim key — drawn as-is.
                     Text(title)
                         .font(.pretendard(size: 11, weight: .bold))
                         .kerning(0.4)

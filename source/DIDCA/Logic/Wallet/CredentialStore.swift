@@ -20,13 +20,13 @@ import Foundation
 import Observation
 import DIDWalletSDK
 
-// 발급/조회한 VC 와 그 부가정보(VCSchema, 상태)를 메모리에 보관하는 캐시.
-// - credentials:    WalletAPI.getAllCredentials 결과 (SDK 모델). 재조회 없이 재사용.
-// - zkpCredentials: WalletAPI.getAllZKPCredentials 결과. VC 와 페어이므로 함께 로드한다
-//                   (ZKP 는 VC 단독 보유 위에만 존재 — ZKP 단독 케이스 없음).
-// - schemaCache:    credentialSchema.id(URL) → VCSchema. title 반복 조회 비용 절감.
-// - statusCache:    vcId → VCStatusEnum. vc-meta 반복 조회 비용 절감.
-// - zkpSchemaCache: ZKPCredential.schemaId → ZKPCredentialSchema. ZKP 클레임 라벨(caption) 매핑용.
+// In-memory cache of issued/fetched VCs and their extra info (VCSchema, status).
+// - credentials:    result of WalletAPI.getAllCredentials (SDK model). Reused without refetching.
+// - zkpCredentials: result of WalletAPI.getAllZKPCredentials. Paired with VCs, so loaded together
+//                   (ZKP exists only on top of a held VC — there is no ZKP-only case).
+// - schemaCache:    credentialSchema.id(URL) → VCSchema. Saves the cost of repeated title lookups.
+// - statusCache:    vcId → VCStatusEnum. Saves the cost of repeated vc-meta lookups.
+// - zkpSchemaCache: ZKPCredential.schemaId → ZKPCredentialSchema. For mapping ZKP claim labels (caption).
 @Observable
 final class CredentialStore {
 
@@ -35,42 +35,43 @@ final class CredentialStore {
 
     private(set) var credentials: [VerifiableCredential] = []
     private(set) var zkpCredentials: [ZKPCredential] = []
-    /// OID4VCI 로 발급된 보유분(SD-JWT·mDoc 이 한 목록으로 섞여 온다). W3C 와 저장소가 분리돼 있어
-    /// 따로 읽지만, 읽는 시점은 `reloadCredentials()` 한 곳으로 모은다 — 목록이 두 저장소를 서로
-    /// 다른 시점의 스냅샷으로 그리면 발급 직후 새 카드가 한 박자 늦게 나타난다.
-    /// ⚠️ OID4VP 매칭은 이 캐시를 쓰지 않는다 — 제출 대상은 그 자리에서 새로 읽는다.
+    /// Holdings issued via OID4VCI (SD-JWT and mDoc arrive mixed in one list). Stored separately from W3C, so
+    /// read separately, but the read happens in one place, `reloadCredentials()` — if the list draws the two stores
+    /// from snapshots taken at different times, a newly issued card shows up one beat late.
+    /// ⚠️ OID4VP matching does not use this cache — presentation targets are read fresh on the spot.
     private(set) var oid4vcCredentials: [any CredentialItem] = []
 
     @ObservationIgnored private var schemaCache: [String: VCSchema] = [:]
     @ObservationIgnored private var statusCache: [String: VCStatusEnum] = [:]
     @ObservationIgnored private var zkpSchemaCache: [String: ZKPCredentialSchema] = [:]
-    // Status List 상태(SD-JWT·mDoc 공용) — W3C `statusCache` 와 같은 주기(메인 진입 시 캐시 우선,
-    // 상세 진입 시 강제 재조회). Status List Token 원문이나 압축 해제한 상태 배열은 보관하지 않는다
-    // — 결과 enum 한 개만 남긴다.
+    // Status List status (shared by SD-JWT·mDoc) — same cadence as the W3C `statusCache` (cache first on main entry,
+    // forced refetch on detail entry). Neither the raw Status List Token nor the decompressed status array is kept
+    // — only the single resulting enum.
     @ObservationIgnored private var statusListCache: [String: StatusListStatus] = [:]
-    // credentialId → Status List 위치. 상세 진입 시 재조회하려면 uri·idx 가 필요한데, 그 값은
-    // 저장된 크리덴셜에서만 나오므로 목록 로딩 때 함께 보관한다.
+    // credentialId → Status List location. Refetching on detail entry needs uri·idx, and those values
+    // only come from the stored credential, so they are kept alongside during list loading.
     @ObservationIgnored private var statusListRefs: [String: StatusListVerifier.Reference] = [:]
 
-    /// 상태 캐시를 비운다 — 다음 목록 로딩이 Status List / vc-meta 를 다시 조회하게 한다.
-    /// 상태는 서버에서 언제든 바뀌므로(폐기·정지) 앱이 떠 있는 내내 첫 조회값을 붙들고 있으면 안 된다.
-    /// 백그라운드에서 돌아올 때 호출한다. `statusListRefs`(uri·idx)는 크리덴셜에 고정된 값이라 남긴다.
+    /// Clears the status caches — makes the next list load re-query Status List / vc-meta.
+    /// Status can change on the server at any time (revocation, suspension), so the first value must not be held for the app's whole lifetime.
+    /// Called on return from background. `statusListRefs` (uri·idx) are fixed per credential, so they are kept.
     func invalidateStatusCache() {
         statusCache.removeAll()
         statusListCache.removeAll()
     }
 
-    /// 지갑 보유분 전체를 다시 읽어 메모리에 반영 — W3C VC + ZKP + OID4VC(SD-JWT·mDoc).
-    /// 저장소는 둘로 갈려 있지만 토큰은 하나면 되고(`.LIST_VC` 가 양쪽 조회를 모두 허용한다),
-    /// 한 번에 읽어야 목록이 같은 시점의 스냅샷이 된다.
+    /// Re-reads all wallet holdings into memory — W3C VC + ZKP + OID4VC (SD-JWT·mDoc).
+    /// The storage is split in two, but one token suffices (`.LIST_VC` permits reading both),
+    /// and reading them together makes the list a snapshot of a single point in time.
     ///
-    /// OID4VC 조회 실패는 삼킨다 — 그쪽 저장소가 비어 있거나 읽히지 않아도 W3C 목록까지 사라질
-    /// 이유는 없다(그 반대도 마찬가지로, W3C 조회 실패는 호출측이 빈 목록으로 흡수한다).
+    /// OID4VC read failures are swallowed — an empty or unreadable store on that side is no reason for the W3C
+    /// list to vanish too (and vice versa: a W3C read failure is absorbed by the caller as an empty list).
     func reloadCredentials() async throws {
         guard WalletAPI.shared.isAnyCredentialsSaved || WalletAPI.shared.isAnyOID4VCSaved else {
             credentials = []
             zkpCredentials = []
             oid4vcCredentials = []
+            OID4VcIssuerStore.prune(keeping: [])
             return
         }
         let hWalletToken = try await TokenGenerator.requestWalletToken(purpose: .LIST_VC)
@@ -83,12 +84,22 @@ final class CredentialStore {
             zkpCredentials = []
         }
 
-        oid4vcCredentials = WalletAPI.shared.isAnyOID4VCSaved
-            ? ((try? WalletAPI.shared.getAllOID4VCs(hWalletToken: hWalletToken)) ?? [])
-            : []
+        // Issuer reference cleanup runs **only when the wallet was read correctly** — reading an empty list caused by a
+        // read failure as "everything was deleted" would wipe issuer records of intact credentials, blocking server revocation.
+        if WalletAPI.shared.isAnyOID4VCSaved {
+            if let items = try? WalletAPI.shared.getAllOID4VCs(hWalletToken: hWalletToken) {
+                oid4vcCredentials = items
+                OID4VcIssuerStore.prune(keeping: Set(items.map(\.id)))
+            } else {
+                oid4vcCredentials = []
+            }
+        } else {
+            oid4vcCredentials = []
+            OID4VcIssuerStore.prune(keeping: [])
+        }
     }
 
-    /// schema id(URL) 로 VCSchema 조회 — 캐시에 있으면 그대로, 없으면 GET 후 캐시.
+    /// Looks up VCSchema by schema id(URL) — from cache if present, otherwise GET and cache.
     func schema(id: String) async throws -> VCSchema {
         if let cached = schemaCache[id] {
             return cached
@@ -98,8 +109,8 @@ final class CredentialStore {
         return schema
     }
 
-    /// ZKPCredential.schemaId 로 ZKPCredentialSchema 조회 — 캐시 우선, 없으면 GET 후 캐시.
-    /// ZKP 클레임 키(`namespace.id.label`)를 사람이 읽을 caption 으로 바꾸는 데 쓴다.
+    /// Looks up ZKPCredentialSchema by ZKPCredential.schemaId — cache first, otherwise GET and cache.
+    /// Used to turn ZKP claim keys (`namespace.id.label`) into human-readable captions.
     func zkpSchema(id: String) async throws -> ZKPCredentialSchema {
         if let cached = zkpSchemaCache[id] {
             return cached
@@ -112,10 +123,10 @@ final class CredentialStore {
         return schema
     }
 
-    /// vcId 의 발급 상태(ACTIVE/INACTIVE/REVOKED) 조회.
-    /// 기본은 캐시 우선이며, `forceRefresh` 면 캐시를 무시하고 vc-meta 를 새로 조회한다
-    /// (폐기처럼 현재 서버 상태가 중요한 경우 사용). 어느 쪽이든 결과는 캐시에 반영.
-    /// 응답의 vcMeta 는 multibase 인코딩이라 decode 후 VCMeta 로 역직렬화한다.
+    /// Looks up the issuance status (ACTIVE/INACTIVE/REVOKED) of a vcId.
+    /// Cache first by default; with `forceRefresh`, ignores the cache and queries vc-meta fresh
+    /// (used when the current server status matters, e.g. revocation). Either way, the result is written to the cache.
+    /// The response's vcMeta is multibase-encoded, so it is decoded and deserialized into VCMeta.
     func status(forVcId vcId: String, forceRefresh: Bool = false) async throws -> VCStatusEnum {
         if !forceRefresh, let cached = statusCache[vcId] {
             return cached
@@ -127,31 +138,45 @@ final class CredentialStore {
         return meta.status
     }
 
-    /// 상세화면 진입 시 호출 — 해당 크리덴셜의 상태를 새로 조회해 표시용 상태로 변환.
-    /// 만료 여부는 발급 시 고정이므로 기존 표시값을 따른다. 조회 실패 시 기존 상태를 그대로 반환.
-    /// SD-JWT·mDoc 은 서버 vc-meta 가 아니라 Status List 로 판정한다.
+    /// Called on detail screen entry — queries the credential's status fresh and converts it to a display status.
+    /// Expiry is fixed at issuance, so the existing display value is followed.
+    /// On lookup failure, shows a notice toast and returns the last status confirmed during this run, or the existing status if none
+    /// (same order as SD-JWT·mDoc's `refreshedStatusListStatus`).
+    /// SD-JWT·mDoc are judged by Status List, not by server vc-meta.
     func refreshedStatus(for credential: Credential) async -> CredentialStatus {
-        // SD-JWT·mDoc 은 vc-meta 가 아니라 Status List 로 판정한다 — 참조가 있는 카드만 조회한다.
+        // SD-JWT·mDoc are judged by Status List, not vc-meta — only cards with a reference are queried.
         if credential.badge == .sdJwt || credential.badge == .mDoc {
             return await refreshedStatusListStatus(for: credential)
         }
-        guard let fresh = try? await status(forVcId: credential.id, forceRefresh: true) else {
-            return credential.status
+        let fresh: VCStatusEnum
+        do {
+            fresh = try await status(forVcId: credential.id, forceRefresh: true)
+        } catch {
+            // A failed forced lookup does not clear the cache — the remaining value is the last confirmed status.
+            OverlayManager.shared.showToast(message: Self.statusCheckFailureMessage)
+            guard let cached = statusCache[credential.id] else { return credential.status }
+            return Self.detailStatus(cached, current: credential.status)
         }
-        switch fresh {
+        return Self.detailStatus(fresh, current: credential.status)
+    }
+
+    /// vc-meta status → detail display status. Expiry follows the value decided in the list (`current`).
+    private static func detailStatus(_ status: VCStatusEnum,
+                                     current: CredentialStatus) -> CredentialStatus {
+        switch status {
         case .REVOKED:
-            // 폐기는 SD-JWT(Status List INVALID)와 같은 표시로 맞춘다.
+            // Revocation is displayed the same as SD-JWT (Status List INVALID).
             return .expired
         case .INACTIVE:
             return .inactive
         case .ACTIVE:
-            return credential.status == .expired ? .expired : .active
+            return current == .expired ? .expired : .active
         }
     }
 
-    /// SD-JWT·mDoc 상세 진입 — 만료된 카드는 조회하지 않고, 그 외에는 캐시를 무시하고 Status List 를
-    /// 새로 조회한다. 참조가 없으면(Status List 미적용분) 만료일 기준 표시를 그대로 둔다.
-    /// 실패하면 안내 토스트 후 만료일 기준 표시(기존 상태)를 유지한다.
+    /// SD-JWT·mDoc detail entry — expired cards are not queried; otherwise the cache is ignored and Status List
+    /// is queried fresh. With no reference (no Status List applied), the expiry-based display is left as is.
+    /// On failure, shows a notice toast and keeps the expiry-based display (existing status).
     private func refreshedStatusListStatus(for credential: Credential) async -> CredentialStatus {
         guard credential.status != .expired,
               let reference = statusListRefs[credential.id]
@@ -163,14 +188,14 @@ final class CredentialStore {
             statusListCache[credential.id] = status
             return Self.displayStatus(status)
         } catch {
-            // 캐시를 지우지 않는다 — 조회 실패의 폴백이 **마지막으로 조회한 상태**이고,
-            // 그게 없을 때만 만료일 기준 표시로 물러난다. 지우면 첫 실패에 폴백이 사라진다.
+            // Don't clear the cache — the fallback for a lookup failure is **the last queried status**,
+            // falling back to the expiry-based display only when there is none. Clearing it would lose the fallback on the first failure.
             OverlayManager.shared.showToast(message: Self.statusCheckFailureMessage)
             return statusListCache[credential.id].map(Self.displayStatus) ?? credential.status
         }
     }
 
-    /// Status List 상태 → 표시용 상태. RESERVED 는 조회 단계에서 실패로 걸러진다.
+    /// Status List status → display status. RESERVED is filtered out as a failure at lookup time.
     private static func displayStatus(_ status: StatusListStatus) -> CredentialStatus {
         switch status {
         case .valid:     return .active
@@ -180,38 +205,38 @@ final class CredentialStore {
         }
     }
 
-    /// 조회·검증 실패 안내. 상태를 "유효"로 대체하지 않고 만료일 기준 표시로 물러났음을 알린다.
+    /// Notice for lookup/verification failure. Says the status was not replaced with "valid" but fell back to the expiry-based display.
     static let statusCheckFailureMessage = "Couldn't check the credential status."
 
-    // MARK: - 제출 후보 판정 (PRES-B-06)
+    // MARK: - Presentation candidate decision (PRES-B-06)
 
-    /// 제출 후보로 올릴 수 있는 크리덴셜을 **한 번에** 가린다 — 돌려주는 것은 ACTIVE 인 것의 id 집합.
-    /// Inactive·Expired 는 단일/복수 판정과 옵션 목록에서 모두 제외된다.
+    /// Determines **in one go** which credentials can be offered as presentation candidates — returns the set of ids that are ACTIVE.
+    /// Inactive·Expired are excluded from both the single/multiple decision and the option list.
     ///
-    /// **후보를 한 건씩 판정하지 않는다.** 같은 Status List 를 가리키는 후보들이 같은 토큰을 후보
-    /// 수만큼 내려받게 되는데, 낭비인 것보다 판정이 갈리는 것이 문제다 — 그중 일부만 실패하면 같은
-    /// 리스트를 근거로 하는 후보들이 서로 다른 사다리 단계로 판정돼, 사용자에게는 같은 발급기관 카드
-    /// 중 하나만 목록에서 사라진 모습이 된다. 묶음 조회는 목록 표시(`oid4vcDisplayCredentials`)가
-    /// 쓰는 것과 같은 경로다.
+    /// **Candidates are not judged one by one.** Candidates pointing at the same Status List would download the same
+    /// token once per candidate; worse than the waste is that the decisions can diverge — if only some fail, candidates
+    /// based on the same list get judged at different ladder steps, and the user sees just one of several cards from the
+    /// same issuer vanish from the list. The batched lookup is the same path the list display (`oid4vcDisplayCredentials`)
+    /// uses.
     ///
-    /// 판정 사다리는 세 단계이고, **실패를 ACTIVE 로 승격하지 않는다** — 2·3 은 이미 알고 있는
-    /// 사실로 물러나는 것이지 모르는 것을 유효로 치는 게 아니다.
-    /// 1. Status List 를 **새로** 조회한다 (제출은 그 자리의 사실이 중요하므로 캐시를 먼저 보지 않는다)
-    /// 2. 조회·참조 읽기가 실패하면 **마지막으로 조회한 상태**로 판정한다
-    /// 3. 그것도 없으면 **만료일과 현재 시각**을 비교한다
+    /// The decision ladder has three steps, and **a failure is never promoted to ACTIVE** — steps 2·3 fall back to
+    /// already-known facts; they don't count the unknown as valid.
+    /// 1. Query the Status List **fresh** (presentation depends on the facts right now, so the cache isn't checked first)
+    /// 2. If the lookup or reference read fails, decide by **the last queried status**
+    /// 3. If there is none, compare **the expiry date with the current time**
     ///
-    /// 못 읽는 크리덴셜과 앱이 표시할 줄 모르는 포맷은 집합에서 빠진다(= 후보가 아니다).
+    /// Unreadable credentials and formats the app can't display are left out of the set (= not candidates).
     func submittableIds(among items: [any CredentialItem]) async -> Set<String> {
         let candidates = items.compactMap(Self.submissionCandidate)
 
-        // [1] 조회할 것만 모은다 — 만료분은 조회 없이 탈락이고, 참조가 없으면 조회할 것이 없다.
+        // [1] Collect only what needs querying — expired ones drop out without a query, and with no reference there's nothing to query.
         var pending: [String: StatusListVerifier.Reference] = [:]
         for candidate in candidates where candidate.expiryStatus != .expired {
             if let reference = candidate.reference {
                 pending[candidate.credentialId] = reference
             }
         }
-        // [2] 같은 uri 를 가리키는 후보는 토큰을 한 번만 받아 인덱스별 비트만 읽는다.
+        // [2] Candidates pointing at the same uri fetch the token once and read only per-index bits.
         let statuses = pending.isEmpty
             ? [:]
             : await StatusListVerifier.statuses(for: pending)
@@ -220,7 +245,7 @@ final class CredentialStore {
         for candidate in candidates {
             guard candidate.expiryStatus != .expired else { continue }
 
-            // [3-1] 새 조회 성공 — 판정 근거는 이것 하나다.
+            // [3-1] Fresh lookup succeeded — this is the sole basis for the decision.
             if case .success(let status) = statuses[candidate.credentialId] {
                 statusListCache[candidate.credentialId] = status
                 if Self.displayStatus(status) == .active {
@@ -228,19 +253,19 @@ final class CredentialStore {
                 }
                 continue
             }
-            // Status List 미적용분 — 확인할 상태가 없고 만료도 아니다. (참조를 못 읽은 것과 다르다.)
+            // No Status List applied — no status to check and not expired. (Different from failing to read the reference.)
             if candidate.reference == nil, !candidate.referenceUnreadable {
                 submittable.insert(candidate.credentialId)
                 continue
             }
-            // [3-2] 조회·참조 읽기 실패 → 마지막으로 조회한 상태.
+            // [3-2] Lookup/reference read failed → last queried status.
             if let cached = statusListCache[candidate.credentialId] {
                 if Self.displayStatus(cached) == .active {
                     submittable.insert(candidate.credentialId)
                 }
                 continue
             }
-            // [3-3] 아는 상태가 없다 → 만료일 기준.
+            // [3-3] No known status → by expiry date.
             if candidate.expiryStatus == .active {
                 submittable.insert(candidate.credentialId)
             }
@@ -248,23 +273,23 @@ final class CredentialStore {
         return submittable
     }
 
-    /// 판정 재료 — 실물에서 id·만료일 기준 상태·Status List 참조를 뽑는다.
+    /// Decision inputs — extracts id, expiry-based status, and Status List reference from the stored item.
     ///
-    /// `reference == nil` 은 두 가지 사건을 겸하므로 `referenceUnreadable` 로 갈라 둔다.
-    /// 참조가 애초에 없는 것(Status List 미적용분)은 확인할 상태가 없다는 뜻이고, 읽다 실패한 것은
-    /// 확인해야 할 상태를 확인하지 못했다는 뜻이라 폴백 사다리를 타야 한다.
+    /// `reference == nil` covers two distinct cases, so they are split via `referenceUnreadable`.
+    /// Having no reference at all (no Status List applied) means there is no status to check; failing to read it
+    /// means a status that should be checked couldn't be, so it has to go down the fallback ladder.
     private static func submissionCandidate(_ item: any CredentialItem) -> SubmissionCandidate? {
         switch item {
         case let item as SdJwtCredentialItem:
-            // 표시 매핑을 그대로 쓴다 — 거기서 나오는 상태가 곧 3단계(만료일 기준)다.
+            // Reuse the display mapping as is — the status it produces is exactly step 3 (expiry-based).
             guard let payload = sdJwtPayload(item),
                   let credential = makeSDJWTCredential(item, payload: payload)
             else {
-                return nil              // 못 읽는 크리덴셜은 후보가 아니다
+                return nil              // unreadable credentials are not candidates
             }
             var reference: StatusListVerifier.Reference?
             var unreadable = false
-            do { reference = try item.status } catch { unreadable = true }
+            do { reference = try item.sdjwt.status() } catch { unreadable = true }
             return SubmissionCandidate(credentialId: credential.id,
                                        expiryStatus: credential.status,
                                        reference: reference,
@@ -272,14 +297,14 @@ final class CredentialStore {
 
         case let item as MdocCredentialItem:
             let credential = makeMdocCredential(item)
-            // mDoc 은 `Mdoc.parse` 가 이미 MSO 를 풀어 둬서 참조 읽기가 실패할 여지가 없다.
+            // For mDoc, `Mdoc.parse` has already unpacked the MSO, so reading the reference has no way to fail.
             return SubmissionCandidate(credentialId: credential.id,
                                        expiryStatus: credential.status,
-                                       reference: item.status,
+                                       reference: item.mdoc.status,
                                        referenceUnreadable: false)
 
         default:
-            return nil                  // 앱이 표시할 줄 모르는 포맷
+            return nil                  // a format the app doesn't know how to display
         }
     }
 
@@ -290,7 +315,7 @@ final class CredentialStore {
         let referenceUnreadable: Bool
     }
 
-    /// W3C VC 제출 후보 판정 — 사다리는 위와 같고 조회처만 `vc-meta` 다.
+    /// W3C VC presentation candidate decision — same ladder as above; only the lookup source is `vc-meta`.
     func isSubmittable(w3c vc: VerifiableCredential) async -> Bool {
         guard Self.displayStatus(.ACTIVE, validUntil: vc.validUntil) != .expired else { return false }
         if let fresh = try? await status(forVcId: vc.id, forceRefresh: true) {
@@ -299,68 +324,82 @@ final class CredentialStore {
         if let cached = statusCache[vc.id] {
             return cached == .ACTIVE
         }
-        return true                     // 만료 안 됐고, 아는 상태가 없다
+        return true                     // not expired, and no known status
     }
 
-    /// 발급자를 확인할 수 없을 때의 표시. SDK `issuerDid` 는 옵셔널이지만 저장된 크리덴셜에서는
-    /// nil 이 나오지 않는다(발급 검증 자체가 그 DID 를 필요로 한다) — 빈 칸을 남기지 않기 위한 대비다.
+    /// Display used when the issuer can't be determined. SDK `issuerDid` is optional, but it is never nil for stored
+    /// credentials (issuance verification itself requires that DID) — this is a guard against leaving a blank.
     private static let unknownIssuer = "Unknown"
 
-    /// 지갑 VC 를 다시 읽어 화면 표시용 [Credential] 로 매핑해 반환.
-    /// - 전체 조회(reloadCredentials)가 실패하면 빈 배열 — 메인 진입 자체는 막지 않는다.
-    /// - 개별 VC 의 schema/status 조회 실패는 기본값으로 흡수한다.
+    /// Re-reads wallet VCs and returns them mapped to display [Credential].
+    /// - If the full read (reloadCredentials) fails, returns an empty array — main entry itself is not blocked.
+    /// - Per-VC schema lookup failures are absorbed with a name built from the raw data (`fallbackName`).
+    /// - Per-VC status lookup failures are not replaced with valid; they fall back to the expiry-based display. The list
+    ///   lookup checks the cache first, so a failure here means no status was confirmed during this run.
+    /// - The status-check failure toast is shown only once per round, combining W3C and OID4VC.
     func loadCredentials() async -> [Credential] {
         do {
             try await reloadCredentials()
         } catch {
             return []
         }
-        // OID4VC(SD-JWT·mDoc) 매핑은 Status List 조회를 품고 있어 W3C 매핑과 독립 → 먼저 시작해
-        // 아래 루프의 네트워크 왕복과 겹친다.
+        // OID4VC (SD-JWT·mDoc) mapping contains Status List lookups and is independent of W3C mapping → start it first
+        // so it overlaps with the network round trips of the loop below.
         async let oid4vcDisplay = oid4vcDisplayCredentials()
 
         var result: [Credential] = []
+        var statusCheckFailed = false
         for vc in credentials {
             let zkpCred = zkpCredential(forVcId: vc.id)
-            // 한 VC 의 schema/status/zkpSchema 조회는 서로 독립 → 동시에 시작해 네트워크 왕복을 겹친다
-            // (콜드캐시에서 VC 당 최대 3회 직렬 왕복이 스플래시를 붙잡던 문제 완화).
+            // One VC's schema/status/zkpSchema lookups are independent → start them concurrently to overlap round trips
+            // (mitigates up to 3 serial round trips per VC on a cold cache holding up the splash).
             async let vcSchemaTask = schema(id: vc.credentialSchema.id)
             async let vcStatusTask = status(forVcId: vc.id)
             async let zkpSchemaTask = zkpSchemaIfPresent(zkpCred)
 
             let vcSchema = try? await vcSchemaTask
-            let vcStatus = (try? await vcStatusTask) ?? .ACTIVE
+            let vcStatus = try? await vcStatusTask
             let zkpSchema = await zkpSchemaTask
-            result.append(Self.makeCredential(
-                vc: vc, schema: vcSchema, status: vcStatus, zkp: zkpCred, zkpSchema: zkpSchema))
+            // On lookup failure, .ACTIVE is not a "valid" verdict but the value that selects the expiry-based display.
+            let credential = Self.makeCredential(
+                vc: vc, schema: vcSchema, status: vcStatus ?? .ACTIVE, zkp: zkpCred, zkpSchema: zkpSchema)
+            // Expired cards have nothing to report — the toast only fires when before expiry but the status is unknown.
+            if vcStatus == nil, credential.status != .expired {
+                statusCheckFailed = true
+            }
+            result.append(credential)
         }
-        // OID4VCI 발급분은 W3C 와 저장소가 분리돼 있어 따로 매핑해 합친다.
-        result.append(contentsOf: await oid4vcDisplay)
+        // OID4VCI credentials are stored separately from W3C, so they are mapped separately and merged.
+        let oid4vc = await oid4vcDisplay
+        result.append(contentsOf: oid4vc.credentials)
+        if statusCheckFailed || oid4vc.statusCheckFailed {
+            OverlayManager.shared.showToast(message: Self.statusCheckFailureMessage)
+        }
         return result
     }
 
-    /// ZKP 페어가 있으면 그 스키마(클레임 caption 매핑용)를 조회, 없으면 nil. 조회 실패도 nil.
+    /// If there is a ZKP pair, looks up its schema (for claim caption mapping); otherwise nil. Lookup failure is nil too.
     private func zkpSchemaIfPresent(_ zkpCred: ZKPCredential?) async -> ZKPCredentialSchema? {
         guard let zkpCred else { return nil }
         return try? await zkpSchema(id: zkpCred.schemaId)
     }
 
-    /// OID4VCI 로 발급된 보유분(SD-JWT·mDoc)을 화면 표시용 `[Credential]` 로 매핑.
-    /// 저장소는 두 포맷을 한 목록으로 돌려주므로 여기서 갈라 각자 규칙으로 옮기고, **저장 순서를
-    /// 그대로 유지한다**(포맷별로 몰아 정렬하면 발급 순서가 화면에서 뒤섞인다).
-    /// 앱이 표시할 줄 모르는 포맷은 조용히 건너뛴다.
+    /// Maps holdings issued via OID4VCI (SD-JWT·mDoc) to display `[Credential]`.
+    /// The store returns both formats in one list, so they are split here and converted by their own rules, **keeping
+    /// the stored order** (grouping by format would scramble the issuance order on screen).
+    /// Formats the app can't display are silently skipped.
     ///
-    /// 상태는 **만료일 우선** — 만료됐으면 그대로 expired 로 두고 Status List 를 조회하지 않는다.
-    /// 유효한 카드만 조회하며, 캐시에 있으면 재조회하지 않는다(W3C `statusCache` 와 같은 주기).
-    /// 조회·검증 실패는 유효로 대체하지 않고 만료일 기준 표시로 물러난 뒤 토스트로 알린다 —
-    /// 여러 장이 실패해도 이 회차에 한 번만 띄운다.
+    /// Status is **expiry first** — if expired, it stays expired and the Status List is not queried.
+    /// Only valid cards are queried, and not refetched if cached (same cadence as the W3C `statusCache`).
+    /// Lookup/verification failures are not replaced with valid; they fall back to the expiry-based display. Failure is only
+    /// returned; the toast is shown by the caller (`loadCredentials`) once per round, combined with W3C failures.
     ///
-    /// SD-JWT·mDoc 모두 `status.status_list.{uri, idx}` 를 같은 규격으로 싣고, 참조는 SDK 가 읽어 준다.
-    /// **nil 과 throw 는 다른 사건이다** — nil 은 "확인할 상태가 없다"(Status List 미적용분)이고,
-    /// throw 는 참조가 깨져 "읽다 실패했다"다. 후자를 nil 로 삼키면 폐기 가능한 카드가 확인 없이
-    /// 유효로 통과하므로, 조회 실패와 같은 취급(만료일 기준 표시 + 토스트)으로 올린다.
-    private func oid4vcDisplayCredentials() async -> [Credential] {
-        // [1] 표시 데이터를 먼저 만들고, 조회가 필요한 항목(만료 안 됨 + status 참조 있음 + 캐시 없음)만 모은다.
+    /// SD-JWT and mDoc both carry `status.status_list.{uri, idx}` in the same format, and the SDK reads the reference.
+    /// **nil and throw are different events** — nil is "no status to check" (no Status List applied),
+    /// throw is "reading failed" due to a broken reference. Swallowing the latter as nil would let a revocable card pass
+    /// as valid unchecked, so it is escalated with the same treatment as a lookup failure (expiry-based display + toast).
+    private func oid4vcDisplayCredentials() async -> (credentials: [Credential], statusCheckFailed: Bool) {
+        // [1] Build display data first, collecting only items that need a lookup (not expired + has status reference + not cached).
         var credentials: [Credential] = []
         var pending: [String: StatusListVerifier.Reference] = [:]
         var referenceUnreadable = false
@@ -376,7 +415,7 @@ final class CredentialStore {
                 else { continue }
                 credential = mapped
                 do {
-                    reference = try item.status
+                    reference = try item.sdjwt.status()
                 } catch {
                     reference = nil
                     readFailed = true
@@ -384,16 +423,16 @@ final class CredentialStore {
 
             case let item as MdocCredentialItem:
                 credential = Self.makeMdocCredential(item)
-                // mDoc 은 `Mdoc.parse` 가 이미 MSO 를 풀어 둬서 여기서 실패할 여지가 없다 —
-                // 참조가 깨진 문서는 파싱 단계에서 걸려 목록에 아예 오지 않는다.
-                reference = item.status
+                // For mDoc, `Mdoc.parse` has already unpacked the MSO, so this cannot fail here —
+                // a document with a broken reference is caught at parse time and never reaches the list.
+                reference = item.mdoc.status
 
             default:
                 continue
             }
 
-            // 만료된 카드는 애초에 조회 대상이 아니다 — 참조를 못 읽었더라도 알릴 것이 없으므로
-            // 실패 플래그를 세우지 않는다(만료 카드 때문에 매 로딩마다 토스트가 뜨는 것을 막는다).
+            // Expired cards aren't lookup targets to begin with — even if the reference couldn't be read there's nothing to
+            // report, so the failure flag isn't set (prevents a toast on every load because of an expired card).
             guard credential.status != .expired else {
                 credentials.append(credential)
                 continue
@@ -415,13 +454,10 @@ final class CredentialStore {
             }
         }
         guard !pending.isEmpty else {
-            if referenceUnreadable {
-                OverlayManager.shared.showToast(message: Self.statusCheckFailureMessage)
-            }
-            return credentials
+            return (credentials, referenceUnreadable)
         }
 
-        // [2] 한 번에 조회 — 같은 리스트를 가리키는 카드들은 토큰을 한 번만 받아 검증한다.
+        // [2] Query all at once — cards pointing at the same list fetch and verify the token only once.
         let statuses = await StatusListVerifier.statuses(for: pending)
         var statusCheckFailed = referenceUnreadable
         let resolved: [Credential] = credentials.map { credential in
@@ -432,30 +468,27 @@ final class CredentialStore {
                 return credential.with(status: Self.displayStatus(status))
             case .failure:
                 statusCheckFailed = true
-                return credential   // 만료일 기준 표시 유지
+                return credential   // keep the expiry-based display
             }
         }
-        if statusCheckFailed {
-            OverlayManager.shared.showToast(message: Self.statusCheckFailureMessage)
-        }
-        return resolved
+        return (resolved, statusCheckFailed)
     }
 
-    /// vcId 와 짝지어진 ZKP 크레덴셜 — 없으면 nil.
-    /// `ZKPCredential.credentialId` 가 `VerifiableCredential.id` 와 동일 키.
+    /// The ZKP credential paired with vcId — nil if none.
+    /// `ZKPCredential.credentialId` is the same key as `VerifiableCredential.id`.
     func zkpCredential(forVcId vcId: String) -> ZKPCredential? {
         zkpCredentials.first { $0.credentialId == vcId }
     }
 
-    // MARK: - VerifiableCredential → Credential 매핑
+    // MARK: - VerifiableCredential → Credential mapping
 
     private static func makeCredential(vc: VerifiableCredential,
                                        schema: VCSchema?,
                                        status: VCStatusEnum,
                                        zkp zkpCred: ZKPCredential?,
                                        zkpSchema: ZKPCredentialSchema?) -> Credential {
-        // VC 클레임 → 평면 .row 목록 (VCSchema namespace 그룹화는 후속 작업).
-        // 이미지 판정은 W3C 데이터 모델의 claim.type 기준 — 디코드 실패 시 원문 텍스트(ImageClaim 참조).
+        // VC claims → flat list of .row (VCSchema namespace grouping is follow-up work).
+        // Image detection is by claim.type of the W3C data model — on decode failure, raw text (see ImageClaim).
         let claims: [ClaimEntry] = vc.credentialSubject.claims.map { claim in
             ClaimEntry(kind: .row(
                 label: claim.caption,
@@ -464,7 +497,7 @@ final class CredentialStore {
         }
         return Credential(
             id: vc.id,
-            name: schema?.title ?? vc.id,
+            name: schema?.title ?? fallbackName(schemaId: vc.credentialSchema.id),
             badge: .vc,
             issuer: vc.issuer.name ?? vc.issuer.id,
             issued: displayDate(vc.issuanceDate),
@@ -476,35 +509,59 @@ final class CredentialStore {
         )
     }
 
-    // MARK: - OID4VCICredential(SD-JWT) → Credential 매핑
+    /// Card name when the schema title couldn't be fetched (offline, etc.) — built from the schema URL's `name=` value.
+    /// `…/vcschema?name=vc.schema.driver.license` → `Driver License VC`
+    /// (strip `vc.schema.` → `.` to spaces → capitalize first letter of each word → append ` VC`).
+    /// The schema URL always has `name=`. If it somehow doesn't, the whole URL is converted by the same rule.
+    private static func fallbackName(schemaId: String) -> String {
+        var name = schemaId
+        if let range = schemaId.range(of: "name=") {
+            name = String(schemaId[range.upperBound...].prefix { $0 != "&" && $0 != "#" })
+        }
+        name = name.removingPercentEncoding ?? name
+        if name.hasPrefix(vcSchemaNamePrefix) {
+            name.removeFirst(vcSchemaNamePrefix.count)
+        }
+        let words = name.split(separator: ".").map(capitalizeFirst)
+        return (words + ["VC"]).joined(separator: " ")
+    }
 
-    /// 저장된 SD-JWT 의 issuer-signed JWT payload. SD-JWT 포맷이 아니면 nil(표시 제외).
-    /// 메타(iss/iat/exp)와 status 참조를 같은 payload 에서 읽으므로 파싱은 한 번만 한다.
+    private static let vcSchemaNamePrefix = "vc.schema."
+
+    /// Uppercase only the first letter — the rest is left as is (`capitalized` lowercases the rest).
+    nonisolated private static func capitalizeFirst(_ word: Substring) -> String {
+        word.prefix(1).uppercased() + word.dropFirst()
+    }
+
+    // MARK: - SdJwtCredentialItem → Credential mapping
+
+    /// The issuer-signed JWT payload of a stored SD-JWT. nil if not SD-JWT format (excluded from display).
+    /// Metadata (iss/iat/exp) and the status reference are read from the same payload, so it is parsed only once.
     private static func sdJwtPayload(_ issued: SdJwtCredentialItem) -> [String: Any]? {
         switch issued.format {
         case .sdJwtVc: break
-        default: return nil   // msoMdoc/vcdm 은 표시 제외 — Phase 2.
+        default: return nil   // msoMdoc/vcdm are excluded from display — Phase 2.
         }
         return (try? SimpleJWTDecoder.parse(issued.sdjwt.credentialJwt))?.payload ?? [:]
     }
 
-    /// 저장된 SD-JWT 한 건을 표시용 `Credential` 로 변환.
-    /// 메타는 issuer-signed JWT payload(iat/exp)에서, 클레임은 SDK `consentItems` 에서 뽑는다.
-    /// 여기서의 상태는 **만료일 기준**이며, 유효한 카드의 폐기·정지 여부는 호출측이 Status List 로
-    /// 판정해 덮어쓴다.
+    /// Converts one stored SD-JWT into a display `Credential`.
+    /// Metadata comes from the issuer-signed JWT payload (iat/exp); claims come from SDK `consentItems`.
+    /// The status here is **expiry-based**; for valid cards, the caller judges revocation/suspension via Status List
+    /// and overwrites it.
     ///
-    /// 클레임을 못 읽으면(`consentItems` throw — issuer JWT payload 손상) **nil 을 돌려 목록에서
-    /// 뺀다**(결정 2026-08-12). 클레임 없는 빈 카드를 정상인 것처럼 세워 두지 않는다.
+    /// If the claims can't be read (`consentItems` throws — issuer JWT payload corrupted), **returns nil to drop it from
+    /// the list** (decision 2026-08-12). An empty card without claims is not presented as if it were normal.
     private static func makeSDJWTCredential(_ issued: SdJwtCredentialItem,
                                             payload: [String: Any]) -> Credential? {
-        // 클레임 구성은 VP 제출 동의화면과 **같은 근거·같은 규칙**이다 — SdJwtClaimDisplay 참조.
-        // 값이 복합(object/array)이거나 하위 claim 이 있으면 접이식 .group, 아니면 단일 .row.
-        guard let consentItems = try? issued.consentItems else { return nil }
+        // Claim composition uses **the same basis and rules** as the VP presentation consent screen — see SdJwtClaimDisplay.
+        // If the value is composite (object/array) or has sub-claims, a collapsible .group; otherwise a single .row.
+        guard let consentItems = try? issued.sdjwt.consentItems() else { return nil }
         let claims: [ClaimEntry] = SdJwtClaimDisplay.consentRows(consentItems).map { row in
             let items = row.nested.map {
                 ClaimItem(label: $0.claimName, value: SdJwtClaimDisplay.value(of: $0))
             } + row.rideAlong.map {
-                // 하위 항목도 이미지일 수 있다 — 판정은 상위와 같은 이름 화이트리스트.
+                // Sub-items can be images too — detection uses the same name whitelist as the parent.
                 ClaimItem(label: $0.label,
                           value: ImageClaim.claimValue(name: $0.label, text: $0.value))
             }
@@ -515,18 +572,18 @@ final class CredentialStore {
                                          value: SdJwtClaimDisplay.value(of: row.item)))
         }
 
-        // exp 가 지났으면 expired — 이 경우 Status List 는 조회하지 않는다.
+        // If exp has passed, expired — in that case the Status List is not queried.
         let isExpired = epochDate(payload["exp"]).map { $0 < Date() } ?? false
 
         return Credential(
             id: issued.id,
-            // 제목 규칙은 VP 제출 카드와 공유 — SdJwtClaimDisplay 참조.
+            // Title rules are shared with the VP presentation card — see SdJwtClaimDisplay.
             name: SdJwtClaimDisplay.title(of: issued),
             badge: .sdJwt,
-            // 발급자는 payload 의 `iss` 가 아니라 SDK `issuerDid`(발급 JWT 헤더 `kid`)다 —
-            // 둘 다 서명이 덮지만 `iss` 는 발급자가 자기에 대해 적은 값이고, `kid` 는 발급 시
-            // 서명을 실제로 검증한 키다. 어긋나면 검증이 붙어 있는 쪽을 쓴다(규칙은 mDoc 과 공유).
-            issuer: issued.issuerDid ?? Self.unknownIssuer,
+            // The issuer is not the payload's `iss` but SDK `issuerDid` (issuance JWT header `kid`) —
+            // both are covered by the signature, but `iss` is what the issuer wrote about itself, while `kid` is the key that
+            // actually verified the signature at issuance. If they disagree, use the one backed by verification (rule shared with mDoc).
+            issuer: issued.sdjwt.issuerDid ?? Self.unknownIssuer,
             issued: epochDisplay(payload["iat"]),
             valid: epochDisplay(payload["exp"]),
             status: isExpired ? .expired : .active,
@@ -534,47 +591,47 @@ final class CredentialStore {
         )
     }
 
-    // MARK: - MdocCredentialItem → Credential 매핑
+    // MARK: - MdocCredentialItem → Credential mapping
 
-    /// 저장된 mDoc 한 건을 표시용 `Credential` 로 변환.
+    /// Converts one stored mDoc into a display `Credential`.
     ///
-    /// 메타는 MSO 의 `validityInfo` 에서 온다 — ISSUED 는 `validFrom`, VALID UNTIL 은 `validUntil`.
-    /// 발급자는 SDK `issuerDid`(`issuerAuth` 의 `kid`)다 — 발급 시 그 DID 로 서명을 검증했으므로
-    /// 근거가 있는 값이다. `docType` 은 문서 **종류**라 "Issued by" 자리에 맞지 않고,
-    /// 원소의 `issuing_authority` 는 홀더가 발급 폼에 입력한 값이 실려 오므로 신원 근거가 못 된다.
+    /// Metadata comes from the MSO's `validityInfo` — ISSUED is `validFrom`, VALID UNTIL is `validUntil`.
+    /// The issuer is SDK `issuerDid` (`kid` of `issuerAuth`) — the signature was verified with that DID at issuance,
+    /// so the value is well-founded. `docType` is the document **kind**, so it doesn't fit the "Issued by" slot, and
+    /// the element `issuing_authority` carries what the holder typed into the issuance form, so it is no basis for identity.
     ///
-    /// 여기서 정하는 상태는 **만료일 기준까지**다 — MSO 에 `status.status_list` 가 있으면 호출측
-    /// (`oid4vcDisplayCredentials`)이 Status List 를 조회해 폐기·정지로 덮는다. 참조가 없는 발급물은
-    /// 만료일 판정에서 끝난다(표준상 optional 이라 없을 수 있다).
+    /// The status decided here goes **only as far as expiry** — if the MSO has `status.status_list`, the caller
+    /// (`oid4vcDisplayCredentials`) queries the Status List and overwrites with revoked/suspended. Credentials without a
+    /// reference end at the expiry decision (it's optional in the standard, so it may be absent).
     private static func makeMdocCredential(_ item: MdocCredentialItem) -> Credential {
         let validity = item.mdoc.validityInfo
         return Credential(
             id: item.id,
-            // 제목 규칙은 SD-JWT 와 공유 — MdocClaimDisplay 참조.
+            // Title rules are shared with SD-JWT — see MdocClaimDisplay.
             name: MdocClaimDisplay.title(of: item),
             badge: .mDoc,
-            issuer: item.issuerDid ?? Self.unknownIssuer,
+            issuer: item.mdoc.issuerDid ?? Self.unknownIssuer,
             issued: dateFormatter.string(from: validity.validFrom),
             valid: dateFormatter.string(from: validity.validUntil),
             status: validity.validUntil < Date() ? .expired : .active,
-            claims: mdocClaims(item.consentItems)
+            claims: mdocClaims(item.mdoc.consentItems)
         )
     }
 
-    /// mDoc 원소 → 상세화면 클레임 목록.
+    /// mDoc elements → detail screen claim list.
     ///
-    /// 순회 대상은 `consentItems` 다 — `Mdoc.namespaces` 는 `Dictionary` 라 순회 순서가 실행마다
-    /// 달라져 화면을 열 때마다 항목이 재배열된다. `consentItems` 는 발급자가 서명한 원소 순서
-    /// (네임스페이스는 이름순)를 SDK 가 고정해 준다.
+    /// Iterates over `consentItems` — `Mdoc.namespaces` is a `Dictionary`, so its iteration order varies per run
+    /// and items would reshuffle every time the screen opens. `consentItems` has the SDK fix the issuer-signed
+    /// element order (namespaces sorted by name).
     ///
-    /// **네임스페이스로 묶지 않고 평면으로 그린다** — 라벨은 `elementIdentifier` 원문 그대로다
-    /// (VP 화면과 같은 규칙). 원소 이름에 네임스페이스가 이미 들어 있어 접두하지 않는다.
-    /// 값이 비어 있는 원소도 거르지 않고 그대로 싣는다 (결정 2026-08-11).
+    /// **Drawn flat, not grouped by namespace** — labels are the raw `elementIdentifier`
+    /// (same rule as the VP screen). Element names already include the namespace, so no prefix is added.
+    /// Elements with empty values are not filtered out but included as is (decision 2026-08-11).
     private static func mdocClaims(_ items: [MdocConsentItem]) -> [ClaimEntry] {
         items.map { mdocEntry($0) }
     }
 
-    /// 한 원소 — 복합값(array/map)은 접이식 그룹으로 펼친다.
+    /// One element — composite values (array/map) expand into a collapsible group.
     private static func mdocEntry(_ item: MdocConsentItem) -> ClaimEntry {
         let children = MdocClaimDisplay.childRows(item.value)
         let label = item.elementIdentifier
@@ -590,42 +647,53 @@ final class CredentialStore {
         ))
     }
 
-    /// JWT 수치 클레임(iat/exp, epoch seconds) → Date. 숫자가 아니면 nil.
+    /// JWT numeric claim (iat/exp, epoch seconds) → Date. nil if not a number.
     private static func epochDate(_ any: Any?) -> Date? {
         guard let number = any as? NSNumber else { return nil }
         return Date(timeIntervalSince1970: number.doubleValue)
     }
 
-    /// epoch seconds → "dd MMM yyyy" (W3C 의 displayDate 와 동일 표기).
+    /// epoch seconds → "dd MMM yyyy" (same notation as W3C's displayDate).
     private static func epochDisplay(_ any: Any?) -> String? {
         guard let date = epochDate(any) else { return nil }
         return dateFormatter.string(from: date)
     }
 
-    /// 페어 ZKP 크레덴셜의 values → ClaimItem 목록. key 정렬로 표시 순서를 고정한다.
-    /// 라벨은 스키마의 caption(`namespace.id.label` → caption)으로 치환, 스키마 없거나 미매칭이면 raw 키.
+    /// values of the paired ZKP credential → ClaimItem list. Display order is fixed by sorting on key.
+    /// Labels are replaced with the schema's caption (`namespace.id.label` → caption); if there's no schema or no match,
+    /// a label built from the key (`fallbackZkpLabel`).
     private static func zkpClaimItems(from zkp: ZKPCredential?,
                                       schema: ZKPCredentialSchema?) -> [ClaimItem] {
         guard let zkp else { return [] }
         let captions = schema?.captionMap ?? [:]
         return zkp.values
             .sorted { $0.key < $1.key }
-            .map { ClaimItem(label: captions[$0.key] ?? $0.key, value: .text($0.value.raw)) }
+            .map { ClaimItem(label: captions[$0.key] ?? fallbackZkpLabel(key: $0.key),
+                             value: .text($0.value.raw)) }
     }
 
-    /// ISO8601 문자열 → "dd MMM yyyy". 파싱 실패 시 nil.
+    /// ZKP label when the caption couldn't be fetched (offline, etc.) — the key's last word, first letter uppercased.
+    /// `zkp.idcard.name` → `Name`. If the last word is empty (key ending in `.`), the key as is.
+    private static func fallbackZkpLabel(key: String) -> String {
+        guard let last = key.split(separator: ".", omittingEmptySubsequences: false).last,
+              !last.isEmpty
+        else { return key }
+        return capitalizeFirst(last)
+    }
+
+    /// ISO8601 string → "dd MMM yyyy". nil on parse failure.
     private static func displayDate(_ iso: String) -> String? {
         guard let date = isoParser.date(from: iso) else { return nil }
         return dateFormatter.string(from: date)
     }
 
-    /// VC 상태 + 만료일 → 화면 표시용 상태.
-    /// REVOKED 는 CredentialStatus 에 대응 케이스가 없어 .inactive 로 흡수한다.
+    /// VC status + expiry date → display status.
+    /// REVOKED has no matching case in CredentialStatus, so it is absorbed into .inactive.
     private static func displayStatus(_ status: VCStatusEnum,
                                       validUntil: String) -> CredentialStatus {
         switch status {
         case .REVOKED:
-            // 폐기 표시는 SD-JWT(Status List INVALID)와 같은 뱃지로 맞춘다.
+            // Revocation display uses the same badge as SD-JWT (Status List INVALID).
             return .expired
         case .INACTIVE:
             return .inactive
@@ -643,8 +711,8 @@ final class CredentialStore {
         return formatter
     }()
 
-    // 목록(MainView)·상세(CredentialHero)의 ISSUED / VALID UNTIL 표기를 만드는 단일 포맷터.
-    // 일(day)은 한 자리도 0 을 채운다 — 카드가 세로로 쌓일 때 자릿수가 흔들리지 않게.
+    // The single formatter producing the ISSUED / VALID UNTIL notation for the list (MainView) and detail (CredentialHero).
+    // Days are zero-padded even when single-digit — so digit widths don't wobble as cards stack vertically.
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -653,7 +721,7 @@ final class CredentialStore {
     }()
 }
 
-// vc-meta 응답 — vcMeta 는 multibase 인코딩된 VCMeta 문자열.
+// vc-meta response — vcMeta is a multibase-encoded VCMeta string.
 private struct VCMetaVO: Jsonable {
     let vcId: String
     let vcMeta: String

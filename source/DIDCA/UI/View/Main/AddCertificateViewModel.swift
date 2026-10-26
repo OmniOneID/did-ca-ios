@@ -23,14 +23,14 @@ import DIDWalletSDK
 @Observable
 final class AddCertificateViewModel {
 
-    // 발급 가능한 VC plan 목록 (TAS /list/api/v1/vcplan/list 결과).
+    // List of issuable VC plans (result of TAS /list/api/v1/vcplan/list).
     var plans: [VCPlan] = []
 
-    // 초기 .task 가 발화하기 전 한 프레임 동안 "empty" 메시지가 깜빡이지 않도록 true 시작.
+    // Starts true so the "empty" message doesn't flicker for one frame before the initial .task fires.
     var isLoading: Bool = true
 
     func load(coordinator: AppCoordinator) async {
-        // 서버에서 plan 목록을 받아오는 구간이므로 인라인 프로그래스가 아니라 로딩 HUD 로 덮는다.
+        // This span fetches the plan list from the server, so it's covered with the loading HUD rather than an inline progress.
         isLoading = true
         OverlayManager.shared.showLoading()
         defer {
@@ -39,7 +39,7 @@ final class AddCertificateViewModel {
         }
         do {
             plans = try await TASConnection.getVCPlanList()
-            // DOC-E-01: 발급 가능 Issuer 0건 → 안내 다이얼로그, OK 시 Docs 로 복귀.
+            // DOC-E-01: 0 issuable Issuers → notice dialog, return to Docs on OK.
             if plans.isEmpty {
                 OverlayManager.shared.showPopup(
                     title: "Notification",
@@ -49,7 +49,7 @@ final class AddCertificateViewModel {
                 )
             }
         } catch {
-            // DOC-E-02: Add list 로딩 실패 → OK 시 호출 화면(Docs)으로 복귀.
+            // DOC-E-02: Add list load failed → return to the calling screen (Docs) on OK.
             OverlayManager.shared.showErrorPopup(
                 title: "Failed to load VC list",
                 error: error,
@@ -58,16 +58,17 @@ final class AddCertificateViewModel {
         }
     }
 
-    // 사용자가 plan 한 개 선택 → preProcess → 추가정보 웹 폼 → 인증 → process.
-    // did-ca 순서 검증: preProcess(propose-issue-vc 등)를 웹폼보다 먼저 실행해 발급
-    // 트랜잭션(txId)을 만든 뒤 addVcInfo 가 그 위에 얹히도록 한다 (addVcInfo 입력값 유실 방지).
-    // process(핸드셰이크)는 인증 후 실행 — PIN 패드와 메인 스레드 경합 회피.
-    // allowedIssuers 비어있는 plan 은 발급 불가 → noOp.
+    // User picks one plan → preProcess → additional-info web form → auth → process.
+    // Verified did-ca order: run preProcess (propose-issue-vc, etc.) before the web form to create the issuance
+    // transaction (txId), so addVcInfo builds on top of it (prevents losing addVcInfo input).
+    // process (handshake) runs after auth — avoids main-thread contention with the PIN pad.
+    // A plan with empty allowedIssuers can't be issued → noOp.
     func pick(_ plan: VCPlan, coordinator: AppCoordinator) async {
         guard plan.allowedIssuers?.first != nil else { return }
+        guard coordinator.canStartWebIssuance() else { return }
 
-        // [1] preProcess — propose-issue-vc 로 발급 트랜잭션 먼저 생성. 사용자 인터랙션이 없는
-        //     네트워크 구간이라 로딩 HUD 로 덮는다.
+        // [1] preProcess — create the issuance transaction first via propose-issue-vc. A network span with no
+        //     user interaction, so it's covered with the loading HUD.
         let proto: IssueVcProtocol
         OverlayManager.shared.showLoading()
         do {
@@ -83,13 +84,13 @@ final class AddCertificateViewModel {
         }
         OverlayManager.shared.hideLoading()
 
-        // [2] 추가정보 입력 웹 폼 (DEMO_URL/addVcInfo). 완료(true)면 발급 진행, 실패·취소면 중단.
+        // [2] Additional-info input web form (DEMO_URL/addVcInfo). If completed (true), proceed with issuance; on failure/cancel, stop.
         do {
             let webFormURL = try IssueVcProtocol.webFormURL(for: plan)
             guard await coordinator.presentIssueWebForm(url: webFormURL) else { return }
         } catch {
-            // load/issue 실패와 동일하게 OK 시 Docs 로 복귀 — webFormURL 실패(holder DID 없음/
-            // schema id 깨짐)는 같은 plan 재시도해도 재발하므로 화면 잔류가 아니라 복귀가 일관됨.
+            // Same as load/issue failure, return to Docs on OK — webFormURL failures (no holder DID /
+            // broken schema id) recur even when retrying the same plan, so returning is more consistent than staying.
             OverlayManager.shared.showErrorPopup(
                 title: "Failed to open issue form",
                 error: error,
@@ -98,10 +99,10 @@ final class AddCertificateViewModel {
             return
         }
 
-        // [3] 인증 (PIN/BIO 시트 또는 PIN 입력 모달).
+        // [3] Auth (PIN/BIO sheet or PIN input modal).
         guard let auth = await coordinator.presentAuth() else { return }
 
-        // [4] process — 인증 후 핸드셰이크(request-issue-vc + confirm).
+        // [4] process — handshake after auth (request-issue-vc + confirm).
         OverlayManager.shared.showLoading()
         defer { OverlayManager.shared.hideLoading() }
         do {

@@ -57,8 +57,8 @@ struct AddCertificateView: View {
                             .buttonStyle(.plain)
                         }
 
-                        // 로딩 중엔 HUD 가 화면을 덮으므로 인라인 표시는 없다.
-                        // isLoading 가드는 로딩 중 "empty" 메시지가 깜빡이지 않게 막는다.
+                        // While loading, the HUD covers the screen, so there's no inline indicator.
+                        // The isLoading guard keeps the "empty" message from flickering during loading.
                         if !vm.isLoading && vm.plans.isEmpty {
                             Text("No credentials available to issue.")
                                 .font(.pretendard(size: 13, weight: .regular))
@@ -93,9 +93,9 @@ struct AddCertificateView: View {
         .background { Color.customPrimary.ignoresSafeArea(edges: .top) }
     }
 
-    // 화면설계서(ScrDocsAddList, 19): plan 행은 title(name) + 그 아래 VC 포맷 뱃지 + 우측 + 버튼.
-    // 포맷 뱃지는 선택 프로토콜에 따라 다르다 — 이 화면은 Open DID 발급 경로라 VC 단일이다.
-    // (OID4VCI 경로는 SD-JWT·mDoc 이며 후속 작업.)
+    // Screen design spec (ScrDocsAddList, 19): a plan row is title(name) + a VC format badge below it + a + button on the right.
+    // The format badge depends on the selected protocol — this screen is the Open DID issuance path, so it's VC only.
+    // (The OID4VCI path is SD-JWT·mDoc and is follow-up work.)
     private func planRow(_ plan: VCPlan) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {

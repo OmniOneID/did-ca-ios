@@ -28,22 +28,30 @@ struct Splash: View {
                 .resizable()
                 .frame(width: 120, height: 120)
 
+            // SPL-01 — hide the spinner while the server settings popup is shown (its space is kept).
             DotSpinner()
                 .padding()
+                .opacity(vm.isServerSetupPending ? 0 : 1)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.backgroundGray.ignoresSafeArea())
         .task {
-            guard let route = await vm.bootstrap() else { return }
-            // Unlock PIN 활성 상태면 라우팅 전에 인증을 통과해야 한다.
-            // X 버튼·시스템 백은 PINView 측에서 exit(0) (project_unlock_pin_exit).
+            await vm.promptServerSetupIfNeeded(coordinator: coordinator)
+            // Pushing the Server URL screen (SPL-03) covers Splash and cancels this task; returning via pop starts
+            // a new task. A cancelled task that received the answer backs off here and leaves initialization/routing to the new task —
+            // if both proceeded, createWallet would silently die with -999 or setRoot would be called twice.
+            guard !Task.isCancelled else { return }
+            guard let route = await vm.bootstrap(coordinator: coordinator) else { return }
+            guard !Task.isCancelled else { return }
+            // If Unlock PIN is active, authentication must pass before routing.
+            // X button · system back do exit(0) on the PINView side (project_unlock_pin_exit).
             if vm.needsLockAuth {
                 await coordinator.presentLockAuth()
             }
             switch route {
             case .main:
-                // 메인 진입 전에 지갑 VC 를 메모리로 읽어 둔다 — MainView 가 곧장 표시.
-                // 온보딩 경로는 holder DID 도 없어 조회할 VC 가 없으므로 스킵.
+                // Load wallet VCs into memory before entering main — MainView displays them right away.
+                // The onboarding path has no holder DID and thus no VCs to query, so skip.
                 coordinator.credentials = await CredentialStore.shared.loadCredentials()
                 coordinator.popToMain()
             case .onboarding(let step):

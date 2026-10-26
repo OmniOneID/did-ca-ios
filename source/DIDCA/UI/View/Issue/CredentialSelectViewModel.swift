@@ -20,12 +20,12 @@ import Foundation
 import Observation
 import DIDWalletSDK
 
-/// OID4VCI 발급 목록 — 목록사업자의 Issuer 를 모두 읽어 Issuer 별 섹션으로 펼친다.
-/// Issuer 선택 단계를 따로 두지 않으므로 진입 시 Issuer 수만큼 metadata 를 조회한다.
+/// OID4VCI issuance list — reads all of the directory provider's Issuers and lays them out in per-Issuer sections.
+/// There is no separate Issuer selection step, so on entry metadata is fetched once per Issuer.
 @Observable
 final class CredentialSelectViewModel {
 
-    /// 한 Issuer 와 그가 발급하는 credential configuration 목록.
+    /// One Issuer and the list of credential configurations it issues.
     struct IssuerSection: Identifiable {
         let issuer: OID4VCIIssuerItem
         let metadata: IssuerMetadataResponse
@@ -33,14 +33,14 @@ final class CredentialSelectViewModel {
         var id: String { issuer.credentialIssuer }
     }
 
-    /// 표시용 credential configuration. metadata 에 `display.name` 이 없어 id 를 그대로 쓴다.
+    /// Credential configuration for display. metadata has no `display.name`, so the id is used as-is.
     struct Configuration: Identifiable {
         let id: String
         let format: IssuerMetadataResponse.SupportedFormat
 
-        /// SD-JWT 와 mDoc 은 발급·저장이 가능하다. 발급 경로 자체는 포맷을 모르고(SDK 가 저장까지
-        /// 처리한다), 앱이 아는 것은 화면에 그릴 줄 아느냐뿐이다 — 그래서 이 판정은 표시 지원 여부다.
-        /// (SDK 3.0.0 전에는 mDoc 저장이 거부돼 SD-JWT 만 열려 있었다.)
+        /// SD-JWT and mDoc can be issued and stored. The issuance path itself is format-agnostic (the SDK handles
+        /// through storage); all the app knows is whether it can draw it — so this check is about display support.
+        /// (Before SDK 3.0.0, mDoc storage was rejected, so only SD-JWT was enabled.)
         var isIssuable: Bool {
             switch format {
             case .sdjwt, .mdoc: return true
@@ -59,12 +59,12 @@ final class CredentialSelectViewModel {
 
     var sections: [IssuerSection] = []
 
-    // 초기 .task 발화 전 한 프레임 동안 "발급 가능 없음" 문구가 깜빡이지 않도록 true 시작.
+    // Starts true so the "nothing issuable" text doesn't flash for one frame before the initial .task fires.
     var isLoading: Bool = true
 
-    /// 목록 조회 → Issuer 별 metadata 조회 → 섹션 구성.
-    /// **조회 실패와 "지원 Issuer 0건" 은 구분한다** (연동 가이드 §3) — 실패는 오류 팝업 후 Docs 복귀,
-    /// 0건은 화면에 안내 문구만 남긴다.
+    /// Fetch list → fetch metadata per Issuer → build sections.
+    /// **A fetch failure and "0 supported Issuers" are distinguished** (integration guide §3) — failure shows an error popup and returns to Docs,
+    /// 0 results leaves only a notice text on screen.
     func load(coordinator: AppCoordinator) async {
         isLoading = true
         OverlayManager.shared.showLoading()
@@ -86,22 +86,22 @@ final class CredentialSelectViewModel {
             return
         }
 
-        // Issuer 수가 많지 않아 순차 조회한다. 한 Issuer 의 metadata 조회가 실패해도 나머지는 보여준다.
+        // There aren't many Issuers, so fetch sequentially. If one Issuer's metadata fetch fails, the rest are still shown.
         var loaded: [IssuerSection] = []
         for issuer in issuers {
-            // user initiation 시작점이 없는 Issuer 는 issuer-initiated(QR) 발급만 지원하므로
-            // 이 화면에서는 시작할 수 없다 — 섹션을 만들지 않는다.
+            // An Issuer without a user-initiation entry point only supports issuer-initiated (QR) issuance,
+            // so it can't be started from this screen — no section is created.
             guard issuer.userInitiationUri != nil else { continue }
             guard let metadata = try? await IssueOID4VcProtocol.getMetadata(
                 metadataURI: issuer.credentialIssuerMetadataUri
             ) else { continue }
-            // 목록이 지목한 호스트에서 온 metadata 인지 확인한다 — 오퍼 대조 기준값이 여기서 나온다.
+            // Verify the metadata came from the host the list pointed to — the reference value for offer matching comes from here.
             guard OID4VciIssuerDirectory.isMetadataConsistent(
                 metadataUri: issuer.credentialIssuerMetadataUri,
                 metadata: metadata
             ) else { continue }
 
-            // dictionary 순서는 비결정적이라 id 오름차순으로 고정한다.
+            // Dictionary order is nondeterministic, so fix it by ascending id.
             let configurations = metadata.credentialConfigurationsSupported
                 .map { Configuration(id: $0.key, format: $0.value.format) }
                 .sorted { $0.id < $1.id }

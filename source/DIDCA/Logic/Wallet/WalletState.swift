@@ -19,32 +19,33 @@
 import Foundation
 import DIDWalletSDK
 
-/// SDK 의 단순 상태 질의(isLock / holder DID 존재·id)를 한 곳에 모은다.
-/// 이전엔 `WalletAPI.shared.isLock()` / `getDidDocument(...)` 가 Splash·AppRoot·Coordinator
-/// 등 여러 화면에 흩어져 있었음 — 의미 주석도 여기서 한 번만 설명한다.
-/// (full DIDDocument 나 throwing 이 필요한 서명/토큰 경로는 호출처에 그대로 둔다.)
+/// Gathers the SDK's simple state queries (isLock / holder DID existence·id) in one place.
+/// Previously `WalletAPI.shared.isLock()` / `getDidDocument(...)` were scattered across Splash·AppRoot·Coordinator
+/// and other screens — the semantic notes are also explained once, here.
+/// (Signing/token paths that need the full DIDDocument or throwing stay at their call sites.)
 enum WalletState {
 
-    /// 지갑 잠금(Unlock PIN) 활성 여부. SDK `isLock()` 은 내부적으로 `isRegLock()`
-    /// (CoreData `finalEncKey != ""`) 을 반환하는 **persistent** 값이다.
+    /// Whether the wallet lock (Unlock PIN) is active. SDK `isLock()` internally returns `isRegLock()`
+    /// (CoreData `finalEncKey != ""`), a **persistent** value.
     static var isLockEnabled: Bool {
         (try? WalletAPI.shared.isLock()) ?? false
     }
 
-    /// 현재 holder DID 문자열. 미생성 시 nil.
+    /// The current holder DID string. nil if not yet created.
     static var holderDID: String? {
         (try? WalletAPI.shared.getDidDocument(type: .HolderDidDocumnet))?.id
     }
 
-    /// holder DID 문서 존재 여부 (온보딩 step 분기용).
+    /// Whether the holder DID document exists (for onboarding step branching).
     static var hasHolderDID: Bool { holderDID != nil }
 
-    /// 발급 웹 화면에 실어 보내는 사용자 식별 값. 온보딩에서 CAS 에 등록한 userId 를 그대로 쓰며,
-    /// 서버는 이 값을 사용자 이름 자리로 소비한다 (OpenDID `addVcInfo` 의 `userName`,
-    /// OID4VCI user initiation 의 `userName` 이 같은 값 — 두 경로가 갈라지지 않도록 여기서 한 번만 읽는다).
-    /// 미바인딩이면 nil.
+    /// The user name sent to the issuance web page. Uses the username from the onboarding registration webview as is (ONB-03)
+    /// (OpenDID `addVcInfo`'s `userName` and OID4VCI user initiation's `userName` are the same value — read once here so
+    /// the two paths don't diverge).
+    ///
+    /// nil if there is no username, and issuance is blocked with an error — it is not filled with userId instead.
     static var userName: String? {
-        guard let userId = Preference.getUserId(), !userId.isEmpty else { return nil }
-        return userId
+        guard let userName = Preference.getUserName(), !userName.isEmpty else { return nil }
+        return userName
     }
 }

@@ -62,7 +62,7 @@ enum StepEnum : Int
             return [
                 .init(
                     title: "Register Demo User",
-                    message: "Handled automatically on the backend — no input required."
+                    message: "Enter your name on the registration page."
                 ),
                 .init(
                     title: "Set Wallet Lock",
@@ -77,7 +77,7 @@ enum StepEnum : Int
                 ),
                 .init(
                     title: "Register DID Document",
-                    message: "A DID document is created to identify your wallet on-chain."
+                    message: "A DID document is created to identify your wallet."
                 )
             ]
             
@@ -206,6 +206,7 @@ struct StepView : View {
         .padding(.bottom, 32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.backgroundGray.ignoresSafeArea())
+        .task { vm.startBindingIfNeeded(step: step, coordinator: coordinator) }
     }
 }
 

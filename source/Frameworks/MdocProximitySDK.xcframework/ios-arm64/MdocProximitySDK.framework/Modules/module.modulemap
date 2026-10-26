@@ -1,0 +1,3 @@
+framework module MdocProximitySDK {
+  header "MdocProximitySDK-Swift.h"
+}

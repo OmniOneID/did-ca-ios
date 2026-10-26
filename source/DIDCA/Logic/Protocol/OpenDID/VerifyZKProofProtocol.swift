@@ -21,47 +21,47 @@ import DIDWalletSDK
 
 enum VerifyZKProofError: Error {
     case missingProfile
-    /// 후보 referent 가 비어있거나, 어떤 referent 에도 ACTIVE 한 sub-referent 가 없음 — picker 진입 전 차단.
+    /// The candidate referents are empty, or no referent has an ACTIVE sub-referent — blocked before entering the picker.
     case noEligibleZkpCredential
-    /// 사용자가 picker 로 attribute/predicate 값을 아직 고르지 않음 — submit 시점에 모든 항목이 선택돼 있어야 함.
+    /// The user hasn't yet picked attribute/predicate values in the picker — every item must be selected at submit time.
     case attributeNotSelected(referentKey: String)
-    /// self-attribute 입력값이 비어있음.
+    /// A self-attribute input value is empty.
     case selfAttributeMissing(referentKey: String)
 }
 
-// MARK: - ZKP VP 제출 흐름 (OpenDID SDK 사용 예시)
+// MARK: - ZKP VP presentation flow (OpenDID SDK usage example)
 //
-// 진입점은 두 단계로 나뉜다:
+// The entry point is split into two stages:
 //
-//   preProcess(offerId:)                   ─ QR 스캔 직후, 화면 표시 직전
-//     [1] request-proof-request-profile  verifier 프로필(요구 attr/predicate, nonce) 수령
-//     [2] request-wallet-token           LIST_VC_AND_PRESENT_VP 용도
-//     [3] searchZKPCredentials           후보 referent 캐시
-//     [4] fetchDefsAndSchemas            모든 후보 sub-referent 의 credDef/schema lookup →
-//                                         referentNameMap + ZKProofParam 재료 캐시
-//     [5] checkReferentsAreAvailable     각 referent 에 ACTIVE sub-referent 가 있는지 사전 검증
+//   preProcess(offerId:)                   ─ right after QR scan, just before showing the screen
+//     [1] request-proof-request-profile  receive verifier profile (required attr/predicate, nonce)
+//     [2] request-wallet-token           for LIST_VC_AND_PRESENT_VP
+//     [3] searchZKPCredentials           cache candidate referents
+//     [4] fetchDefsAndSchemas            credDef/schema lookup for every candidate sub-referent →
+//                                         cache referentNameMap + ZKProofParam ingredients
+//     [5] checkReferentsAreAvailable     pre-check that each referent has an ACTIVE sub-referent
 //
-//   submit(selections:reveals:selfRaws:)   ─ 사용자가 picker 로 선택 + self-attr 입력 + 확인 후
-//     [6] selectedReferents 구성         사용자 선택 index + reveal flag + self-attr raw 로 UserReferent 빌드
-//     [7] createEncZKProof + request-verify-proof  영지식 증명 생성 후 verifier 제출
+//   submit(selections:reveals:selfRaws:)   ─ after the user picks in the picker + enters self-attrs + confirms
+//     [6] build selectedReferents        build UserReferent from user-selected index + reveal flag + self-attr raw
+//     [7] createEncZKProof + request-verify-proof  generate the zero-knowledge proof, then submit to the verifier
 //
-// 인스턴스는 preProcess → 화면 표시 → submit 까지 단일 ZKP VP 세션 동안 유지된다
-// (AppCoordinator 가 보유). 화면은 인스턴스의 `presentationSummary` computed
-// property 로 verifier 이름·title·attribute/predicate 캡션을 직접 조회.
+// The instance lives for a single ZKP VP session, from preProcess → screen display → submit
+// (held by AppCoordinator). The screen reads the verifier name, title and attribute/predicate captions
+// directly from the instance's `presentationSummary` computed property.
 //
-// 패턴 출처: did-ca-ios `VerifyZKProofProtocol` + `VerifyProfileViewController.
+// Pattern source: did-ca-ios `VerifyZKProofProtocol` + `VerifyProfileViewController.
 // preProcessForZKP` + `ZKPSubmissionViewController.makeUserReferent`.
-// 라우팅은 verifier 직접 (TAS 경유·propose 없음).
+// Routing goes directly to the verifier (no TAS, no propose).
 nonisolated final class VerifyZKProofProtocol {
 
-    // MARK: - 단계별 누적 상태
+    // MARK: - State accumulated across stages
     private var proofRequestProfile: _RequestProofRequestProfile? = nil
     private var hWalletToken: String = ""
     private var txId: String = ""
     private var credDefs: [String: ZKPCredentialDefinition] = [:]
     private var schemas: [String: ZKPCredentialSchema] = [:]
-    /// preProcess 후 캐시되는 후보 referent. attribute 별 sub-referent 들을 picker UI 에
-    /// 노출하기 위해 화면 표시 단계에 미리 조회한다.
+    /// Candidate referents cached after preProcess. Fetched ahead at the display stage to expose
+    /// each attribute's sub-referents in the picker UI.
     private var availableReferent: AvailableReferent? = nil
 
     init() {}
@@ -88,11 +88,11 @@ nonisolated final class VerifyZKProofProtocol {
     }
 
     // MARK: - [4] credDef / schema lookup
-    // searchZKPCredentials 결과(availableReferent)의 모든 sub-referent 의 credDefId/schemaId
-    // 를 모아 fetch. 사용자가 어떤 sub-referent 를 골라도 ZKProofParam 에 필요한 schema/def 가
-    // 캐시에 포함되도록 보장 (did-ca-ios `makeUserReferent` 가 선택된 sub-referent 기반으로
-    // schemaIds/credDefIds 를 모으는 것과 등가 — preProcess 단계에서 미리 모든 후보를 cover).
-    // 라벨 caption(mergedCaptionMap) 도 이 schemas 에서 빌드.
+    // Collect and fetch the credDefId/schemaId of every sub-referent in the searchZKPCredentials result
+    // (availableReferent). Guarantees the schema/def needed by ZKProofParam is in the cache whichever
+    // sub-referent the user picks (equivalent to did-ca-ios `makeUserReferent` collecting
+    // schemaIds/credDefIds from the selected sub-referents — here all candidates are covered up front in preProcess).
+    // The label captions (mergedCaptionMap) are also built from these schemas.
     private func fetchDefsAndSchemas() async throws {
         guard let available = availableReferent else {
             throw VerifyZKProofError.missingProfile
@@ -108,16 +108,16 @@ nonisolated final class VerifyZKProofProtocol {
             )
             credDefs[id] = def
         }
-        // 상세화면과 같은 캐시(CredentialStore.zkpSchemaCache)를 공유 — 메인 진입 때
-        // 이미 받아둔 schema 면 재요청 없이 재사용된다.
+        // Shares the same cache as the detail screen (CredentialStore.zkpSchemaCache) — a schema already
+        // fetched on main-screen entry is reused without a new request.
         for id in schemaIds {
             schemas[id] = try await CredentialStore.shared.zkpSchema(id: id)
         }
     }
 
-    // MARK: - [3] searchZKPCredentials — 후보 referent 캐시
-    // attribute 별 picker UI 에 노출할 sub-referent 목록을 미리 확보. submit 단계에서도
-    // 이 결과를 그대로 재사용해 중복 조회를 막는다.
+    // MARK: - [3] searchZKPCredentials — cache candidate referents
+    // Secure in advance the sub-referent list to expose in each attribute's picker UI. The submit stage
+    // reuses this result as-is to avoid duplicate lookups.
     private func searchCandidates() async throws {
         guard let profile = proofRequestProfile else {
             throw VerifyZKProofError.missingProfile
@@ -129,9 +129,9 @@ nonisolated final class VerifyZKProofProtocol {
         )
     }
 
-    // MARK: - [5] 상태 사전 검증 — DIDCA `checkReferentIsAvailable`
-    // 각 referent 의 sub-referent 들 중 단 하나라도 ACTIVE 가 없으면 picker 진입 전 차단.
-    // (어떤 sub-referent 라도 ACTIVE 면 통과 — 사용자가 거기서 picker 로 ACTIVE 한 걸 고를 수 있다.)
+    // MARK: - [5] Status pre-check — DIDCA `checkReferentIsAvailable`
+    // If no sub-referent of a referent is ACTIVE, block before entering the picker.
+    // (Passes if any sub-referent is ACTIVE — the user can then pick an ACTIVE one in the picker.)
     private func checkReferentsAreAvailable() async throws {
         guard let available = availableReferent else { return }
         let groups = available.attrReferent + available.predicateReferent
@@ -153,7 +153,7 @@ nonisolated final class VerifyZKProofProtocol {
         }
     }
 
-    // MARK: - [7] createEncZKProof + request-verify-proof (submit 호출)
+    // MARK: - [7] createEncZKProof + request-verify-proof (called from submit)
     private func requestVerifyProof(
         selectedReferents: [UserReferent],
         proofParam: ZKProofParam
@@ -179,7 +179,7 @@ nonisolated final class VerifyZKProofProtocol {
         try await HttpClient.sendPostRequest(urlString: urlString, request: request)
     }
 
-    // MARK: - 진입점: 화면 표시 전 (단계 1 ~ 5)
+    // MARK: - Entry point: before showing the screen (stages 1 ~ 5)
     @discardableResult
     func preProcess(offerId: String) async throws -> _RequestProofRequestProfile {
         try await requestProfile(offerId: offerId)
@@ -190,13 +190,13 @@ nonisolated final class VerifyZKProofProtocol {
         return proofRequestProfile!
     }
 
-    // MARK: - 진입점: 사용자 선택/확인/인증 후 (단계 5 ~ 7)
-    /// `selections`: attribute / predicate referent key → 선택된 sub-referent index.
-    ///   did-ca-ios `ZKPSubmissionViewController.makeUserReferent` 와 동일하게 두 섹션 모두
-    ///   사용자가 picker 로 어느 VC 의 sub-referent 를 쓸지 골라야 한다.
-    /// `reveals`: reveal 선택한 attribute referent key 집합. predicate / self-attr 는 무관 —
-    ///   predicate 는 isRevealed: false 고정, self-attr 는 init 시 reveal 개념 없음.
-    /// `selfRaws`: self-attribute referent key → 사용자가 텍스트필드로 입력한 raw 값.
+    // MARK: - Entry point: after user selection/confirmation/authentication (stages 5 ~ 7)
+    /// `selections`: attribute / predicate referent key → selected sub-referent index.
+    ///   As in did-ca-ios `ZKPSubmissionViewController.makeUserReferent`, for both sections the
+    ///   user must pick in the picker which VC's sub-referent to use.
+    /// `reveals`: set of attribute referent keys chosen for reveal. Irrelevant for predicate / self-attr —
+    ///   predicate is fixed to isRevealed: false, and self-attr has no reveal concept at init.
+    /// `selfRaws`: self-attribute referent key → raw value the user typed into the text field.
     func submit(
         selections: [String: Int],
         reveals: Set<String>,
@@ -206,14 +206,14 @@ nonisolated final class VerifyZKProofProtocol {
             throw VerifyZKProofError.missingProfile
         }
 
-        // (1) 후보 referent 가 하나도 없으면 매칭 불가.
+        // (1) If there are no candidate referents at all, matching is impossible.
         guard !available.attrReferent.isEmpty
                 || !available.predicateReferent.isEmpty
                 || !available.selfAttrReferent.isEmpty else {
             throw VerifyZKProofError.noEligibleZkpCredential
         }
 
-        // (2) attribute referent — picker 선택값 사용. 미선택 차단.
+        // (2) attribute referent — use the picker selection. Block if unselected.
         var selectedReferents: [UserReferent] = []
         for ar in available.attrReferent {
             guard !ar.referent.isEmpty else {
@@ -230,7 +230,7 @@ nonisolated final class VerifyZKProofProtocol {
                 )
             )
         }
-        // (3) predicate referent — picker 선택값 사용. reveal 은 항상 false.
+        // (3) predicate referent — use the picker selection. reveal is always false.
         for pr in available.predicateReferent {
             guard !pr.referent.isEmpty else {
                 throw VerifyZKProofError.noEligibleZkpCredential
@@ -246,7 +246,7 @@ nonisolated final class VerifyZKProofProtocol {
                 )
             )
         }
-        // (4) self-attribute — 사용자가 직접 입력한 raw 값. 빈 값 차단.
+        // (4) self-attribute — the raw value the user typed. Block if empty.
         for sr in available.selfAttrReferent {
             let raw = selfRaws[sr.key] ?? ""
             guard !raw.isEmpty else {
@@ -257,9 +257,9 @@ nonisolated final class VerifyZKProofProtocol {
             )
         }
 
-        // (5) preProcess 단계에서 캐시한 defs/schemas 재사용.
-        //     상태 검증(.ACTIVE) 은 preProcess 의 checkReferentsAreAvailable 에서 이미 수행됨
-        //     (did-ca-ios `checkReferentIsAvailable` 와 동일 시점).
+        // (5) Reuse the defs/schemas cached in the preProcess stage.
+        //     The status check (.ACTIVE) was already done in preProcess's checkReferentsAreAvailable
+        //     (same timing as did-ca-ios `checkReferentIsAvailable`).
         let proofParam = ZKProofParam(schemas: schemas, creDefs: credDefs)
 
         // (6) process → createEncZKProof + request-verify-proof
@@ -270,15 +270,15 @@ nonisolated final class VerifyZKProofProtocol {
     }
 }
 
-// 표시 모델(`ZkpPresentationSummary` 등)은 `Logic/Display/PresentationSummary.swift` 에 있다.
+// The display models (`ZkpPresentationSummary` etc.) live in `Logic/Display/PresentationSummary.swift`.
 
 extension VerifyZKProofProtocol {
 
-    /// VPRequestZkpView 표시용 — preProcess 가 채운 profile + availableReferent + schemas 로
-    /// 화면 모델을 구성. did-ca-ios `ZKPSubmissionViewController` 는 `availableReferent.*Referent`
-    /// 배열을 그대로 순회한다 — proofRequest 의 dictionary 를 도는 게 아니라. 같은 패턴 적용해
-    /// 화면 표시 순서를 결정적으로 유지한다.
-    /// preProcess 전에 호출하면 빈 summary 가 반환됨.
+    /// For VPRequestZkpView — builds the screen model from the profile + availableReferent + schemas
+    /// filled by preProcess. did-ca-ios `ZKPSubmissionViewController` iterates the `availableReferent.*Referent`
+    /// arrays as-is — not the proofRequest's dictionary. The same pattern is applied here to keep
+    /// the display order deterministic.
+    /// Returns an empty summary if called before preProcess.
     var presentationSummary: ZkpPresentationSummary {
         guard let profile = proofRequestProfile, let available = availableReferent else {
             return ZkpPresentationSummary(

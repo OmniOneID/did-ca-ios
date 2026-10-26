@@ -20,7 +20,7 @@ import SwiftUI
 
 
 struct DraggableActionSheet: View {
-    // 시트 dismiss 슬라이드다운 길이. 외부(예: 후속 모달 present 타이밍)에서 참조한다.
+    // Slide-down length of the sheet dismiss. Referenced from outside (e.g. timing of presenting a follow-up modal).
     static let dismissDuration: TimeInterval = 0.22
 
     @Binding var isPresented: Bool
@@ -44,7 +44,7 @@ struct DraggableActionSheet: View {
                 sheetView
                     .offset(y: showSheet ? dragOffset : UIScreen.main.bounds.height)
                     .transaction { transaction in
-                        // 드래그 중 offset 변화에는 애니메이션 제거
+                        // Remove animation for offset changes while dragging
                         if isDragging
                         {
                             transaction.animation = nil
@@ -67,7 +67,9 @@ struct DraggableActionSheet: View {
         VStack(spacing: 0) {
             dragHandle
 
-            VStack(alignment: .leading) {
+            // Design spec BottomSheet — 4 between title and description, 12 below the description. Selection rows paint their
+            // background to the row edge, so without this spacing the first row (current value) looks stuck to the description.
+            VStack(alignment: .leading, spacing: 4) {
                 Text(viewModel.title)
                     .font(.pretendard(size: 18, weight: .semibold))
                     .foregroundStyle(.black)
@@ -82,7 +84,8 @@ struct DraggableActionSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.horizontal, 24)
-            
+            .padding(.bottom, 12)
+
             ForEach(viewModel.contents.indices, id: \.self) { index in
                 
                 let content = viewModel.contents[index]
@@ -90,25 +93,49 @@ struct DraggableActionSheet: View {
                     dismiss()
                     content.action()
                 } label: {
-                    HStack(spacing: 16) {
-                        
-                        Image(content.icon)
-                            .frame(width: 40, height: 40)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(.paleOrange)
-                            )
-                        
-                        Text(content.title)
-                            .font(.pretendard(size: 16, weight: .medium))
-                            .foregroundStyle(.black)
-                        Spacer()
-                        
-                        Image(.icChevR)
-                            .padding()
+                    if let selected = content.selected {
+                        // Selection row (design spec BottomSheet select) — no icon; the label starts at the same x (24) as the title,
+                        // and on the right only the current value gets a check (20). Other rows keep alignment with a blank of the same width.
+                        HStack(spacing: 16) {
+                            Text(content.title)
+                                .font(.pretendard(size: 16, weight: .medium))
+                                .foregroundStyle(.black)
+                            Spacer()
+                            Image(.icCheckOrange)
+                                .resizable()
+                                .frame(width: 20, height: 20)
+                                .opacity(selected ? 1 : 0)
+                        }
+                        .padding(.vertical, 16)
+                        .padding(.horizontal, 24)
+                        .contentShape(Rectangle())
+                        .background(selected ? Color.paleOrange : .clear)
+                    } else {
+                        HStack(spacing: 16) {
+                            if let icon = content.icon {
+                                Image(icon)
+                                    .frame(width: 40, height: 40)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(.paleOrange)
+                                    )
+                            }
+                            
+                            Text(content.title)
+                                .font(.pretendard(size: 16, weight: .medium))
+                                .foregroundStyle(.black)
+                            Spacer()
+                            
+                            Image(.icChevR)
+                                .padding()
+                        }
+                        .padding()
+                        // Make the whole row the tap area — otherwise, with a .plain button, the Spacer's empty space isn't tappable and
+                        // only the icon, text and chevron respond.
+                        .contentShape(Rectangle())
                     }
-                    .padding()
                 }
+                .buttonStyle(.plain)
                 
                 if index < viewModel.contents.count - 1 {
                     Divider()

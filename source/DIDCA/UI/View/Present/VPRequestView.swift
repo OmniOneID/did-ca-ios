@@ -17,83 +17,83 @@
 
 import SwiftUI
 
-/// 그룹(복합값 disclosure·mDoc 복합 원소)의 하위 한 줄 — **표시 전용**이다.
-/// 하위는 개별 체크박스를 갖지 않는다(PRES-B-03). 제출 여부는 상위 체크박스 하나가 정하고,
-/// 하위 code 는 상위의 `descendantCodes` 로만 따라 움직인다.
+/// One child line of a group (compound-value disclosure / mDoc compound element) — **display only**.
+/// Children have no checkbox of their own (PRES-B-03). The single parent checkbox decides submission,
+/// and child codes only follow the parent via its `descendantCodes`.
 struct VpChildRow: Identifiable {
     let id = UUID()
     let label: String
     let value: ClaimValue
 }
 
-/// 한 행 = 제출 단위 하나. 하위가 있으면 접이식 그룹으로 그린다(한 단계만).
+/// One row = one submission unit. If it has children it is drawn as a collapsible group (one level only).
 struct VpClaim: Identifiable {
     let id = UUID()
-    /// 제출에 나가는 claim code. `nil` 이면 따로 뺄 수단이 없는 표시 전용 행이라 체크박스를 그리지 않는다.
+    /// Claim code sent on submit. `nil` means a display-only row that can't be excluded on its own, so no checkbox is drawn.
     let code: String?
     let label: String
     let value: ClaimValue
-    /// 이 행을 켜고 끌 때 **함께** 움직이는 하위 code — all-or-nothing(PRES-B-03).
+    /// Child codes that move **together** when this row is toggled — all-or-nothing (PRES-B-03).
     ///
-    /// SD-JWT 하위 disclosure 는 자신을 가리는 조상 disclosure 를 항상 동반한다
-    /// (SDK `SDJWTPresenter.resolveDisclosures`). 상·하위를 따로 놀게 두면 화면과 제출이 갈린다.
+    /// An SD-JWT child disclosure always carries along the ancestor disclosures that conceal it
+    /// (SDK `SDJWTPresenter.resolveDisclosures`). Letting parent and child move independently makes screen and submission diverge.
     let descendantCodes: [String]
     let children: [VpChildRow]
 
     var isGroup: Bool { !children.isEmpty }
-    /// 체크가 이 행을 켜고 끌 때 건드리는 code 전부.
+    /// Every code touched when the checkbox toggles this row.
     var toggledCodes: Set<String> {
         guard let code else { return [] }
         return Set([code] + descendantCodes)
     }
 }
 
-/// 제출 후보 한 건 = 카드 한 장. 후보가 2건 이상이면 라디오 옵션 카드가 되고 **그중 1건만 제출된다**
+/// One submission candidate = one card. With 2+ candidates they become radio option cards and **only one is submitted**
 /// (PRES-B-05).
 struct VpOption: Identifiable {
     let id = UUID()
     let credentialId: String
     let title: String
-    /// 체크와 무관하게 항상 제출되는 code. 비어 있지 않으면 Submit 은 항상 활성이다(PRES-E-05).
+    /// Codes always submitted regardless of checks. If non-empty, Submit is always enabled (PRES-E-05).
     let requiredCodes: Set<String>
-    /// REQUIRED 섹션 — 체크박스를 그리지 않는다(회색 비활성 체크박스를 쓰지 않는다, PRES-B-02).
+    /// REQUIRED section — no checkboxes are drawn (no greyed-out disabled checkboxes, PRES-B-02).
     let required: [VpClaim]
-    /// OPTIONAL 섹션 — **해제 상태로 시작**한다(opt-in).
+    /// OPTIONAL section — **starts unchecked** (opt-in).
     let optional: [VpClaim]
 
-    /// Select all 이 다루는 code — 표시 전용 행은 제외한다.
+    /// Codes handled by Select all — display-only rows excluded.
     var optionalCodes: Set<String> {
         optional.reduce(into: Set<String>()) { $0.formUnion($1.toggledCodes) }
     }
 }
 
-/// VP 요청(제시) 화면. 검증자·후보 목록은 `VpPresentationSummary` 에서 온다
-/// (일반 VP = `VerifyVcProtocol`, OID4VP = `OID4VPPresenter` — 같은 타입, 같은 화면).
+/// VP request (presentation) screen. Verifier and candidate list come from `VpPresentationSummary`
+/// (regular VP = `VerifyVcProtocol`, OID4VP = `OID4VPPresenter` — same type, same screen).
 struct VPRequestView: View {
     var summary: VpPresentationSummary?
     var onBack: () -> Void = {}
-    /// 제출 payload — **선택된 후보 1건만** 담는다(credentialId → 체크한 code).
+    /// Submission payload — holds **only the one selected candidate** (credentialId → checked codes).
     ///
-    /// 고르지 않은 후보는 키 자체가 없다. 받는 쪽(`VerifyVcProtocol.submit` ·
-    /// `OID4VPPresenter.applyConsent`)이 "키 없음 = 제출 대상 아님"으로 읽고 드롭한다.
-    /// 체크가 0건이어도 REQUIRED 가 있으면 제출되므로, 빈 집합이 곧 "안 낸다"는 뜻은 아니다.
+    /// Unselected candidates have no key at all. The receivers (`VerifyVcProtocol.submit` ·
+    /// `OID4VPPresenter.applyConsent`) read "no key = not submitted" and drop them.
+    /// Even with 0 checks, REQUIRED items are still submitted, so an empty set doesn't mean "submit nothing".
     var onSubmit: ([String: Set<String>]) async -> Void = { _ in }
 
     @State private var options: [VpOption] = []
-    /// 라디오로 고른 후보. 후보가 1건이면 그 1건이 늘 선택 상태다.
+    /// Candidate chosen by radio. With a single candidate, that one is always selected.
     @State private var selectedOption: UUID?
-    /// 선택된 후보에서 사용자가 켠 code. 후보를 바꾸면 통째로 비운다(PRES-B-05).
+    /// Codes the user turned on in the selected candidate. Cleared entirely when the candidate changes (PRES-B-05).
     @State private var checked: Set<String> = []
-    /// 펼친 카드들 — **여러 장이 동시에 펼쳐질 수 있다**.
+    /// Expanded cards — **several can be expanded at once**.
     ///
-    /// 문서 헤더 탭은 그 카드만 여닫고 다른 카드를 건드리지 않는다 — 후보를 나란히 펼쳐 놓고
-    /// 비교할 수 있어야 하고, 위 카드가 접히면 방금 누른 카드가 그만큼 튀기 때문이다.
-    /// 다른 카드를 접는 것은 **라디오로 후보를 고를 때뿐**이다(설계서 PRES-B-05).
+    /// Tapping a document header opens/closes only that card and leaves the others alone — candidates must be
+    /// expandable side by side for comparison, and collapsing a card above would make the just-tapped card jump.
+    /// Other cards are collapsed **only when a candidate is chosen via radio** (design spec PRES-B-05).
     @State private var expandedOptions: Set<UUID> = []
-    // 그룹 펼침은 claim 의 id 로 잡는다 — 제목으로 잡으면 같은 이름이 두 카드에 있을 때 함께 펼쳐진다.
+    // Group expansion is keyed by claim id — keying by title would expand both when two cards share a name.
     @State private var expandedGroups: Set<UUID> = []
-    /// 제출 진행 중 재탭 가드. 로딩 HUD 는 PassThroughWindow 라 터치를 못 막으므로 화면단에서 잠근다.
-    /// (인증 취소로 화면이 남는 경로에선 `onSubmit` 완료 후 풀려 재시도 가능.)
+    /// Re-tap guard while submitting. The loading HUD is a PassThroughWindow and can't block touches, so lock at the screen level.
+    /// (On paths where the screen stays after auth cancel, it is released after `onSubmit` completes so retry is possible.)
     @State private var isSubmitting: Bool = false
 
     private var institution: String { summary?.verifierName ?? "—" }
@@ -105,12 +105,15 @@ struct VPRequestView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
+                // Same cancel path as the bottom Reject — locked together while submitting. In proximity presentation `reject()`
+                // cuts off the in-flight `respond`.
                 Button(action: onBack) {
                     Image(.icBack)
                         .renderingMode(.template)
                         .foregroundStyle(.white)
                         .padding()
                 }
+                .disabled(isSubmitting)
                 Text("Presentation")
                     .font(.pretendard(size: 17, weight: .semibold))
                     .foregroundStyle(.white)
@@ -158,9 +161,24 @@ struct VPRequestView: View {
                 .padding(.bottom, 24)
             }
 
-            VStack {
+            // PRES-B-12 — Reject(outline) / Accept(filled) 1:1. Reject is the same cancel path as the app-bar Back, so
+            // it calls `onBack` directly without confirmation and is always enabled regardless of Accept's disabled state.
+            HStack(spacing: 10) {
+                Button(action: onBack) {
+                    Text("Reject")
+                        .font(.pretendard(size: 16, weight: .semibold))
+                        .foregroundStyle(.customPrimary)
+                        .frame(height: 52)
+                        .frame(maxWidth: .infinity)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.customPrimary, lineWidth: 1.5)
+                        )
+                }
+                .disabled(isSubmitting)
+
                 Button(action: submit) {
-                    Text("Submit")
+                    Text("Accept")
                         .font(.pretendard(size: 16, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(height: 52)
@@ -189,16 +207,16 @@ struct VPRequestView: View {
         .onAppear(perform: buildOptions)
     }
 
-    // MARK: - 상태
+    // MARK: - State
 
-    /// summary → 화면 렌더 모델. id 안정성을 위해 @State 에 한 번만 빌드한다.
+    /// summary → screen render model. Built once into @State for id stability.
     ///
-    /// 진입 상태는 opt-in 이다 — 체크는 비었고(REQUIRED 는 체크 대상이 아니다), 후보가 여럿이면
-    /// Option 1 이 선택된 채 **전 카드가 접혀** 있다(PRES-B-05). 그룹은 펼친 채로 시작한다.
+    /// Initial state is opt-in — no checks (REQUIRED is not checkable), and with multiple candidates
+    /// Option 1 is selected with **all cards collapsed** (PRES-B-05). Groups start expanded.
     private func buildOptions() {
         guard options.isEmpty else { return }
         options = (summary?.documents ?? []).map { doc in
-            // REQUIRED 는 상위 행에서만 내려오고 서브트리 전체로 전파된다 — 섹션 분리는 상위 기준이다.
+            // REQUIRED comes only from top-level rows and propagates to the whole subtree — sections split by the top level.
             let rows = doc.claims.map { claim in
                 (required: claim.required,
                  claim: VpClaim(code: claim.code,
@@ -218,23 +236,23 @@ struct VPRequestView: View {
             )
         }
         selectedOption = options.first?.id
-        // 후보가 여럿이면 전 카드 접힘으로 시작한다(PRES-B-05). 1건이면 그 카드는 펼친 채로.
+        // With multiple candidates, start with all cards collapsed (PRES-B-05). With one, that card starts expanded.
         expandedOptions = options.count > 1 ? [] : Set(options.prefix(1).map(\.id))
         expandedGroups = Set(options.flatMap { $0.required + $0.optional }
             .filter(\.isGroup)
             .map(\.id))
     }
 
-    /// Submit 활성 = 선택된 옵션에서 **제출될 항목이 1건 이상**.
-    /// REQUIRED 가 하나라도 있으면 항상 활성이고, OPTIONAL 만 있는 구성은 1건 이상 켜야 활성이다
+    /// Submit enabled = **at least one item to be submitted** in the selected option.
+    /// Always enabled if there is any REQUIRED item; an OPTIONAL-only set needs at least one checked to be enabled
     /// (PRES-E-05).
     private var canSubmit: Bool {
         guard let option = currentOption else { return false }
         return !option.requiredCodes.isEmpty || !checked.isEmpty
     }
 
-    /// 제출 트리거 — in-flight 가드로 재탭을 막는다. `onSubmit` 은 인증·네트워크가 끝날 때까지
-    /// 이어지므로(성공/실패 시 화면이 교체되고, 인증 취소 시엔 이 화면이 남아) 완료 후 가드를 푼다.
+    /// Submit trigger — an in-flight guard blocks re-taps. `onSubmit` runs until auth and network finish
+    /// (on success/failure the screen is replaced; on auth cancel this screen stays), so the guard is released afterwards.
     private func submit() {
         guard !isSubmitting, let option = currentOption else { return }
         isSubmitting = true
@@ -244,9 +262,9 @@ struct VPRequestView: View {
         }
     }
 
-    /// 라디오 선택 — 다른 후보로 옮기면 직전 옵션의 체크를 **전부 초기화**한다(PRES-B-05).
-    /// 고른 카드만 펼치고 **나머지는 접는다** — 다른 카드를 접는 유일한 경로다.
-    /// 이미 선택된 라디오를 다시 탭해도 펼쳐진다(체크는 유지).
+    /// Radio selection — moving to another candidate **resets all checks** of the previous option (PRES-B-05).
+    /// Expands only the chosen card and **collapses the rest** — the only path that collapses other cards.
+    /// Re-tapping an already-selected radio also expands it (checks are kept).
     private func select(_ option: VpOption) {
         withAnimation(Self.foldAnimation) {
             if selectedOption != option.id {
@@ -257,7 +275,7 @@ struct VPRequestView: View {
         }
     }
 
-    /// 문서 헤더 탭 — **그 카드만** 여닫는다. 다른 카드는 펼쳐진 채로 둔다.
+    /// Document header tap — opens/closes **only that card**. Other cards stay expanded.
     private func toggleExpand(_ option: VpOption) {
         withAnimation(Self.foldAnimation) {
             if expandedOptions.contains(option.id) {
@@ -268,17 +286,17 @@ struct VPRequestView: View {
         }
     }
 
-    /// 접힘·펼침 애니메이션.
+    /// Collapse/expand animation.
     ///
-    /// 위 카드가 접히면 아래 카드는 그만큼 자리를 옮긴다(실측 221pt). 화면에 콘텐츠가 다 들어와
-    /// **스크롤 여지가 없어** 그 이동을 스크롤로 상쇄할 수단이 없다 — `ScrollViewProxy.scrollTo` 는
-    /// 스크롤이 0인 상태에서 아무 일도 하지 않는다(실측으로 확인). 그래서 이동이 남는 경로
-    /// (라디오 전환)에서는 **한 프레임에 튀지 않게** 한다: 카드가 미끄러지듯 새 자리에 놓인다.
+    /// When a card above collapses, cards below shift by that much (measured 221pt). With all content fitting on screen
+    /// there is **no scroll room**, so the shift can't be offset by scrolling — `ScrollViewProxy.scrollTo`
+    /// does nothing when scroll offset is 0 (verified by measurement). So on the path where the shift remains
+    /// (radio switch) we make it **not jump in a single frame**: the card slides into its new position.
     private static let foldAnimation: Animation = .easeInOut(duration: 0.22)
 
 
-    /// 체크 토글 — 상위 하나가 서브트리 전체를 움직인다(`descendantCodes`).
-    /// 화면에 적힌 것만 나가고, 나가는 것은 모두 화면에 적혀 있게 하는 것이 이 함수의 계약이다.
+    /// Check toggle — one parent moves its whole subtree (`descendantCodes`).
+    /// This function's contract: only what's shown goes out, and everything that goes out is shown.
     private func toggle(_ claim: VpClaim) {
         guard let code = claim.code else { return }
         if checked.contains(code) {
@@ -288,7 +306,7 @@ struct VPRequestView: View {
         }
     }
 
-    /// OPTIONAL 전체 토글. **중간 상태가 없다** — 전부 켜져 있으면 끄고, 아니면 전부 켠다.
+    /// Toggle all OPTIONAL. **No intermediate state** — if all are on, turn off; otherwise turn all on.
     private func toggleSelectAll(_ option: VpOption) {
         let codes = option.optionalCodes
         if codes.isSubset(of: checked) {
@@ -298,9 +316,9 @@ struct VPRequestView: View {
         }
     }
 
-    // MARK: - 카드
+    // MARK: - Cards
 
-    /// 후보 1건 — 라디오 없이 클레임 목록을 바로 그린다(26 · 26a · 26b).
+    /// Single candidate — draw the claim list directly without a radio (26 · 26a · 26b).
     private func singleCard(_ option: VpOption) -> some View {
         let open = expandedOptions.contains(option.id)
         return VStack(spacing: 0) {
@@ -319,7 +337,7 @@ struct VPRequestView: View {
         )
     }
 
-    /// 후보 2건 이상 — 라디오 옵션 카드(26c). 선택된 카드만 체크박스를 노출한다.
+    /// 2+ candidates — radio option cards (26c). Only the selected card shows checkboxes.
     private func optionCard(_ option: VpOption, index: Int) -> some View {
         let selected = selectedOption == option.id
         let open = expandedOptions.contains(option.id)
@@ -345,7 +363,7 @@ struct VPRequestView: View {
             VStack(spacing: 0) {
                 documentHeader(option, open: open)
                 if open {
-                    // 미선택 옵션은 라벨·값만 — 체크박스도 Select all 도 노출하지 않는다.
+                    // Unselected options show label/value only — neither checkboxes nor Select all.
                     claimSections(option, selectable: selected)
                 }
             }
@@ -382,14 +400,14 @@ struct VPRequestView: View {
         .buttonStyle(.plain)
     }
 
-    /// REQUIRED(상단) → OPTIONAL(하단). 내용이 있는 섹션만 그린다 — 개수 배지·보조 문구는 없다.
-    /// - parameter selectable: 체크박스·Select all 노출 여부. 미선택 옵션 카드에서는 false 다.
+    /// REQUIRED (top) → OPTIONAL (bottom). Only sections with content are drawn — no count badge or helper text.
+    /// - parameter selectable: whether checkboxes and Select all are shown. false on unselected option cards.
     @ViewBuilder
     private func claimSections(_ option: VpOption, selectable: Bool) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             if !option.required.isEmpty {
                 VpSectionLabel(title: "Required", isFirst: true)
-                // REQUIRED 는 체크박스를 그리지 않는다 — 해제할 수 없는 항목이다(PRES-B-02).
+                // REQUIRED draws no checkboxes — these items can't be unchecked (PRES-B-02).
                 claimRows(option.required, selectable: false)
             }
             if !option.optional.isEmpty {
@@ -437,17 +455,17 @@ struct VPRequestView: View {
         }
     }
 
-    /// 체크박스 — 켤 수 없는 자리에서는 nil 이라 자리 자체가 비워진다.
-    /// (REQUIRED 섹션 · 미선택 옵션 카드 · code 없는 표시 전용 행.)
+    /// Checkbox — nil where it can't be toggled, leaving the slot itself empty.
+    /// (REQUIRED section · unselected option card · display-only row without a code.)
     private func checkbox(for claim: VpClaim, selectable: Bool) -> VpCheckbox? {
         guard selectable, let code = claim.code else { return nil }
         return VpCheckbox(checked: checked.contains(code)) { toggle(claim) }
     }
 }
 
-// MARK: - 하위 뷰
+// MARK: - Subviews
 
-/// 체크박스 그림만 — 탭은 감싸는 쪽이 받는다(행 체크박스는 자기 버튼, Select all 은 라벨까지 한 버튼).
+/// Checkbox graphic only — the wrapper receives taps (a row checkbox is its own button; Select all is one button including its label).
 private struct VpCheckboxMark: View {
     let checked: Bool
     var size: CGFloat = 22
@@ -468,7 +486,7 @@ private struct VpCheckboxMark: View {
     }
 }
 
-/// 공개 여부 체크박스. 그릴 수 없는(=해제할 수 없는) 자리에는 아예 붙지 않는다 — 잠금 표현은 없다.
+/// Disclosure checkbox. Not attached at all where it can't be drawn (= can't be unchecked) — there is no lock indicator.
 private struct VpCheckbox: View {
     let checked: Bool
     let onToggle: () -> Void
@@ -481,7 +499,7 @@ private struct VpCheckbox: View {
     }
 }
 
-/// 라디오 — 후보가 2건 이상일 때 카드 헤더에 붙는다(PRES-B-05).
+/// Radio — attached to the card header when there are 2+ candidates (PRES-B-05).
 private struct VpOptionRadio: View {
     let on: Bool
 
@@ -499,7 +517,7 @@ private struct VpOptionRadio: View {
     }
 }
 
-/// REQUIRED / OPTIONAL 섹션 라벨. 개수 표기·보조 안내 문구는 두지 않는다(PRES-B-02).
+/// REQUIRED / OPTIONAL section label. No count or helper text (PRES-B-02).
 private struct VpSectionLabel<Trailing: View>: View {
     let title: String
     let isFirst: Bool
@@ -512,7 +530,7 @@ private struct VpSectionLabel<Trailing: View>: View {
                 .kerning(0.6)
                 .textCase(.uppercase)
                 .foregroundStyle(.customGray)
-            // Select all 은 섹션 라벨 옆이 아니라 **행 오른쪽 끝**이다 — 아래 체크박스 열과 맞춘다.
+            // Select all sits at the **right end of the row**, not beside the section label — aligned with the checkbox column below.
             Spacer(minLength: 0)
             trailing
         }
@@ -532,13 +550,13 @@ extension VpSectionLabel where Trailing == EmptyView {
     }
 }
 
-/// OPTIONAL 섹션 전체 토글. 중간 상태를 그리지 않는다 — 전부 켜졌을 때만 체크로 보인다.
+/// Toggle for the whole OPTIONAL section. No intermediate state is drawn — shown checked only when all are on.
 private struct VpSelectAll: View {
     let allOn: Bool
     let onToggle: () -> Void
 
     var body: some View {
-        // 라벨과 체크박스가 한 버튼이다 — 텍스트만 눌러도 토글된다(탭 영역이 22dp 를 넘도록).
+        // Label and checkbox are one button — tapping just the text toggles too (so the tap area exceeds 22dp).
         Button(action: onToggle) {
             HStack(spacing: 6) {
                 Text("Select all")
@@ -561,8 +579,8 @@ private struct VpClaimRow: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                // 라벨은 원형 그대로 — SD-JWT 는 이 값이 곧 클레임 키라 대문자 변환이 데이터 변형이 된다.
-                // (W3C 는 스키마 caption 이지만 상세화면이 이미 원형으로 그려 표기를 맞춘다.)
+                // Label kept as-is — for SD-JWT this value is the claim key itself, so uppercasing would alter the data.
+                // (For W3C it's the schema caption, but the detail screen already draws it as-is, so we match.)
                 if !label.isEmpty {
                     Text(label)
                         .font(.pretendard(size: 11, weight: .medium))
@@ -584,8 +602,8 @@ private struct VpClaimRow: View {
     }
 }
 
-/// 제시화면 클레임 값 — 텍스트 또는 이미지. 이미지는 값 텍스트를 대신하며(PRES-B-04),
-/// 체크박스는 우측에 그대로 남는다. 표시 가능 폭이 상세화면보다 좁을 뿐 크기 규칙은 같다.
+/// Claim value on the presentation screen — text or image. An image replaces the value text (PRES-B-04),
+/// and the checkbox stays on the right. Same sizing rules as the detail screen, just a narrower available width.
 private struct VpClaimValueView: View {
     let value: ClaimValue
 
@@ -602,13 +620,13 @@ private struct VpClaimValueView: View {
     }
 }
 
-/// 하위를 가진 항목 — 상위 체크박스 하나로 서브트리 전체를 토글하고 하위는 **표시 전용**이다
-/// (PRES-B-03). 체크박스 탭과 펼침 토글은 서로 분리돼 동작한다.
+/// Item with children — one parent checkbox toggles the whole subtree, and children are **display only**
+/// (PRES-B-03). The checkbox tap and the expand toggle work independently.
 private struct VpClaimGroup: View {
     let title: String
     let children: [VpChildRow]
-    /// nil 이면 체크할 수 없는 그룹이다 — REQUIRED 그룹이거나 미선택 옵션 카드다.
-    /// 펼치고 접는 것만 동작한다.
+    /// nil means a group that can't be checked — a REQUIRED group or an unselected option card.
+    /// Only expand/collapse works.
     let checkbox: VpCheckbox?
     let isExpanded: Bool
     let isLast: Bool
@@ -637,7 +655,7 @@ private struct VpClaimGroup: View {
                 VStack(spacing: 0) {
                     ForEach(Array(children.enumerated()), id: \.element.id) { index, child in
                         VpClaimRow(
-                            // 하위 라벨 = object 키 원형. 배열 원소는 라벨이 비어 값만 그린다.
+                            // Child label = object key as-is. Array elements have an empty label and show only the value.
                             label: child.label,
                             value: child.value,
                             checkbox: nil,

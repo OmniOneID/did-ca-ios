@@ -21,9 +21,9 @@ import DIDWalletSDK
 
 extension ZKPCredentialSchema {
 
-    /// ZKP 클레임 키(`namespace.id.label`) → caption(사람이 읽는 라벨) 매핑.
-    /// 상세화면(`CredentialStore`)과 제출화면(`VerifyZKProofProtocol`) 양쪽이 공유한다.
-    /// did-ca-ios `VCDetailViewController` / `makeReferentNameMap` 과 동일 패턴.
+    /// ZKP claim key (`namespace.id.label`) → caption (human-readable label) mapping.
+    /// Shared by the detail screen (`CredentialStore`) and the submission screen (`VerifyZKProofProtocol`).
+    /// Same pattern as did-ca-ios `VCDetailViewController` / `makeReferentNameMap`.
     var captionMap: [String: String] {
         var dict: [String: String] = [:]
         for attr in attrTypes {
@@ -37,7 +37,7 @@ extension ZKPCredentialSchema {
 
 extension Sequence where Element == ZKPCredentialSchema {
 
-    /// 여러 schema 의 captionMap 을 하나로 평탄화. 키 충돌 시 뒤 값 우선.
+    /// Flattens the captionMaps of several schemas into one. On key collision the later value wins.
     var mergedCaptionMap: [String: String] {
         reduce(into: [String: String]()) { dict, schema in
             dict.merge(schema.captionMap) { _, new in new }

@@ -182,3 +182,4 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_
 ## License
 [Apache 2.0](LICENSE)
 
+The bundled Pretendard font is licensed under the [SIL Open Font License 1.1](source/DIDCA/Assets/PretendardVariable-OFL.txt), not Apache 2.0. See [dependencies-license.md](dependencies-license.md).

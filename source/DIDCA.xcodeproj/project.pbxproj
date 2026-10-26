@@ -8,9 +8,26 @@
 
 /* Begin PBXBuildFile section */
 		C994EAD92FB6B29D00687132 /* DIDWalletSDK in Frameworks */ = {isa = PBXBuildFile; productRef = C994EAD82FB6B29D00687132 /* DIDWalletSDK */; };
+		C9A1F00000000000000000A1 /* MdocProximitySDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9A1F00000000000000000A0 /* MdocProximitySDK.xcframework */; };
+		C9A1F00000000000000000A2 /* MdocProximitySDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C9A1F00000000000000000A0 /* MdocProximitySDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		C9A1F00000000000000000A3 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				C9A1F00000000000000000A2 /* MdocProximitySDK.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		C9A1F00000000000000000A0 /* MdocProximitySDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = MdocProximitySDK.xcframework; path = Frameworks/MdocProximitySDK.xcframework; sourceTree = "<group>"; };
 		C96B28C62FB16D3B00DC718D /* DIDCA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DIDCA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -41,6 +58,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C994EAD92FB6B29D00687132 /* DIDWalletSDK in Frameworks */,
+				C9A1F00000000000000000A1 /* MdocProximitySDK.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -51,8 +69,17 @@
 			isa = PBXGroup;
 			children = (
 				C96B28C82FB16D3B00DC718D /* DIDCA */,
+				C9A1F00000000000000000A4 /* Frameworks */,
 				C96B28C72FB16D3B00DC718D /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		C9A1F00000000000000000A4 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C9A1F00000000000000000A0 /* MdocProximitySDK.xcframework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		C96B28C72FB16D3B00DC718D /* Products */ = {
@@ -73,6 +100,7 @@
 				C96B28C22FB16D3B00DC718D /* Sources */,
 				C96B28C32FB16D3B00DC718D /* Frameworks */,
 				C96B28C42FB16D3B00DC718D /* Resources */,
+				C9A1F00000000000000000A3 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -282,6 +310,7 @@
 				INFOPLIST_FILE = DIDCA/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "DID CA";
 				INFOPLIST_KEY_NSCameraUsageDescription = "DIDCA use the camera to issue and verification for VC";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Bluetooth is used to present your credential to a nearby verifier.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to access your private key";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -322,6 +351,7 @@
 				INFOPLIST_FILE = DIDCA/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "DID CA";
 				INFOPLIST_KEY_NSCameraUsageDescription = "DIDCA use the camera to issue and verification for VC";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Bluetooth is used to present your credential to a nearby verifier.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to access your private key";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

@@ -18,8 +18,8 @@
 
 import SwiftUI
 
-// 설계서 화면 22 (TX Code · Empty). PIN 화면과 같은 공용 부품(DigitBoxView · NumberPadView)을 재사용하되,
-// PIN 인증 로직(PINViewModel)과는 분리한다. 입력 자릿수는 length 로 가변(tx_code.length 주입 대비).
+// Design spec screen 22 (TX Code · Empty). Reuses the same shared parts as the PIN screen (DigitBoxView · NumberPadView),
+// but is separate from the PIN auth logic (PINViewModel). The digit count varies with length (prepared for tx_code.length injection).
 struct TxCodeView: View {
 
     @Environment(\.dismiss) var dismiss
@@ -69,10 +69,10 @@ struct TxCodeView: View {
             VStack(alignment: .center, spacing: 12) {
                 Spacer()
 
-                // 오류 상태가 없다 — 코드가 틀리면 이 화면은 그냥 닫히고 호출 화면 위에
-                // 다이얼로그가 뜬다(TXC-E-01).
-                // tx_code 는 PIN 과 달리 비밀값이 아니라 issuer 가 알려 준 거래 코드다 —
-                // 설계서 22/22a 는 입력한 숫자를 가리지 않고 그대로 보여 준다.
+                // There is no error state — if the code is wrong this screen just closes and a dialog
+                // appears on top of the calling screen (TXC-E-01).
+                // Unlike a PIN, tx_code isn't a secret but a transaction code given by the issuer —
+                // design spec 22/22a shows the entered digits as is, without masking.
                 DigitBoxView(maskDigits: false,
                              digits: $viewModel.code,
                              maxDigits: viewModel.length,

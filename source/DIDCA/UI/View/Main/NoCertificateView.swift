@@ -19,8 +19,8 @@ import SwiftUI
 
 struct NoCertificateView : View {
 
-    /// 중앙 아이콘 탭 — 상단 `+` 와 같은 동작(Add certificate 시트)을 호출한다.
-    /// 시트 상태는 `MainView` 가 들고 있어 여기서는 클로저로만 받는다.
+    /// Center icon tap — invokes the same action as the top `+` (Add certificate sheet).
+    /// The sheet state is held by `MainView`, so here it's received only as a closure.
     var onAdd: () -> Void
 
     var body: some View {

@@ -22,11 +22,11 @@ import PhotosUI
 import CoreImage
 #endif
 
-/// QR 스캔 모달. 카메라 프리뷰 위에 dim + 정사각형 가이드를 얹는다.
-/// 첫 QR 인식 시 onScanned(payload), 좌상단 X 또는 권한 거부 시 onClose.
+/// QR scan modal. Overlays a dim layer + square guide on the camera preview.
+/// onScanned(payload) on the first QR recognized; onClose on the top-left X or permission denial.
 ///
-/// 시뮬레이터엔 카메라가 없어, 사진 라이브러리의 QR 이미지를 PhotosPicker 로 골라
-/// 디코딩하는 경로로 대체한다 (`#if targetEnvironment(simulator)` — 기기 빌드엔 미포함).
+/// The simulator has no camera, so instead a QR image is picked from the photo library via PhotosPicker
+/// and decoded (`#if targetEnvironment(simulator)` — not included in device builds).
 struct QrScanView: View {
     var onScanned: (String) -> Void = { _ in }
     var onClose: () -> Void = {}
@@ -43,12 +43,12 @@ struct QrScanView: View {
         ZStack {
             scannerLayer
 
-            // dim · cutout · ScanFrame · 안내문구를 한 wrapper ZStack 의 sibling
-            // 으로 두고 wrapper 자체에 .ignoresSafeArea() 적용. 모든 자식이
-            // 같은 screen-center 에 정렬됨 — .overlay 로 둘러싸면 overlay 콘텐츠
-            // 가 SafeArea 안쪽 좌표로 평가되어 ScanFrame 이 safe-area-center 로
-            // 내려가면서 cutout 과 어긋났음. blendMode 가 ScanFrame 까지 번지지
-            // 않게 dim/ cutout 만 inner ZStack + compositingGroup 으로 격리.
+            // dim · cutout · ScanFrame · guide text are siblings in one wrapper ZStack,
+            // with .ignoresSafeArea() applied to the wrapper itself. All children
+            // align to the same screen center — wrapping with .overlay made the overlay content
+            // evaluate in safe-area coordinates, so ScanFrame dropped to the safe-area center
+            // and misaligned with the cutout. So blendMode doesn't bleed into ScanFrame,
+            // only dim/cutout are isolated in an inner ZStack + compositingGroup.
             ZStack {
                 ZStack {
                     Color.black.opacity(0.7)
@@ -84,7 +84,7 @@ struct QrScanView: View {
     @ViewBuilder
     private var scannerLayer: some View {
         #if targetEnvironment(simulator)
-        // 시뮬레이터 — 사진 라이브러리의 QR 이미지를 골라 디코딩.
+        // Simulator — pick a QR image from the photo library and decode it.
         PhotosPicker(selection: $pickedItem, matching: .images) {
             VStack(spacing: 10) {
                 Image(systemName: "qrcode.viewfinder")
@@ -127,7 +127,7 @@ struct QrScanView: View {
     }
 
     #if targetEnvironment(simulator)
-    /// 선택한 사진에서 QR 페이로드를 디코딩해 onScanned 로 전달.
+    /// Decodes the QR payload from the chosen photo and passes it to onScanned.
     private func decodePicked(_ item: PhotosPickerItem?) async {
         guard let item,
               let data = try? await item.loadTransferable(type: Data.self),
@@ -137,7 +137,7 @@ struct QrScanView: View {
         onScanned(payload)
     }
 
-    /// CIDetector 로 이미지에서 첫 QR 코드 문자열을 추출.
+    /// Extracts the first QR code string from the image with CIDetector.
     private static func decodeQR(from image: UIImage) -> String? {
         guard let ciImage = CIImage(image: image) else { return nil }
         let detector = CIDetector(
@@ -149,7 +149,7 @@ struct QrScanView: View {
         return features.compactMap(\.messageString).first
     }
     #else
-    /// 카메라 권한 확인 — 미결정이면 요청, 거부면 QR-E-01 안내를 띄운다.
+    /// Camera permission check — request if undetermined; show the QR-E-01 notice if denied.
     private func resolveCameraPermission() async {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
@@ -165,8 +165,8 @@ struct QrScanView: View {
         }
     }
 
-    /// 권한 거부 시 — QR 스캔 화면을 유지한 채 QR-E-01 안내 다이얼로그를 띄운다.
-    /// 화면 이탈은 사용자가 좌상단 X 로 직접 (설계 QR-E-01 결과화면: "QR scan · 권한 안내").
+    /// On permission denial — keep the QR scan screen and show the QR-E-01 notice dialog.
+    /// The user leaves the screen themselves via the top-left X (design QR-E-01 result screen: "QR scan · permission notice").
     private func showPermissionDeniedPopup() {
         OverlayManager.shared.showPopup(
             title: "Camera permission required",

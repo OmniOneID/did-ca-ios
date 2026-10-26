@@ -24,39 +24,41 @@ enum IssueVcError: Error {
     case noAllowedIssuer
     case missingProxyEndpoint
     case invalidWebFormURL
+    /// No username was provided by the registration web view, so the user name can't be put in the issuance web form.
+    case missingUserName
     case missingProfile
     case missingVcId
 }
 
-// MARK: - VC 발급 흐름 (OpenDID SDK 사용 예시)
+// MARK: - VC issuance flow (OpenDID SDK usage example)
 //
-// 진입점은 두 단계로 나뉜다:
+// The entry point is split into two stages:
 //
-//   preProcess(vcPlanId:issuer:offerId:)   ─ 사용자 인증 전
-//     [1] propose-issue-vc          TAS 에 발급 의사 전달 → txId/refId
+//   preProcess(vcPlanId:issuer:offerId:)   ─ before user authentication
+//     [1] propose-issue-vc          tell TAS of the intent to issue → txId/refId
 //     [2] (parallel) request-wallet-token
-//     [3] ECDH                      .tas 모드에서만 — sharedSecret 도출
-//     [4] request-server-token      .tas 모드에서만 — hServerToken
-//     [5] request-issue-profile     발급자 프로필 + authNonce 수령
+//     [3] ECDH                      only in .tas mode — derive sharedSecret
+//     [4] request-server-token      only in .tas mode — hServerToken
+//     [5] request-issue-profile     receive issuer profile + authNonce
 //
-//   process(passcode:)                     ─ 사용자 PIN/BIO 인증 직후
-//     [6] getSignedDidAuth          authNonce 를 holder DID 키로 서명 (sync)
-//     [7] request-issue-vc          서명된 didAuth + 토큰으로 VC 요청 → vcId
-//     [8] confirm-issue-vc          발급 완료 확정
+//   process(passcode:)                     ─ right after user PIN/BIO authentication
+//     [6] getSignedDidAuth          sign authNonce with the holder DID key (sync)
+//     [7] request-issue-vc          request the VC with the signed didAuth + token → vcId
+//     [8] confirm-issue-vc          confirm issuance completed
 //
-// 편의를 위해 두 단계를 연속 호출하는 정적 진입점도 제공:
+// Static entry points that call both stages back to back are also provided for convenience:
 //   IssueVcProtocol.issue(plan:passcode:)
 //   IssueVcProtocol.issue(offer:passcode:)
 //
-// 패턴 출처: did-ca-ios (UIKit reference) — 단일 HTTP 호출 = 단일 private
-// 메서드, 인스턴스 상태(txId/hServerToken/issueProfile/vcId)는 단계 사이로
-// 전달되어 orchestration 함수(preProcess/process) 본문이 스크립트처럼 읽힘.
+// Pattern source: did-ca-ios (UIKit reference) — one HTTP call = one private
+// method; instance state (txId/hServerToken/issueProfile/vcId) is carried between
+// stages so the orchestration function bodies (preProcess/process) read like a script.
 nonisolated final class IssueVcProtocol {
 
-    // MARK: - 라우팅 모드 (.tas / .proxy)
+    // MARK: - Routing mode (.tas / .proxy)
     private let mode: IssuanceMode
 
-    // MARK: - 단계별 누적 상태
+    // MARK: - State accumulated across stages
     private var txId: String = ""
     private var refId: String = ""
     private var hWalletToken: String = ""
@@ -88,12 +90,12 @@ nonisolated final class IssueVcProtocol {
         return response
     }
 
-    // MARK: - [3] ECDH — holder DID 기반 sharedSecret 도출 (.tas 전용)
+    // MARK: - [3] ECDH — derive sharedSecret from the holder DID (.tas only)
     private func deriveSharedSecret() async throws {
         self.sharedSecret = try await TokenGenerator.getSharedSecret(type: .holder, txId: txId)
     }
 
-    // MARK: - [4] request-server-token (.tas 전용, sharedSecret 필요)
+    // MARK: - [4] request-server-token (.tas only, needs sharedSecret)
     private func requestServerToken() async throws {
         guard let sharedSecret else { return }
         self.hServerToken = try await TokenGenerator.requestServerToken(
@@ -110,8 +112,8 @@ nonisolated final class IssueVcProtocol {
 
     // MARK: - [5] request-issue-profile
     private func requestIssueProfile() async throws {
-        // .tas 는 ECDH 로 받은 serverToken 으로 식별하지만, .proxy 는 serverToken 핸드셰이크가
-        // 없으므로 serverToken 대신 userId 로 사용자를 식별한다.
+        // .tas identifies the user by the serverToken obtained via ECDH, but .proxy has no serverToken
+        // handshake, so it identifies the user by userId instead of serverToken.
         let request: RequestIssueProfile
         if case .proxy = mode {
             request = RequestIssueProfile(
@@ -128,7 +130,7 @@ nonisolated final class IssueVcProtocol {
         }
         let response = try await TASConnection.requestIssueProfile(mode: mode, request: request)
         self.issueProfile = response
-        // profile 응답의 최신 txId 로 갱신 — request-issue-vc 단계에서 사용.
+        // Update to the latest txId from the profile response — used in the request-issue-vc stage.
         self.txId = response.txId
     }
 
@@ -154,7 +156,7 @@ nonisolated final class IssueVcProtocol {
             throw IssueVcError.missingIssueResponse
         }
         self.vcId = vcId
-        // requestIssueVc 응답의 최신 txId — propose 단계의 것과 다를 수 있음.
+        // Latest txId from the requestIssueVc response — may differ from the one in the propose stage.
         self.txId = response.txId
     }
 
@@ -172,14 +174,14 @@ nonisolated final class IssueVcProtocol {
         _ = try await TASConnection.confirmIssueVc(mode: mode, request: request)
     }
 
-    // MARK: - 진입점: 사용자 인증 전 단계 (1 ~ 5)
+    // MARK: - Entry point: stages before user authentication (1 ~ 5)
     func preProcess(vcPlanId: String, issuer: String, offerId: String?) async throws {
         try await proposeIssueVc(vcPlanId: vcPlanId, issuer: issuer, offerId: offerId)
 
-        // walletToken 은 sharedSecret/serverToken/profile 와 무관 — 백그라운드 동시 진행.
+        // walletToken is independent of sharedSecret/serverToken/profile — runs concurrently in the background.
         async let walletTokenTask: () = requestWalletToken()
 
-        // serverToken(ECDH 기반)은 TAS 직접 발급에서만 필요. proxy 는 발급자가 자체 처리.
+        // serverToken (ECDH-based) is needed only for direct TAS issuance. For proxy the issuer handles it itself.
         if case .tas = mode {
             try await deriveSharedSecret()
             try await requestServerToken()
@@ -189,13 +191,13 @@ nonisolated final class IssueVcProtocol {
         try await walletTokenTask
     }
 
-    // MARK: - 진입점: 사용자 인증 후 단계 (6 ~ 8) + 후처리
+    // MARK: - Entry point: stages after user authentication (6 ~ 8) + post-processing
     @discardableResult
     func process(passcode: String?) async throws -> String {
         try await requestIssueVc(passcode: passcode)
         try await confirmIssueVc()
 
-        // proxy 로 발급했다면 발급자 endpoint 를 vcId 키로 보관 — 폐기 시 vcId 로 호스트 조회.
+        // If issued via proxy, store the issuer endpoint keyed by vcId — on revocation the host is looked up by vcId.
         if case .proxy = mode, let vcId {
             Preference.setIssuerEndpoint(TASConnection.routeHost(mode: mode), forVcId: vcId)
         }
@@ -209,22 +211,22 @@ nonisolated final class IssueVcProtocol {
 
 // MARK: - Static convenience
 //
-// preProcess + process 를 연속 호출하는 단일 진입점. 현재 UX 는 사용자 인증을
-// SDK 핸드셰이크 *전에* 받기 때문에 두 단계를 분리할 필요가 없어 이 정적
-// 메서드로 단일 호출이 가능. 두 단계 사이에 발급자 프로필 확인 같은 UI 가
-// 들어가야 하면 instance API(preProcess → process) 를 직접 호출.
+// A single entry point that calls preProcess + process back to back. The current UX takes user
+// authentication *before* the SDK handshake, so there's no need to split the two stages and this
+// static method allows a single call. If UI such as checking the issuer profile has to go between
+// the two stages, call the instance API (preProcess → process) directly.
 extension IssueVcProtocol {
 
-    // 수동 발급 — plan.allowedIssuers / issuanceMode / endpoints 로 라우팅 결정.
+    // Manual issuance — routing decided by plan.allowedIssuers / issuanceMode / endpoints.
     @discardableResult
     static func issue(plan: VCPlan, passcode: String?) async throws -> String {
         let proto = try await begin(plan: plan)
         return try await proto.process(passcode: passcode)
     }
 
-    // preProcess(propose-issue-vc 등)까지만 수행한 인스턴스를 반환 — did-ca 순서처럼
-    // preProcess 와 process 사이에 웹폼/인증 등 UI 를 끼워야 할 때 사용한다.
-    // propose 가 먼저 실행되어 발급 트랜잭션(txId)이 생성된 뒤 addVcInfo 가 그 위에 얹힌다.
+    // Returns an instance that has run only up to preProcess (propose-issue-vc etc.) — use it when, as in
+    // the did-ca order, UI such as a web form / authentication must go between preProcess and process.
+    // propose runs first to create the issuance transaction (txId), and addVcInfo is then layered on top of it.
     static func begin(plan: VCPlan) async throws -> IssueVcProtocol {
         guard let issuer = plan.allowedIssuers?.first else {
             throw IssueVcError.noAllowedIssuer
@@ -235,9 +237,9 @@ extension IssueVcProtocol {
         return proto
     }
 
-    // QR 발급 — offer 의 vcPlanId/issuer/offerId 만으로 TAS 직행. plan list
-    // 조회 없음 (did-ca-ios 패턴): SDK 응답에 issuanceMode 가 없어 client 분기
-    // 불가. PROXY 모드 plan 발급은 수동 Add VC 경로(issue(plan:)) 전용.
+    // QR issuance — straight to TAS using only the offer's vcPlanId/issuer/offerId. No plan list
+    // lookup (did-ca-ios pattern): the SDK response has no issuanceMode, so the client can't
+    // branch. PROXY-mode plan issuance is exclusive to the manual Add VC path (issue(plan:)).
     @discardableResult
     static func issue(offer: IssueOfferPayload, passcode: String?) async throws -> String {
         let proto = IssueVcProtocol(mode: .tas)
@@ -249,19 +251,21 @@ extension IssueVcProtocol {
         return try await proto.process(passcode: passcode)
     }
 
-    // 발급 추가정보 입력 웹 폼 URL — DEMO_URL/addVcInfo?did=&userName=&vcSchemaId=.
-    // holder DID id, userName(WalletState — OID4VCI user initiation 과 같은 값), plan 의 schema id 를
-    // 쿼리로 싣는다. schema id 는 "...?id=<값>" 형태일 수 있어 '=' 뒤를 취한다.
+    // Issuance additional-info web form URL — DEMO_URL/addVcInfo?did=&userName=&vcSchemaId=.
+    // Puts the holder DID id, userName (WalletState — same value as OID4VCI user initiation) and the plan's
+    // schema id in the query. The schema id may be of the form "...?id=<value>", so take the part after '='.
     static func webFormURL(for plan: VCPlan) throws -> URL {
         let holderDid = try WalletAPI.shared.getDidDocument(type: .HolderDidDocumnet).id
-        let userId = WalletState.userName ?? ""
+        guard let userName = WalletState.userName else {
+            throw IssueVcError.missingUserName
+        }
         let schemaId = plan.credentialSchema.id.components(separatedBy: "=").last
             ?? plan.credentialSchema.id
 
         var components = URLComponents(string: URLs.DEMO_URL + "/addVcInfo")
         components?.queryItems = [
             URLQueryItem(name: "did", value: holderDid),
-            URLQueryItem(name: "userName", value: userId),
+            URLQueryItem(name: "userName", value: userName),
             URLQueryItem(name: "vcSchemaId", value: schemaId)
         ]
         guard let url = components?.url else {
@@ -270,7 +274,7 @@ extension IssueVcProtocol {
         return url
     }
 
-    // plan.issuanceMode 를 라우팅 모드로 변환. nil / .DIRECT → TAS, .PROXY → endpoints 첫 항목.
+    // Convert plan.issuanceMode to a routing mode. nil / .DIRECT → TAS, .PROXY → first entry of endpoints.
     private static func issuanceMode(of plan: VCPlan) throws -> IssuanceMode {
         guard plan.issuanceMode == .PROXY else {
             return .tas

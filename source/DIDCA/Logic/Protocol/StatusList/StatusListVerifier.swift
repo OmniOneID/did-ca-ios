@@ -20,66 +20,66 @@ import Foundation
 import CryptoKit
 import DIDWalletSDK
 
-/// Status List 상태값 (`draft-ietf-oauth-status-list-21`, 서버 기본 설정 bits=2).
+/// Status List status values (`draft-ietf-oauth-status-list-21`, server default bits=2).
 enum StatusListStatus: Int {
     case valid = 0
     case invalid = 1
     case suspended = 2
-    /// 예약값. 서버는 사용하지 않으며, 마주치면 유효로 취급하지 않는다.
+    /// Reserved. The server does not use it; if encountered, it is not treated as valid.
     case reserved = 3
 }
 
 enum StatusListError: Error {
-    /// status 참조가 형식에 맞지 않음 (uri 없음 / idx 가 0 이상 정수가 아님).
+    /// The status reference is malformed (no uri / idx is not a non-negative integer).
     case invalidReference
-    /// 조회 주소가 http·https 가 아님.
+    /// The lookup address is not http or https.
     case unsupportedURIScheme
-    /// Status List Token 조회가 비-2xx.
+    /// Fetching the Status List Token returned a non-2xx response.
     case fetchFailed(Int)
-    /// 응답이 compact JWS 가 아니거나 헤더가 규격과 다름 (typ ≠ statuslist+jwt / alg ≠ ES256 / kid 없음).
+    /// The response is not a compact JWS, or its header deviates from the spec (typ ≠ statuslist+jwt / alg ≠ ES256 / no kid).
     case invalidToken
-    // 서명자 신원 확인 실패는 `JWSSignerError` 로 그대로 전파된다 — kid 규약 위반·서명 키 미발견·
-    // 서명 불일치. 이 흐름 전용 오류가 아니라 JWS 를 kid 로 검증하는 모든 곳이 같은 것을 던진다.
-    /// payload 의 sub 가 크리덴셜이 가리키는 uri 와 다름.
+    // Signer identity failures propagate as `JWSSignerError` unchanged — kid convention violation, signing
+    // key not found, signature mismatch. Not specific to this flow: every place that verifies a JWS by kid throws the same.
+    /// The payload's sub differs from the uri the credential points to.
     case subjectMismatch
-    /// 토큰이 만료됐거나 발급 시각이 미래.
+    /// The token has expired, or its issued-at time is in the future.
     case tokenExpired
-    /// status_list 구조가 규격에 맞지 않음 (bits 허용값 밖 / lst 디코딩·압축 해제 실패 / idx 범위 밖).
+    /// The status_list structure violates the spec (bits outside allowed values / lst decode or decompress failure / idx out of range).
     case invalidStatusList
-    /// RESERVED(3) — 유효한 크리덴셜로 처리하지 않는다.
+    /// RESERVED(3) — not treated as a valid credential.
     case reservedStatus
 }
 
-// MARK: - Status List Token 검증 (IETF Token Status List)
+// MARK: - Status List Token verification (IETF Token Status List)
 //
-// 연동 가이드("Status List 클라이언트 연동 가이드", draft-ietf-oauth-status-list-21 기준) §3·§4.
-// 크리덴셜이 가리키는 `status.status_list.{uri, idx}` 로 공개 Status List Token 을 받아 서명을
-// 검증하고, 해당 인덱스의 상태 비트만 읽어 돌려준다. SD-JWT·mDoc 둘 다 같은 규격이라 이 한 경로를
-// 공유한다 — 참조는 SDK 가 포맷별로 읽어 `StatusListReference` 로 준다.
+// Integration guide ("Status List client integration guide", based on draft-ietf-oauth-status-list-21) §3·§4.
+// Fetches the public Status List Token via the credential's `status.status_list.{uri, idx}`, verifies its
+// signature, and returns only the status bits at that index. SD-JWT and mDoc follow the same spec, so they share
+// this single path — the SDK reads the reference per format and hands it over as `StatusListReference`.
 //
-//   [1] status(for:)       GET uri → JWS 검증 → sub/exp/iat 확인 → lst 해제 → idx 비트 추출
-//   [2] statuses(for:)     같은 uri 를 가리키는 여러 건은 토큰을 한 번만 받아 인덱스별로 읽는다
+//   [1] status(for:)       GET uri → verify JWS → check sub/exp/iat → decompress lst → extract idx bits
+//   [2] statuses(for:)     multiple entries pointing at the same uri fetch the token once and read per index
 //
-// **결과는 상태 enum 한 개만 돌려준다** — 토큰 원문도, 압축 해제한 상태 배열도 보관하지 않는다.
-// 조회 실패·검증 실패는 삼키지 않고 throw 한다. 호출측(CredentialStore)이 "유효"로 대체하지 않고
-// 만료일 기준 표시 + 안내로 처리한다 (가이드 §5 — 실패를 VALID 로 처리 금지).
+// **Only a single status enum is returned** — neither the raw token nor the decompressed status array is kept.
+// Lookup and verification failures are not swallowed; they throw. The caller (CredentialStore) does not substitute
+// "valid" but falls back to expiry-date display + a notice (guide §5 — never treat failure as VALID).
 nonisolated enum StatusListVerifier {
 
-    /// 크리덴셜이 가리키는 Status List 위치 — SDK 가 SD-JWT·mDoc 양쪽에서 같은 타입으로 준다.
-    /// 앱이 payload·MSO 를 직접 뒤져 만들지 않는다(`SdJwtCredentialItem.status` / `MdocCredentialItem.status`).
+    /// Status List location the credential points to — the SDK provides the same type for both SD-JWT and mDoc.
+    /// The app does not build it by digging through the payload/MSO itself (`SDJWT.status()` / `Mdoc.status`).
     typealias Reference = StatusListReference
 
-    /// 상태 조회 — 토큰을 받아 검증하고 해당 인덱스의 상태를 돌려준다.
-    /// 조회는 항상 서버까지 간다 (HTTP 캐시를 쓰지 않는다).
+    /// Status lookup — fetches and verifies the token, then returns the status at the given index.
+    /// The lookup always goes to the server (no HTTP cache).
     static func status(for reference: Reference) async throws -> StatusListStatus {
         let list = try await verifiedList(uri: reference.uri)
         return try Self.status(in: list, index: reference.idx)
     }
 
-    /// 여러 크리덴셜의 상태를 한 번에 판정한다 — **같은 uri 를 가리키는 항목은 토큰을 한 번만**
-    /// 받아 검증하고 인덱스별 비트만 읽는다(지갑의 SD-JWT 가 대개 같은 리스트를 공유한다).
-    /// 검증한 토큰과 압축 해제한 배열은 이 호출이 끝나면 버려지고, 호출측에는 상태 enum 만 남는다.
-    /// 개별 실패는 다른 크리덴셜 판정을 막지 않도록 항목별 `Result` 로 돌려준다.
+    /// Determines the status of several credentials at once — **entries pointing at the same uri fetch the token
+    /// only once**, verify it, and read only per-index bits (a wallet's SD-JWTs usually share the same list).
+    /// The verified token and decompressed array are discarded when this call ends; the caller is left with status enums only.
+    /// Each result is returned as a per-entry `Result` so an individual failure does not block other credentials.
     static func statuses(for references: [String: Reference]) async -> [String: Result<StatusListStatus, Error>] {
         var result: [String: Result<StatusListStatus, Error>] = [:]
         let byURI = Dictionary(grouping: references, by: { $0.value.uri })
@@ -99,13 +99,13 @@ nonisolated enum StatusListVerifier {
         return result
     }
 
-    /// 검증까지 마친 상태 배열 — 압축 해제된 바이트와 entry 당 비트 수.
+    /// Fully verified status array — the decompressed bytes and bits per entry.
     private struct VerifiedList {
         let bytes: Data
         let bits: Int
     }
 
-    /// 토큰 조회 → 헤더·서명·`sub`·수명 검증 → `lst` 해제. 인덱스 해석은 하지 않는다.
+    /// Fetch token → verify header, signature, `sub`, lifetime → decompress `lst`. Does not interpret the index.
     private static func verifiedList(uri: String) async throws -> VerifiedList {
         guard let url = URL(string: uri),
               let scheme = url.scheme?.lowercased(),
@@ -114,10 +114,10 @@ nonisolated enum StatusListVerifier {
             throw StatusListError.unsupportedURIScheme
         }
 
-        // 서버가 `Cache-Control: max-age=300` 을 주지만 이 토큰은 캐시하지 않는다 — 낡은 값은
-        // 폐기·정지 반영을 최대 5분 늦춘다. SDK `CommunicationClient` 가 전용 ephemeral 세션
-        // (urlCache 없음 + `reloadIgnoringLocalCacheData`)으로만 내보내므로 그걸 그대로 쓴다.
-        // 기본 헤더에는 GET 에 맞지 않는 `Content-Type: application/json` 이 있어 Accept 만 넘긴다.
+        // The server sends `Cache-Control: max-age=300`, but this token is not cached — a stale value would delay
+        // revocation/suspension by up to 5 minutes. The SDK `CommunicationClient` sends only via a dedicated ephemeral
+        // session (no urlCache + `reloadIgnoringLocalCacheData`), so it is used as is.
+        // The default headers include `Content-Type: application/json`, which doesn't fit a GET, so only Accept is passed.
         let (data, statusCode) = try await CommunicationClient.sendRequest(
             urlString: url.absoluteString,
             httpMethod: .GET,
@@ -135,7 +135,7 @@ nonisolated enum StatusListVerifier {
             throw StatusListError.invalidToken
         }
 
-        // 세그먼트 원문(서명 입력)은 SDK JWS 로, header/payload 해석은 SimpleJWTDecoder 로 얻는다.
+        // Raw segments (signing input) come from the SDK JWS; header/payload parsing comes from SimpleJWTDecoder.
         let jws = try JWS(from: compact)
         guard let decoded = try? SimpleJWTDecoder.parse(compact) else {
             throw StatusListError.invalidToken
@@ -148,11 +148,11 @@ nonisolated enum StatusListVerifier {
             throw StatusListError.invalidToken
         }
 
-        // 발급자 신원 확인 — 토큰 헤더의 kid 가 가리키는 DID Document 의 키로 검증한다.
+        // Issuer identity check — verify with the key from the DID Document that the token header's kid points to.
         try await JWSSignerVerifier.verify(jws: jws, kid: kid)
 
-        // sub 는 크리덴셜이 가리키는 uri 와 정확히 일치해야 한다 — 다른 리스트의 토큰을 붙여
-        // 넣는 것을 막는다.
+        // sub must exactly match the uri the credential points to — prevents splicing in a token from a
+        // different list.
         guard decoded.payload["sub"] as? String == uri else {
             throw StatusListError.subjectMismatch
         }
@@ -161,7 +161,7 @@ nonisolated enum StatusListVerifier {
         return try decodedList(payload: decoded.payload)
     }
 
-    /// 해제된 상태 배열에서 인덱스 한 자리를 읽어 상태로 변환.
+    /// Reads one slot at the index from the decompressed status array and converts it to a status.
     private static func status(in list: VerifiedList, index: Int) throws -> StatusListStatus {
         let value = try statusValue(list: list, index: index)
         guard let status = StatusListStatus(rawValue: value) else {
@@ -173,27 +173,27 @@ nonisolated enum StatusListVerifier {
         return status
     }
 
-    // MARK: - payload 검증 · 비트 추출
+    // MARK: - payload verification · bit extraction
 
-    /// `exp`/`iat` 확인. 만료된 토큰은 거부한다 — 서명은 영구히 유효하므로, 폐기 반영 전에 발행된
-    /// 옛 토큰이 그대로 돌아오면 서명만으로는 걸러지지 않는다. (`ttl` 은 캐시 주기용이라 보지 않는다.)
+    /// Checks `exp`/`iat`. Expired tokens are rejected — signatures stay valid forever, so an old token issued
+    /// before a revocation took effect cannot be filtered out by signature alone. (`ttl` is for cache cadence and is ignored.)
     private static func validateLifetime(_ payload: [String: Any]) throws {
         let now = Date()
         if let exp = (payload["exp"] as? NSNumber)?.doubleValue,
            Date(timeIntervalSince1970: exp) < now {
             throw StatusListError.tokenExpired
         }
-        // 기기 시계 오차를 감안해 미래 발급은 1분까지 허용.
+        // Allow up to 1 minute of future issuance to tolerate device clock skew.
         if let iat = (payload["iat"] as? NSNumber)?.doubleValue,
            Date(timeIntervalSince1970: iat) > now.addingTimeInterval(60) {
             throw StatusListError.tokenExpired
         }
     }
 
-    /// 압축 해제 결과 상한 — 기본 용량(10만 엔트리 × 2bit = 25KB) 대비 넉넉하되, 압축 폭탄은 막는다.
+    /// Upper bound on decompressed size — generous relative to the default capacity (100k entries × 2bit = 25KB), but blocks zip bombs.
     private static let maxDecompressedBytes = 1 << 20   // 1 MiB
 
-    /// payload 의 `status_list` → 해제된 상태 배열.
+    /// payload `status_list` → decompressed status array.
     private static func decodedList(payload: [String: Any]) throws -> VerifiedList {
         guard let statusList = payload["status_list"] as? [String: Any],
               let bits = (statusList["bits"] as? NSNumber)?.intValue,
@@ -206,7 +206,7 @@ nonisolated enum StatusListVerifier {
         return VerifiedList(bytes: try inflate(compressed), bits: bits)
     }
 
-    /// `idx` 위치의 상태 정수. 상태는 byte 안에서 LSB 부터 저장된다.
+    /// Status integer at position `idx`. Statuses are stored from the LSB within each byte.
     private static func statusValue(list: VerifiedList, index: Int) throws -> Int {
         let bitIndex = index * list.bits
         let byteIndex = bitIndex / 8
@@ -218,13 +218,13 @@ nonisolated enum StatusListVerifier {
         return (Int(list.bytes[list.bytes.startIndex + byteIndex]) >> shift) & mask
     }
 
-    /// ZLIB(RFC 1950) 해제. Apple 의 `.zlib` 알고리즘은 이름과 달리 raw DEFLATE(RFC 1951) 이므로
-    /// 2바이트 헤더와 4바이트 adler32 트레일러를 벗겨서 넘긴다.
+    /// ZLIB (RFC 1950) decompression. Apple's `.zlib` algorithm is, despite its name, raw DEFLATE (RFC 1951), so
+    /// the 2-byte header and 4-byte adler32 trailer are stripped before passing it in.
     private static func inflate(_ data: Data) throws -> Data {
         guard data.count > 6 else { throw StatusListError.invalidStatusList }
         let cmf = data[data.startIndex]
         let flg = data[data.startIndex + 1]
-        // CM=8(deflate), 헤더 체크섬, preset dictionary 미사용.
+        // CM=8 (deflate), header checksum, no preset dictionary.
         guard cmf & 0x0F == 8,
               (UInt16(cmf) << 8 | UInt16(flg)) % 31 == 0,
               flg & 0x20 == 0
@@ -241,7 +241,7 @@ nonisolated enum StatusListVerifier {
         return inflated
     }
 
-    /// base64url → Data. 패딩(`=`)이 생략된 표기를 표준 base64 로 복원해 디코딩한다.
+    /// base64url → Data. Restores notation with omitted padding (`=`) to standard base64 before decoding.
     private static func base64URLDecoded(_ string: String) -> Data? {
         var base64 = string
             .replacingOccurrences(of: "-", with: "+")

@@ -33,7 +33,7 @@ enum ServerError: Error, LocalizedError {
 }
 
 enum HttpClientError: Error, LocalizedError {
-    /// 서버가 준 id/DID 등이 URL 로 파싱되지 않음 (공백·제어문자 등).
+    /// An id/DID etc. from the server can't be parsed as a URL (whitespace, control characters, etc.).
     case invalidURL(String)
     var errorDescription: String? {
         switch self {

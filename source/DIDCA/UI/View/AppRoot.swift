@@ -153,7 +153,7 @@ struct AppRoot: View {
             )
 
         case .proximityRequest:
-            // Proximity presentation consent — same screen as VP, and back is Reject (PRES-B-12: Certs after status 20).
+            // Proximity presentation consent — same screen as VP, and back is Reject (Certs after status 20).
             VPRequestView(
                 summary: coordinator.proximitySummary,
                 onBack: { Task { await coordinator.rejectProximity() } },
@@ -161,7 +161,7 @@ struct AppRoot: View {
             )
 
         case .vpRequest:
-            // Back = Reject — return to Certs without submitting (PRES-B-12).
+            // Back = Reject — return to Certs without submitting.
             VPRequestView(
                 summary: coordinator.verifySummary,
                 onBack: { coordinator.popToMain() },
@@ -229,7 +229,7 @@ struct AppRoot: View {
                     if WalletState.isLockEnabled {
                         coordinator.present(.pinChange(isLockAuth: true))
                     } else {
-                        // SET-E-04: Change Unlock PIN tapped while Unlock PIN is not set.
+                        // Change Unlock PIN tapped while Unlock PIN is not set.
                         OverlayManager.shared.showPopup(
                             title: "Notification",
                             message: "Unlock PIN not set.",
@@ -303,7 +303,7 @@ struct AppRoot: View {
                 onClose: { coordinator.completeUserInfoWebView(nil) },
                 onRegistered: { coordinator.completeUserInfoWebView($0) },
                 onServerSettings: {
-                    // ONB-E-05 — no reason to return to a blank web view, so close it and go to Server URL.
+                    // Load failure → server settings: no reason to return to a blank web view, so close it and go to Server URL.
                     // On return we're on Step 1, and tapping NEXT again opens the web view with the new address.
                     coordinator.completeUserInfoWebView(nil)
                     coordinator.presentServerURL()
@@ -343,8 +343,7 @@ struct AppRoot: View {
             )
 
         case .lockAuth:
-            // Unlock PIN auth modal. X button · swipe-down · system back all exit(0)
-            // (project_unlock_pin_exit / UNLK-A-E-02).
+            // Unlock PIN auth modal. X button · swipe-down · system back all exit(0).
             PINView(mode: .auth(isLockAuth: true), onClose: { exit(0) }) { _, _ in
                 coordinator.completeLockAuth()
             }

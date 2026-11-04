@@ -46,6 +46,7 @@ struct PINView: View {
                 Image(.icClose)
                     .padding(20)
             }
+            .accessibilityIdentifier("closeButton")
 //            .background(.red)
             
             VStack(alignment: .leading, spacing: 6) {

@@ -18,7 +18,7 @@
 import SwiftUI
 
 /// One child line of a group (compound-value disclosure / mDoc compound element) — **display only**.
-/// Children have no checkbox of their own (PRES-B-03). The single parent checkbox decides submission,
+/// Children have no checkbox of their own. The single parent checkbox decides submission,
 /// and child codes only follow the parent via its `descendantCodes`.
 struct VpChildRow: Identifiable {
     let id = UUID()
@@ -33,7 +33,7 @@ struct VpClaim: Identifiable {
     let code: String?
     let label: String
     let value: ClaimValue
-    /// Child codes that move **together** when this row is toggled — all-or-nothing (PRES-B-03).
+    /// Child codes that move **together** when this row is toggled — all-or-nothing.
     ///
     /// An SD-JWT child disclosure always carries along the ancestor disclosures that conceal it
     /// (SDK `SDJWTPresenter.resolveDisclosures`). Letting parent and child move independently makes screen and submission diverge.
@@ -48,15 +48,14 @@ struct VpClaim: Identifiable {
     }
 }
 
-/// One submission candidate = one card. With 2+ candidates they become radio option cards and **only one is submitted**
-/// (PRES-B-05).
+/// One submission candidate = one card. With 2+ candidates they become radio option cards and **only one is submitted**.
 struct VpOption: Identifiable {
     let id = UUID()
     let credentialId: String
     let title: String
-    /// Codes always submitted regardless of checks. If non-empty, Submit is always enabled (PRES-E-05).
+    /// Codes always submitted regardless of checks. If non-empty, Submit is always enabled.
     let requiredCodes: Set<String>
-    /// REQUIRED section — no checkboxes are drawn (no greyed-out disabled checkboxes, PRES-B-02).
+    /// REQUIRED section — no checkboxes are drawn (no greyed-out disabled checkboxes).
     let required: [VpClaim]
     /// OPTIONAL section — **starts unchecked** (opt-in).
     let optional: [VpClaim]
@@ -82,13 +81,13 @@ struct VPRequestView: View {
     @State private var options: [VpOption] = []
     /// Candidate chosen by radio. With a single candidate, that one is always selected.
     @State private var selectedOption: UUID?
-    /// Codes the user turned on in the selected candidate. Cleared entirely when the candidate changes (PRES-B-05).
+    /// Codes the user turned on in the selected candidate. Cleared entirely when the candidate changes.
     @State private var checked: Set<String> = []
     /// Expanded cards — **several can be expanded at once**.
     ///
     /// Tapping a document header opens/closes only that card and leaves the others alone — candidates must be
     /// expandable side by side for comparison, and collapsing a card above would make the just-tapped card jump.
-    /// Other cards are collapsed **only when a candidate is chosen via radio** (design spec PRES-B-05).
+    /// Other cards are collapsed **only when a candidate is chosen via radio**.
     @State private var expandedOptions: Set<UUID> = []
     // Group expansion is keyed by claim id — keying by title would expand both when two cards share a name.
     @State private var expandedGroups: Set<UUID> = []
@@ -113,6 +112,7 @@ struct VPRequestView: View {
                         .foregroundStyle(.white)
                         .padding()
                 }
+                .accessibilityIdentifier("backButton")
                 .disabled(isSubmitting)
                 Text("Presentation")
                     .font(.pretendard(size: 17, weight: .semibold))
@@ -161,7 +161,7 @@ struct VPRequestView: View {
                 .padding(.bottom, 24)
             }
 
-            // PRES-B-12 — Reject(outline) / Accept(filled) 1:1. Reject is the same cancel path as the app-bar Back, so
+            // Reject(outline) / Accept(filled) 1:1. Reject is the same cancel path as the app-bar Back, so
             // it calls `onBack` directly without confirmation and is always enabled regardless of Accept's disabled state.
             HStack(spacing: 10) {
                 Button(action: onBack) {
@@ -175,6 +175,7 @@ struct VPRequestView: View {
                                 .stroke(.customPrimary, lineWidth: 1.5)
                         )
                 }
+                .accessibilityIdentifier("rejectButton")
                 .disabled(isSubmitting)
 
                 Button(action: submit) {
@@ -192,6 +193,7 @@ struct VPRequestView: View {
                         .shadow(color: canSubmit ? .customPrimary.opacity(0.3) : .clear,
                                 radius: 3, x: 0, y: 2)
                 }
+                .accessibilityIdentifier("acceptButton")
                 .disabled(!canSubmit || isSubmitting)
             }
             .padding(.horizontal, 16)
@@ -212,7 +214,7 @@ struct VPRequestView: View {
     /// summary → screen render model. Built once into @State for id stability.
     ///
     /// Initial state is opt-in — no checks (REQUIRED is not checkable), and with multiple candidates
-    /// Option 1 is selected with **all cards collapsed** (PRES-B-05). Groups start expanded.
+    /// Option 1 is selected with **all cards collapsed**. Groups start expanded.
     private func buildOptions() {
         guard options.isEmpty else { return }
         options = (summary?.documents ?? []).map { doc in
@@ -236,7 +238,7 @@ struct VPRequestView: View {
             )
         }
         selectedOption = options.first?.id
-        // With multiple candidates, start with all cards collapsed (PRES-B-05). With one, that card starts expanded.
+        // With multiple candidates, start with all cards collapsed. With one, that card starts expanded.
         expandedOptions = options.count > 1 ? [] : Set(options.prefix(1).map(\.id))
         expandedGroups = Set(options.flatMap { $0.required + $0.optional }
             .filter(\.isGroup)
@@ -244,8 +246,7 @@ struct VPRequestView: View {
     }
 
     /// Submit enabled = **at least one item to be submitted** in the selected option.
-    /// Always enabled if there is any REQUIRED item; an OPTIONAL-only set needs at least one checked to be enabled
-    /// (PRES-E-05).
+    /// Always enabled if there is any REQUIRED item; an OPTIONAL-only set needs at least one checked to be enabled.
     private var canSubmit: Bool {
         guard let option = currentOption else { return false }
         return !option.requiredCodes.isEmpty || !checked.isEmpty
@@ -262,7 +263,7 @@ struct VPRequestView: View {
         }
     }
 
-    /// Radio selection — moving to another candidate **resets all checks** of the previous option (PRES-B-05).
+    /// Radio selection — moving to another candidate **resets all checks** of the previous option.
     /// Expands only the chosen card and **collapses the rest** — the only path that collapses other cards.
     /// Re-tapping an already-selected radio also expands it (checks are kept).
     private func select(_ option: VpOption) {
@@ -358,6 +359,7 @@ struct VPRequestView: View {
                 .background(selected ? Color.paleOrange : .white)
                 .contentShape(Rectangle())
             }
+            .accessibilityIdentifier("optionRadio")
             .buttonStyle(.plain)
 
             VStack(spacing: 0) {
@@ -397,6 +399,7 @@ struct VPRequestView: View {
             .padding(.vertical, 12)
             .contentShape(Rectangle())
         }
+        .accessibilityIdentifier("sectionChevron")
         .buttonStyle(.plain)
     }
 
@@ -407,7 +410,7 @@ struct VPRequestView: View {
         VStack(alignment: .leading, spacing: 0) {
             if !option.required.isEmpty {
                 VpSectionLabel(title: "Required", isFirst: true)
-                // REQUIRED draws no checkboxes — these items can't be unchecked (PRES-B-02).
+                // REQUIRED draws no checkboxes — these items can't be unchecked.
                 claimRows(option.required, selectable: false)
             }
             if !option.optional.isEmpty {
@@ -465,24 +468,31 @@ struct VPRequestView: View {
 
 // MARK: - Subviews
 
-/// Checkbox graphic only — the wrapper receives taps (a row checkbox is its own button; Select all is one button including its label).
+/// Checkbox box only — the wrapper receives taps (a row checkbox is its own button; Select all is one button including its label).
+/// The check glyph is drawn by the wrapper as an overlay (`VpCheckGlyph`).
 private struct VpCheckboxMark: View {
     let checked: Bool
     var size: CGFloat = 22
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size > 20 ? 6 : 5)
-                .stroke(checked ? .customPrimary : .dotGray, lineWidth: 1.5)
-                .fill(checked ? Color.customPrimary : .white)
-                .frame(width: size, height: size)
+        RoundedRectangle(cornerRadius: size > 20 ? 6 : 5)
+            .stroke(checked ? .customPrimary : .dotGray, lineWidth: 1.5)
+            .fill(checked ? Color.customPrimary : .white)
+            .frame(width: size, height: size)
+    }
+}
 
-            if checked {
-                Image(.icCheckSmall)
-                    .renderingMode(.template)
-                    .foregroundStyle(.white)
-            }
-        }
+/// Check glyph over a checked box. Kept outside the button label so it stays its own accessibility element —
+/// UI tests read the checked state from its presence (`checkIcon` / `selectAllCheckIcon`).
+private struct VpCheckGlyph: View {
+    let identifier: String
+
+    var body: some View {
+        Image(.icCheckSmall)
+            .renderingMode(.template)
+            .foregroundStyle(.white)
+            .allowsHitTesting(false)
+            .accessibilityIdentifier(identifier)
     }
 }
 
@@ -496,10 +506,14 @@ private struct VpCheckbox: View {
             VpCheckboxMark(checked: checked)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("checkboxFrame")
+        .overlay {
+            if checked { VpCheckGlyph(identifier: "checkIcon") }
+        }
     }
 }
 
-/// Radio — attached to the card header when there are 2+ candidates (PRES-B-05).
+/// Radio — attached to the card header when there are 2+ candidates.
 private struct VpOptionRadio: View {
     let on: Bool
 
@@ -517,7 +531,7 @@ private struct VpOptionRadio: View {
     }
 }
 
-/// REQUIRED / OPTIONAL section label. No count or helper text (PRES-B-02).
+/// REQUIRED / OPTIONAL section label. No count or helper text.
 private struct VpSectionLabel<Trailing: View>: View {
     let title: String
     let isFirst: Bool
@@ -567,6 +581,13 @@ private struct VpSelectAll: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("selectAllBox")
+        .overlay(alignment: .trailing) {
+            if allOn {
+                VpCheckGlyph(identifier: "selectAllCheckIcon")
+                    .frame(width: 18, height: 18)
+            }
+        }
     }
 }
 
@@ -599,10 +620,12 @@ private struct VpClaimRow: View {
                 Rectangle().fill(.borderGray).frame(height: 1)
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("claimRow")
     }
 }
 
-/// Claim value on the presentation screen — text or image. An image replaces the value text (PRES-B-04),
+/// Claim value on the presentation screen — text or image. An image replaces the value text,
 /// and the checkbox stays on the right. Same sizing rules as the detail screen, just a narrower available width.
 private struct VpClaimValueView: View {
     let value: ClaimValue
@@ -620,8 +643,8 @@ private struct VpClaimValueView: View {
     }
 }
 
-/// Item with children — one parent checkbox toggles the whole subtree, and children are **display only**
-/// (PRES-B-03). The checkbox tap and the expand toggle work independently.
+/// Item with children — one parent checkbox toggles the whole subtree, and children are **display only**.
+/// The checkbox tap and the expand toggle work independently.
 private struct VpClaimGroup: View {
     let title: String
     let children: [VpChildRow]
@@ -650,6 +673,8 @@ private struct VpClaimGroup: View {
                 checkbox
             }
             .padding(.vertical, 12)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("claimRow")
 
             if isExpanded {
                 VStack(spacing: 0) {

@@ -39,7 +39,7 @@ final class AddCertificateViewModel {
         }
         do {
             plans = try await TASConnection.getVCPlanList()
-            // DOC-E-01: 0 issuable Issuers → notice dialog, return to Docs on OK.
+            // 0 issuable Issuers → notice dialog, return to Docs on OK.
             if plans.isEmpty {
                 OverlayManager.shared.showPopup(
                     title: "Notification",
@@ -49,7 +49,7 @@ final class AddCertificateViewModel {
                 )
             }
         } catch {
-            // DOC-E-02: Add list load failed → return to the calling screen (Docs) on OK.
+            // Add list load failed → return to the calling screen (Docs) on OK.
             OverlayManager.shared.showErrorPopup(
                 title: "Failed to load VC list",
                 error: error,

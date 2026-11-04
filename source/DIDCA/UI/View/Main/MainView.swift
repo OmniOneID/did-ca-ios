@@ -109,6 +109,7 @@ struct MainView: View {
             Button { coordinator.push(.menu) } label: {
                 Image(.icMenu).padding()
             }
+            .accessibilityIdentifier("menuButton")
 
             Text("DID CA")
                 .font(.pretendard(size: 15, weight: .semibold))
@@ -118,6 +119,7 @@ struct MainView: View {
             Button { isPresentedAdding = true } label: {
                 Image(.icAddWhite).padding()
             }
+            .accessibilityIdentifier("addButton")
         }
         .frame(height: 56)
         .background {
@@ -142,6 +144,7 @@ struct MainView: View {
                     )
                     .shadow(color: .customPrimary.opacity(0.3), radius: 3, x: 0, y: 2)
             }
+            .accessibilityIdentifier("presentButton")
             .padding(.horizontal, 16)
             .padding(.top, 12)
             .padding(.bottom, 16)

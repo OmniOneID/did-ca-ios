@@ -92,8 +92,8 @@ class PINViewModel {
     var completionToken: UUID?
     
     // The error message and the error state itself — the view draws even the red marking (DigitBoxView.isErrored) from this.
-    // COM-08: shown for 1 second, then the message and input are cleared together and input is taken again at the same step.
-    // While shown, all keypad input (digits · delete) is ignored (same rule for every PIN·UNLK register/auth/change error).
+    // Shown for 1 second, then the message and input are cleared together and input is taken again at the same step.
+    // While shown, all keypad input (digits · delete) is ignored (same rule for every PIN and Unlock PIN register/auth/change error).
     var errorMessage : String?
 
     private static let errorDisplay: Duration = .seconds(1)
@@ -113,7 +113,7 @@ class PINViewModel {
     }
     
     func addDigit(_ digit: String) {
-        // Key input isn't accepted while an error is shown — it clears itself after 1 second (COM-08).
+        // Key input isn't accepted while an error is shown — it clears itself after 1 second.
         guard errorMessage == nil else { return }
         guard tempPIN.count < maxDigits else { return }
 
@@ -147,7 +147,7 @@ class PINViewModel {
     private func verifyPin() async {
         switch mode {
         case .create(let isChanging, _):
-            // PIN-C-E-02 / UNLK-C-E-02: new PIN is identical to the existing one.
+            // Change: new PIN is identical to the existing one.
             if isChanging, tempPIN == currentPIN {
                 triggerError(message: lockContext
                     ? "New Unlock PIN must be different."
@@ -157,7 +157,7 @@ class PINViewModel {
             newPIN = tempPIN
             mode = .confirm(isChanging: isChanging, isLockAuth: lockContext)
         case .confirm:
-            // PIN-R/C-E-03 · UNLK-R/C-E-03: re-entry mismatch. Stay on the Re-enter step and keep the previous step's PIN (newPIN).
+            // Register/change: re-entry mismatch. Stay on the Re-enter step and keep the previous step's PIN (newPIN).
             // The message is the same in the Unlock context.
             if newPIN == tempPIN { completionToken = UUID() }
             else { triggerError(message: "PINs do not match.") }
@@ -171,7 +171,7 @@ class PINViewModel {
             }
             catch
             {
-                // PIN-A-E-01 / UNLK-A-E-01: wrong entry on authentication.
+                // Wrong entry on authentication.
                 triggerError(message: lockContext ? "Wrong unlock PIN." : "Wrong PIN.")
             }
         case .change(let isLockAuth):
@@ -186,7 +186,7 @@ class PINViewModel {
             }
             catch
             {
-                // PIN-C-E-01 / UNLK-C-E-01: current PIN authentication failed.
+                // Change: current PIN authentication failed.
                 triggerError(message: lockContext ? "Wrong unlock PIN." : "Wrong PIN.")
             }
         }
@@ -206,7 +206,7 @@ class PINViewModel {
         }
     }
     
-    // Entry point for showing an error (COM-08). Clears the message and input together after 1 second.
+    // Entry point for showing an error. Clears the message and input together after 1 second.
     private func triggerError(message: String) {
         errorMessage = message
         errorResetTask?.cancel()

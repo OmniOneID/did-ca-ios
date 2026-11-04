@@ -32,7 +32,7 @@ enum IssueOID4VcError: Error {
     case configurationMismatch
     /// Failure in the **token request** step — wraps the underlying error as-is.
     ///
-    /// Marked separately because design spec TXC-E-01 applies the `"Wrong code."` fallback **only to this step**.
+    /// Marked separately because the design spec applies the `"Wrong code."` fallback **only to this step**.
     /// Without this marker, failures in metadata fetch, wallet token, or credential request would all read as "wrong code".
     case tokenRequestFailed(Error)
     /// `requestCredential(passcode:)` was called before `requestToken(txCode:)` succeeded — call-order error.
@@ -54,7 +54,7 @@ enum IssueOID4VcError: Error {
 //   requestCredential(passcode:)           ─ right after holder auth
 //     [4] requestCredential          sign holder key-binding proof + store VC → issued credential (String)
 //
-// Why the token is obtained before auth: the tx_code verdict only comes from the token response (TXC-B-01·TXC-E-01).
+// Why the token is obtained before auth: the tx_code verdict only comes from the token response.
 // If deferred until after auth, a user who entered the wrong code would only see the error after also entering a PIN.
 //
 // The tx_code input modal and holder auth sheet between steps are UI policy, so
@@ -136,7 +136,7 @@ nonisolated final class IssueOID4VcProtocol {
 
         let metadata = try await Self.getMetadata(issuerURL: offer.credentialIssuer)
 
-        // The tx_code verdict applies only to the token POST response (TXC-E-01) — so only that one call
+        // The tx_code verdict applies only to the token POST response — so only that one call
         // is wrapped inside `requestTokenByPreAuthorizedCode` to surface as `tokenRequestFailed`.
         // Failures in the preparation steps pass straight through here and are treated as general issuance failures.
         let token = try await Self.requestTokenByPreAuthorizedCode(
@@ -263,7 +263,7 @@ extension IssueOID4VcProtocol {
             authorizationDetails: authDetailsArray
         )
 
-        // TXC-E-01 — the only point where the tx_code verdict applies is **this POST's response**. The preparation steps above
+        // The only point where the tx_code verdict applies is **this POST's response**. The preparation steps above
         // (grant type check, endpoint validation, authorization server metadata fetch, issuance target check) are
         // unrelated to the code, so they are not wrapped in `tokenRequestFailed` — wrapping them would show
         // "Wrong code." to a user who entered the correct code.

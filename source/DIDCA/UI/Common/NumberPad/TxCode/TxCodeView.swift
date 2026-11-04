@@ -18,7 +18,7 @@
 
 import SwiftUI
 
-// Design spec screen 22 (TX Code · Empty). Reuses the same shared parts as the PIN screen (DigitBoxView · NumberPadView),
+// TX Code input screen. Reuses the same shared parts as the PIN screen (DigitBoxView · NumberPadView),
 // but is separate from the PIN auth logic (PINViewModel). The digit count varies with length (prepared for tx_code.length injection).
 struct TxCodeView: View {
 
@@ -49,6 +49,7 @@ struct TxCodeView: View {
                 Image(.icClose)
                     .padding(20)
             }
+            .accessibilityIdentifier("closeButton")
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(viewModel.title)
@@ -70,9 +71,9 @@ struct TxCodeView: View {
                 Spacer()
 
                 // There is no error state — if the code is wrong this screen just closes and a dialog
-                // appears on top of the calling screen (TXC-E-01).
+                // appears on top of the calling screen.
                 // Unlike a PIN, tx_code isn't a secret but a transaction code given by the issuer —
-                // design spec 22/22a shows the entered digits as is, without masking.
+                // The entered digits are shown as is, without masking.
                 DigitBoxView(maskDigits: false,
                              digits: $viewModel.code,
                              maxDigits: viewModel.length,

@@ -19,11 +19,11 @@
 import Foundation
 import DIDWalletSDK
 
-// Normalizes user-facing errors by where they originate. Mapped to the design spec common items COM-02/03/04.
-//   .server  : non-2xx response — preserves backend code/description. (COM-04) Accepts both `HttpClient`'s `ServerError`
+// Normalizes user-facing errors by where they originate. Mapped to the design spec's common error cases.
+//   .server  : non-2xx response — preserves backend code/description. Accepts both `HttpClient`'s `ServerError`
 //              and the `CommunicationSDKError` that SDK `CommunicationClient` throws carrying the raw body.
-//   .network : URLError — transport-layer failures such as no connection, timeout, unreachable. Shows a fixed message. (COM-02)
-//   .other   : everything else (DIDWalletSDK errors, TokenGeneratorError, DecodingError, NSError validation, etc.). (COM-03)
+//   .network : URLError — transport-layer failures such as no connection, timeout, unreachable. Shows a fixed message.
+//   .other   : everything else (DIDWalletSDK errors, TokenGeneratorError, DecodingError, NSError validation, etc.).
 //              Shown via Swift's default string representation, so the enum case / domain is visible as-is.
 enum AppError: Error {
     case server(code: String, description: String)
@@ -53,7 +53,7 @@ enum AppError: Error {
     /// **There are two formats.** The OpenDID backend uses `{code, description}`, but the OID4VCI endpoints
     /// (`/token` · `/credential` · `/nonce`) are an OAuth 2.0 server and answer with `{error, error_description}` (RFC 6749 §5.2).
     /// Failing to read the latter discards the server's failure reason entirely — this is why the tx_code error's
-    /// `invalid_grant` description didn't appear on screen (COM-04 · TXC-E-01).
+    /// `invalid_grant` description didn't appear on screen.
     private static func serverResponse(embeddedIn error: CommunicationSDKError) -> ServerErrorResponse? {
         guard let data = error.message.data(using: .utf8) else { return nil }
         if let response = try? ServerErrorResponse(from: data) {
@@ -110,11 +110,11 @@ enum AppError: Error {
 
 extension OverlayManager {
     /// Error popup. If a fallback is given, that fallback text is shown instead only for SDK/unknown errors (.other — the raw
-    /// string isn't user-friendly) (e.g. VC-E-01 "Failed to delete. Try again."). Server response errors (.server) always
-    /// prefer the backend message, and network errors (.network) the COM-02 fixed message (fallback ignored).
+    /// string isn't user-friendly) (e.g. "Failed to delete. Try again."). Server response errors (.server) always
+    /// prefer the backend message, and network errors (.network) the fixed server-unreachable message (fallback ignored).
     /// - parameter onServerSettings: if given, attaches a `Server settings` link at the bottom **only when the server is
-    ///   unreachable (.network — COM-02 family)** (DLG-05 · ONB-E-01 · ONB-E-04). SDK-internal errors (COM-03) and
-    ///   server response errors (COM-04) occur after reaching the server, so the address isn't the cause and no link is shown.
+    ///   unreachable (.network)**. SDK-internal errors and
+    ///   server response errors occur after reaching the server, so the address isn't the cause and no link is shown.
     @MainActor
     func showErrorPopup(title: String,
                         error: Error,
@@ -131,7 +131,9 @@ extension OverlayManager {
         var link: (() -> Void)?
         if case .network = appError { link = onServerSettings }
         showPopup(
-            title: title,
+            // The server-unreachable dialog is titled "Error" wherever it carries the
+            // Server settings link, regardless of the step that failed.
+            title: link == nil ? title : "Error",
             message: message,
             primaryButtonTitle: "OK",
             primaryAction: primaryAction,

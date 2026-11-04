@@ -95,7 +95,7 @@ nonisolated enum OID4VPPresenter {
         // [Authoritative] Submission-target matching — same entry point as submit. The SDK looks at the request format to pick
         // the store and match (requests are single-format; throws if mixed/missing), noMatchedCredentials if the match is empty.
         //
-        // "Does not hold the requested credential at all" is not an error but a **notice case** (PRES-E-04) —
+        // "Does not hold the requested credential at all" is not an error but a **notice case** (the "no submittable credential" notice) —
         // since we decided not to distinguish it from zero ACTIVE by message, convert it to the same thing and throw here.
         let matched: [MatchedCredential]
         do {
@@ -136,9 +136,9 @@ nonisolated enum OID4VPPresenter {
     /// Match result → cards. Reads each of the two stores once and sends each credential to the mapper for its type.
     /// A credentialId found in neither store is skipped.
     ///
-    /// **Only ACTIVE ones become candidates** (PRES-B-06) — Inactive·Expired are excluded from both the single/multiple
+    /// **Only ACTIVE ones become candidates** — Inactive·Expired are excluded from both the single/multiple
     /// decision and the option list. See `CredentialStore.submittableIds` for the decision ladder.
-    /// If no card remains, the caller shows the PRES-E-04 notice.
+    /// If no card remains, the caller shows the "no submittable credential" notice.
     private static func renderDocuments(
         merged: [(credentialId: String, requiredCodes: Set<String>)],
         hWalletToken: String
@@ -179,11 +179,11 @@ nonisolated enum OID4VPPresenter {
 
     /// Checks whether the ACTIVE filter removed **all candidates of any single query** — if so, stop at the display step.
     ///
-    /// `renderDocuments` drops Inactive·Expired from the cards (PRES-B-06), but matching at the submit step doesn't know
+    /// `renderDocuments` drops Inactive·Expired from the cards, but matching at the submit step doesn't know
     /// that filter. So when query A has an active credential and query B's only candidate is revoked, a card
     /// remains, the consent screen opens, and after the user completes auth the SDK rejects the submission
     /// (`invalidSelectedCredentials` — every matched query must be included in the selection). An unfulfillable request
-    /// should go to **the same notice as not-held** (PRES-E-04), not a failure popup, and must end before auth.
+    /// should go to **the same notice as not-held** (`NoSubmittableCredentialError`), not a failure popup, and must end before auth.
     ///
     /// With `credential_sets`, the request may still be fulfilled by another combination even if one query is empty. That
     /// satisfaction check is owned by the SDK's authoritative `requireCredentialSetsSatisfied`, so the app doesn't keep a
@@ -204,7 +204,7 @@ nonisolated enum OID4VPPresenter {
         }
     }
 
-    /// SDK match failures that should read as **"nothing to submit"** — the PRES-E-04 notice, not an error popup.
+    /// SDK match failures that should read as **"nothing to submit"** — the "no submittable credential" notice, not an error popup.
     ///   · 06502 `noMatchedCredentials`      — holds no credential matching the request
     ///   · 06503 `credentialSetsNotSatisfied` — held credentials cannot fill the requested combination
     /// Other match errors (unsupported format, malformed DCQL, etc.) are real errors and are propagated as-is.
@@ -242,7 +242,7 @@ nonisolated enum OID4VPPresenter {
             VpPresentationClaim(
                 code: claim.code,
                 label: claim.caption,
-                // Image claims (portrait, etc.) are drawn as images instead of value text — PRES-B-04.
+                // Image claims (portrait, etc.) are drawn as images instead of value text.
                 value: ImageClaim.claimValue(type: claim.type, encoded: claim.value),
                 required: requiredCodes.contains(claim.code)
             )
@@ -289,7 +289,7 @@ nonisolated enum OID4VPPresenter {
     /// `consentItems` → screen rows. Items to filter out, nesting decisions and order follow **the same rules** as the detail screen
     /// (`SdJwtClaimDisplay.consentRows`). Here we only add whether each is REQUIRED on top of that result.
     ///
-    /// **Nesting moves as a whole** (PRES-B-03) — one parent checkbox toggles the entire subtree, and children have
+    /// **Nesting moves as a whole** — one parent checkbox toggles the entire subtree, and children have
     /// no individual checkboxes. A child's `code` is used only when building the submission set.
     ///
     /// Required-ness **only comes from the parent and propagates down** — if a parent is REQUIRED its entire subtree is
@@ -326,7 +326,7 @@ nonisolated enum OID4VPPresenter {
     /// the app uses `namespace`·`element name` only to draw on screen (it does not assemble codes from the two).
     ///
     /// Exposure is all held elements, REQUIRED is the codes the match pointed to. Elements with empty values are not filtered
-    /// either (decision 2026-08-11) — even while the issuer server sends empty values, what goes out stays visible as-is.
+    /// either — even while the issuer server sends empty values, what goes out stays visible as-is.
     private static func mdocDocument(
         _ cred: MdocCredentialItem,
         requiredCodes: Set<String>

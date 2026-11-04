@@ -38,6 +38,7 @@ struct NavBar: View {
             Button(action: action) {
                 Image(icon).padding()
             }
+            .accessibilityIdentifier(icon == .icCloseWhite ? "closeButton" : "backButton")
 
             Text(title)
                 .font(.pretendard(size: 17, weight: .semibold))

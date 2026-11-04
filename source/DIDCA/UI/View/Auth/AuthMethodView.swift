@@ -31,6 +31,7 @@ struct AuthMethodView: View {
                         .foregroundStyle(.white)
                         .padding()
                 }
+                .accessibilityIdentifier("backButton")
                 Text("Authentication")
                     .font(.pretendard(size: 17, weight: .semibold))
                     .foregroundStyle(.white)

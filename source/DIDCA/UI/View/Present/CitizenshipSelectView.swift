@@ -43,6 +43,7 @@ struct CitizenshipSelectView: View {
                     Image(.icBack)
                         .padding()
                 }
+                .accessibilityIdentifier("backButton")
                 Text("Citizenship")
                     .font(.pretendard(size: 17, weight: .semibold))
                     .foregroundStyle(.black)

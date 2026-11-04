@@ -25,13 +25,13 @@ final class BiometricsViewModel {
 
     // Enable button action. Shows loading only during the token request (iOS shows the biometric prompt).
     func enable(onSuccess: @escaping () -> Void) async {
-        // Pre-check for already registered (SET-E-03) / biometrics not enrolled · unsupported · locked (BIO-E-01/02/03).
+        // Pre-check for already registered / biometrics not enrolled · unsupported · locked.
         // Block before key generation and keep the screen with only a notice dialog
         // (onSuccess not called → modal not closed).
         if let blocked = Biometrics.enrollmentBlock() {
             OverlayManager.shared.showPopup(
-                title: "Notification",
-                message: blocked,
+                title: blocked.title,
+                message: blocked.message,
                 primaryButtonTitle: "OK"
             )
             return
@@ -41,13 +41,13 @@ final class BiometricsViewModel {
             let hWalletToken = try await TokenGenerator.requestWalletToken(purpose: .CREATE_DID)
             OverlayManager.shared.hideLoading()
 
-            // Biometric prompt failures (BIO-E-04/05) are thrown as BiometricError.
+            // Biometric prompt failures (cancel, failure, timeout) are thrown as BiometricError.
             try WalletKeys.generateBio(hWalletToken: hWalletToken)
             onSuccess()
         } catch let bioErr as BiometricError {
             OverlayManager.shared.hideLoading()
             OverlayManager.shared.showPopup(
-                title: "Notification",
+                title: BiometricError.dialogTitle,
                 message: bioErr.message,
                 primaryButtonTitle: "OK"
             )

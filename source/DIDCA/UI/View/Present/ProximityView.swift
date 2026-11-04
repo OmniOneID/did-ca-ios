@@ -17,11 +17,11 @@
 
 import SwiftUI
 
-/// Proximity presentation (design spec 25a · Present · Proximity (iOS)).
+/// Proximity presentation (Present · Proximity, iOS).
 ///
 /// iOS doesn't support holder-side NFC Device Engagement, so the bottom "Or share via NFC" area is
-/// **not rendered at all** (PRES-B-08). No disabled state or unsupported notice either; proximity presentation
-/// is a single QR Device Engagement path. For the same reason Settings has no Proximity group (NFC-E-03).
+/// **not rendered at all**. No disabled state or unsupported notice either; proximity presentation
+/// is a single QR Device Engagement path. For the same reason Settings has no Proximity group.
 ///
 /// The QR text is the communication SDK's engagement — the coordinator opens the session (`startProximity`) and this screen
 /// only draws its result (`qrString`). When a reader attaches and sends a request, the coordinator stacks the consent screen on top.
@@ -33,7 +33,7 @@ struct ProximityView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // PRES-B-07 — the primary-background title bar serves as the screen title, so no large title in the body.
+            // The primary-background title bar serves as the screen title, so no large title in the body.
             HStack {
                 Button(action: onBack) {
                     Image(.icBack)
@@ -41,6 +41,7 @@ struct ProximityView: View {
                         .foregroundStyle(.white)
                         .padding()
                 }
+                .accessibilityIdentifier("backButton")
                 Text("Present in Person")
                     .font(.pretendard(size: 17, weight: .semibold))
                     .foregroundStyle(.white)
@@ -58,11 +59,12 @@ struct ProximityView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 16)
 
-            // With no bottom NFC area, the QR is centered within the remaining space (PRES-B-08).
+            // With no bottom NFC area, the QR is centered within the remaining space.
             Spacer()
             Group {
                 if let qrString {
                     QRCodeView(content: qrString, size: 240)
+                        .accessibilityIdentifier("qrImage")
                 } else {
                     Color.clear.frame(width: 240, height: 240)
                 }

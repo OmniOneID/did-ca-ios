@@ -26,7 +26,7 @@ import DIDWalletSDK
 extension AppCoordinator {
 
     /// VC deletion — auth → server revocation + wallet deletion → list refresh → back to docs. Navigates to docs
-    /// only on success (the card disappears from the list); on failure the card stays + error popup (design VC-E-01).
+    /// only on success (the card disappears from the list); on failure the card stays + error popup.
     ///
     /// W3C is revoked via `RevokeVcProtocol` (propose/request/confirm), OID4VCI-issued items (SD-JWT·mDoc) via
     /// `RevokeOID4VcProtocol` — their store is separate from the W3C `WalletAPI`, so the path differs.
@@ -47,7 +47,15 @@ extension AppCoordinator {
     ///
     /// If there is no issuer record (items issued before this feature) or the issuer doesn't support revocation, there is
     /// no server signature, so it is deleted locally only, without auth, as before.
+    /// The same goes for an item the issuer has already revoked (a successful Status List read said INVALID) —
+    /// nothing is left to revoke, so no auth is asked for (same as the Android app).
     private func revokeOID4VC(_ cred: Credential) async {
+        if CredentialStore.shared.isConfirmedRevoked(credentialId: cred.id) {
+            await runDeletion {
+                try await RevokeOID4VcProtocol.deleteLocally(credentialId: cred.id)
+            }
+            return
+        }
         OverlayManager.shared.showLoading()
         let route: RevokeOID4VcProtocol.Route
         do {
@@ -80,8 +88,8 @@ extension AppCoordinator {
         }
     }
 
-    /// Common deletion wrap-up — run `work` while loading → list refresh → back to docs on OK of the completion dialog (VC-B-04);
-    /// VC-E-01 on failure.
+    /// Common deletion wrap-up — run `work` while loading → list refresh → back to docs on OK of the completion dialog;
+    /// error popup on failure.
     private func runDeletion(_ work: () async throws -> Void) async {
         OverlayManager.shared.showLoading()
         defer { OverlayManager.shared.hideLoading() }
@@ -97,7 +105,7 @@ extension AppCoordinator {
                 primaryAction: { [weak self] in self?.popToMain() }
             )
         } catch {
-            // VC-E-01: deletion failed → show the server message if any, otherwise the fallback. Card stays (no navigation).
+            // Deletion failed → show the server message if any, otherwise the fallback. Card stays (no navigation).
             OverlayManager.shared.showErrorPopup(
                 title: "Failed to delete",
                 error: error,
@@ -126,9 +134,10 @@ extension AppCoordinator {
                 primaryAction: { [weak self] in self?.popToMain() }
             )
         } catch {
-            // PRES-E-01: submit failed → back to Certs (Docs) on OK.
+            // Submit failed → back to Certs (Docs) on OK.
+            // The design spec gives no title; "Error" matches the Android app.
             OverlayManager.shared.showErrorPopup(
-                title: "Failed to submit",
+                title: "Error",
                 error: error,
                 primaryAction: { [weak self] in self?.popToMain() }
             )
@@ -167,9 +176,9 @@ extension AppCoordinator {
                 primaryAction: { [weak self] in self?.popToMain() }
             )
         } catch {
-            // PRES-E-01 (OID4VP): submit failed → back to Certs (Docs) on OK.
+            // OID4VP submit failed → back to Certs (Docs) on OK.
             OverlayManager.shared.showErrorPopup(
-                title: "Failed to submit",
+                title: "Error",
                 error: error,
                 primaryAction: { [weak self] in self?.popToMain() }
             )
@@ -199,9 +208,9 @@ extension AppCoordinator {
                 primaryAction: { [weak self] in self?.popToMain() }
             )
         } catch {
-            // PRES-E-01 (ZKP): submit failed → back to Certs (Docs) on OK.
+            // ZKP submit failed → back to Certs (Docs) on OK.
             OverlayManager.shared.showErrorPopup(
-                title: "Failed to submit",
+                title: "Error",
                 error: error,
                 primaryAction: { [weak self] in self?.popToMain() }
             )
@@ -210,7 +219,7 @@ extension AppCoordinator {
 
     // MARK: - Pre-issuance checks
 
-    /// ISS-E-04 — web-input issuance (Open DID web form · OID4VCI user-initiation) sends the username to the server,
+    /// Web-input issuance (Open DID web form · OID4VCI user-initiation) sends the username to the server,
     /// so a wallet without a name is blocked right after target selection, before auth and the issuance request. On OK it stays on Add list.
     /// QR Credential Offer (pre-authorized code) doesn't use the username, so it is not covered.
     func canStartWebIssuance() -> Bool {
@@ -242,14 +251,16 @@ extension AppCoordinator {
         setStack([.issueSuccess])
     }
 
-    /// Issuance failure tail — ISS-E-01~03. Pressing OK returns to Certs (Docs).
+    /// Issuance failure tail. Pressing OK returns to Certs (Docs).
     /// Loading is not hidden separately — `showErrorPopup` → `showPopup` already calls `hideLoading()`.
     ///
     /// - parameter fallback: wording to show instead for an error with no message in the response (`.other`).
-    ///   TXC-E-01's "Wrong code." takes this path — a server/network message takes precedence if present.
+    ///   The tx_code "Wrong code." takes this path — a server/network message takes precedence if present.
+    ///
+    /// The design spec gives no title for these dialogs; "Issuance failed" matches the Android app.
     func failIssuance(_ error: Error, fallback: String? = nil) {
         OverlayManager.shared.showErrorPopup(
-            title: "Failed to issue",
+            title: "Issuance failed",
             error: error,
             fallback: fallback,
             primaryAction: { [weak self] in self?.popToMain() }

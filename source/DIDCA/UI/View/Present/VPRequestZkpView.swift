@@ -84,6 +84,7 @@ struct VPRequestZkpView: View {
                     .foregroundStyle(.white)
                     .padding()
             }
+            .accessibilityIdentifier("backButton")
             Text("Presentation")
                 .font(.pretendard(size: 17, weight: .semibold))
                 .foregroundStyle(.white)
@@ -153,7 +154,7 @@ struct VPRequestZkpView: View {
         }
     }
 
-    /// PRES-B-12 — same Reject / Accept layout as the SD screen (VPRequestView). Reject is the same cancel path as Back.
+    /// Same Reject / Accept layout as the SD screen (VPRequestView). Reject is the same cancel path as Back.
     private var submitBar: some View {
         HStack(spacing: 10) {
             Button(action: onBack) {
@@ -167,6 +168,7 @@ struct VPRequestZkpView: View {
                             .stroke(.customPrimary, lineWidth: 1.5)
                     )
             }
+            .accessibilityIdentifier("rejectButton")
 
             Button(action: onSubmit) {
                 Text("Accept")
@@ -183,6 +185,7 @@ struct VPRequestZkpView: View {
                     .shadow(color: canSubmit ? .customPrimary.opacity(0.3) : .clear,
                             radius: 3, x: 0, y: 2)
             }
+            .accessibilityIdentifier("acceptButton")
             .disabled(!canSubmit)
         }
         .padding(.horizontal, 16)

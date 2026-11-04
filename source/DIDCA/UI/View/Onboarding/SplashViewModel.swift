@@ -33,24 +33,24 @@ final class SplashViewModel {
     /// Whether the unlockAuth modal must be shown once right before routing the bootstrap result — the SDK's `isLock()` result.
     var needsLockAuth: Bool = false
 
-    /// true while the server settings popup (SPL-01) is shown — the basis for the screen hiding its spinner.
+    /// true while the server settings popup is shown — the basis for the screen hiding its spinner.
     var isServerSetupPending: Bool = false
 
-    /// Progress stage of the server settings popup (SPL-01). Splash's `.task` is cancelled when the Server URL screen is
+    /// Progress stage of the server settings popup. Splash's `.task` is cancelled when the Server URL screen is
     /// pushed on top and **restarts** on pop, so whether the popup was shown is remembered by the VM, not the task.
     private enum ServerSetupPhase { case notPrompted, prompting, resolved }
     private var serverSetupPhase: ServerSetupPhase = .notPrompted
     /// Tasks waiting for the popup's answer — kept as a list since the cancelled original task and the restarted one may overlap.
     private var serverSetupWaiters: [CheckedContinuation<Void, Never>] = []
 
-    /// true after the ONB-E-01 popup is shown — its OK terminates the app, so a later restarted task doesn't rerun initialization.
+    /// true after the initialization-failure popup is shown — its OK terminates the app, so a later restarted task doesn't rerun initialization.
     private var hasFailed: Bool = false
 
-    /// SPL-01~03 — when onboarding isn't finished (first launch · relaunch after quitting mid-onboarding), the server
-    /// settings popup is shown **before** talking to the server. Use default keeps **the saved settings as is** (SPL-02 — the
+    /// When onboarding isn't finished (first launch · relaunch after quitting mid-onboarding), the server
+    /// settings popup is shown **before** talking to the server. Use default keeps **the saved settings as is** (the
     /// build default if nothing was ever saved, otherwise the saved value; the saved value is not cleared). Server settings goes
     /// through the Server URL screen (no back) and, after returning via Save·Cancel — without showing the popup again —
-    /// continues initialization with the saved value at that point. Saved values apply immediately (SRV-E-07), so the following createWallet uses the new address.
+    /// continues initialization with the saved value at that point. Saved values apply immediately, so the following createWallet uses the new address.
     /// Not shown once onboarding is finished (Splash → Unlock).
     ///
     /// Shown **only once** per VM. Pushing the Server URL screen makes Splash disappear and cancels `.task`;
@@ -93,10 +93,10 @@ final class SplashViewModel {
     }
 
     /// - parameter coordinator: used by the `Server settings` link attached at the bottom of the error popup to go to
-    ///   the Server URL screen when initialization ends in a **server unreachable** failure (ONB-E-01). For other causes
+    ///   the Server URL screen when initialization ends in a **server unreachable** failure. For other causes
     ///   the link isn't attached, so it isn't used.
     func bootstrap(coordinator: AppCoordinator) async -> Route? {
-        // Going back and forth to the Server URL screen while the ONB-E-01 popup is shown restarts `.task` — since that popup's OK
+        // Going back and forth to the Server URL screen while the initialization-failure popup is shown restarts `.task` — since that popup's OK
         // terminates the app, initialization isn't rerun here (connecting to the new address is up to the relaunched Splash).
         guard !hasFailed else { return nil }
         async let minDelay: Void? = try? await Task.sleep(for: .seconds(0.5))
@@ -124,7 +124,7 @@ final class SplashViewModel {
         // no userId (registration web view not finished) → step1.
         // holder DID exists (end of step2) → step3.
         // otherwise (userId present, no keys) → step2. This also covers quitting after registration but before binding —
-        // the web view isn't shown again (ONB-E-02) and binding happens on entering Step 2. An Unlock PIN lost in between
+        // the web view isn't shown again and binding happens on entering Step 2. An Unlock PIN lost in between
         // isn't asked again; binding proceeds without a lock (StepViewModel).
         if Preference.isUserRegistered() {
             return .main
@@ -138,10 +138,10 @@ final class SplashViewModel {
         return .onboarding(step: .step2)
     }
 
-    /// ONB-E-01 — Wallet creation failed. OK terminates the app (same policy as UNLK-A-E-02's exit(0)).
+    /// Wallet creation failed. OK terminates the app (same policy as closing the Unlock PIN screen, which calls exit(0)).
     ///
-    /// If the server was unreachable (COM-02), a `Server settings` link is attached at the bottom, and on returning from that
-    /// screen **the same popup is shown again** (ONB-E-01). The saved address applies immediately (SRV-E-07), but this popup's OK
+    /// If the server was unreachable, a `Server settings` link is attached at the bottom, and on returning from that
+    /// screen **the same popup is shown again**. The saved address applies immediately, but this popup's OK
     /// terminates the app, so reconnecting with the new address is up to the relaunched Splash.
     private func showInitializationFailure(_ error: Error, coordinator: AppCoordinator) {
         hasFailed = true
@@ -159,7 +159,7 @@ final class SplashViewModel {
     }
 
     /// - Returns: nil on success, the **last attempt's error** on failure. The cause is kept because the popup wording and
-    ///   whether the Server settings link is shown depend on the COM-02/03/04 branch (ONB-E-01).
+    ///   whether the Server settings link is shown depend on the cause (server unreachable / SDK error / server response).
     private func createWalletWithRetry() async -> Error? {
         var lastError: Error?
         for attempt in 1...maxCreateWalletAttempts {

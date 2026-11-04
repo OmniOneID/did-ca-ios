@@ -43,7 +43,7 @@ import DIDWalletSDK
 nonisolated enum UpdateUserProtocol {
 
     /// Create the bio key + reflect #bio in the DID document. Entry point for Settings > Add Biometrics.
-    /// generateBio throws biometric prompt failures as BiometricError(BIO-E) — the caller branches on it.
+    /// generateBio throws biometric prompt failures as BiometricError — the caller branches on it.
     static func addBioKey(passcode: String) async throws {
         let hWalletToken = try await TokenGenerator.requestWalletToken(purpose: .UPDATE_DID)
         try WalletKeys.generateBio(hWalletToken: hWalletToken)

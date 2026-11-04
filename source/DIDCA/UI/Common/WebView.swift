@@ -45,6 +45,10 @@ struct WebView: UIViewRepresentable {
     /// with the default value (did-ca parity). Used, like the issuance form whose result comes over the JS bridge,
     /// so that incidental alerts fired by the page (e.g. a bogus "failure" alert right after success) don't disrupt the flow.
     var silenceJSDialogs: Bool = false
+    /// If set, the start page must produce a response or a failure within this time, otherwise `onLoadFailure(nil)`
+    /// fires (a connect timeout). Some loads never call back at all — WebKit silently refuses restricted ports
+    /// such as `:1` — and would otherwise leave a blank page up indefinitely.
+    var firstLoadTimeout: Duration? = nil
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onMessage: onMessage,
@@ -80,6 +84,9 @@ struct WebView: UIViewRepresentable {
         webView.uiDelegate = context.coordinator
         webView.allowsLinkPreview = false
         webView.load(URLRequest(url: url))
+        if let firstLoadTimeout {
+            context.coordinator.startFirstLoadWatchdog(after: firstLoadTimeout)
+        }
         return webView
     }
 
@@ -105,6 +112,9 @@ struct WebView: UIViewRepresentable {
         /// Whether the first main-frame page has ever loaded successfully (2xx) — used to limit error interception
         /// to the start page only. Recreating the web view on retry (`.id(attempt)`) also creates a new coordinator, resetting it.
         private var hasLoadedMainFrame = false
+        /// Whether the start page has produced anything — a main-frame response or a failure. The first-load watchdog
+        /// only fires while this is still false.
+        private var firstLoadSettled = false
         var registeredHandlers: [String] = []
 
         init(onMessage: ((String, Any) -> Void)?,
@@ -121,6 +131,16 @@ struct WebView: UIViewRepresentable {
             self.completionScheme = completionScheme
             self.onCompletionURI = onCompletionURI
             self.onLoadFailure = onLoadFailure
+        }
+
+        func startFirstLoadWatchdog(after timeout: Duration) {
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: timeout)
+                guard let self, !self.firstLoadSettled else { return }
+                self.firstLoadSettled = true
+                self.onLoadingChanged?(false)
+                self.onLoadFailure?(nil)
+            }
         }
 
         // MARK: - WKScriptMessageHandler
@@ -162,6 +182,7 @@ struct WebView: UIViewRepresentable {
         ///    the caller prevents duplicates (the coordinator's in-progress flag), so going through both is harmless.
         /// 2. Navigation the app cut off itself (completion-scheme interception, host block, non-2xx cancel) is not a load failure.
         private func handleNavigationFailure(_ error: Error, phase: String) {
+            firstLoadSettled = true
             let error = error as NSError
             // Both NSURLErrorDomain and WebKitErrorDomain put the failing URL under this key.
             let failingURL = error.userInfo[NSURLErrorFailingURLErrorKey] as? URL
@@ -198,6 +219,7 @@ struct WebView: UIViewRepresentable {
                 decisionHandler(.allow)
                 return
             }
+            firstLoadSettled = true
             guard response.statusCode >= 400, !hasLoadedMainFrame else {
                 if (200...299).contains(response.statusCode) {
                     hasLoadedMainFrame = true
@@ -246,7 +268,8 @@ struct WebView: UIViewRepresentable {
         //
         // JS native UI requests are handled with the app's custom popup (OverlayManager) instead of the OS default popup.
         // Each completionHandler must be called exactly once or JS stalls — this is guaranteed because the custom popup
-        // closes only via its buttons (backdrop tap disabled) and every button action calls the handler.
+        // closes only through a button action — a backdrop tap runs the default button's action — and every
+        // button action calls the handler.
 
         /// `window.alert()` → single OK-button popup. Tapping OK resumes JS.
         func webView(_ webView: WKWebView,

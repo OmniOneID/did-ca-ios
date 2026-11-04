@@ -16,7 +16,7 @@
 
 import Foundation
 import DIDWalletSDK
-import MdocProximitySDK
+import MdocDevice
 
 // MARK: - Proximity presentation (ISO/IEC 18013-5)
 //
@@ -71,8 +71,8 @@ final class ProximityPresenter {
     init() {
         var configuration = MdocDeviceConfiguration()
         // The auth method (mac/ecdsa) is decided by the wallet SDK in `createDeviceResponse` based on key capabilities
-        // (`MdocDeviceResponse.authMethods`) — the communication SDK has no such setting (removed in the 9/15 build).
-        // Settings · BLE Transfer Mode (BLE-03~05) — Both advertises both modes; a single mode advertises only that one.
+        // (`MdocDeviceResponse.authMethods`) — the communication SDK has no such setting.
+        // Settings · BLE Transfer Mode — Both advertises both modes; a single mode advertises only that one.
         // It can only narrow, not widen (start fails if the device does not support the mode).
         configuration.bleAdvertiseMode = switch Preference.bleTransferMode {
         case .both:             .both
@@ -84,7 +84,7 @@ final class ProximityPresenter {
         // the channel doesn't come up, the communication SDK falls back to GATT in the same mode, so leaving it on loses no path.
         // (The communication SDK default is false, based on P6 measurements — GATT was faster for a 21KB response.)
         configuration.l2capUpgrade = true
-        // PRES-E-09 (9/23-2 edition) — 90s waiting for reader connection, 60s waiting for consent/response. Same as the communication SDK
+        // Session timeouts — 90s waiting for reader connection, 60s waiting for consent/response. Same as the communication SDK
         // defaults, but stated explicitly since it's a design spec requirement, so we aren't dragged along by SDK default changes.
         configuration.engagementTimeout = 90
         configuration.responseTimeout = 60
@@ -119,7 +119,7 @@ final class ProximityPresenter {
 
     /// Matches the incoming request against held mDocs and converts it into consent screen data.
     ///
-    /// Display rules are PRES-B-10 (9/23 edition) — requested elements are REQUIRED, and elements the credential holds **outside the request**
+    /// Display rules — requested elements are REQUIRED, and elements the credential holds **outside the request**
     /// are OPTIONAL (off by default, submitted additionally when turned on). For a Full request there are no out-of-request elements, so all are REQUIRED.
     /// Elements the reader can't get filled (`missing`) are not held, so they aren't drawn; ambiguous codes (`isAmbiguous`) are
     /// also dropped from OPTIONAL since the SDK rejects their submission (06611). Cards are per credential, so when one credential
@@ -130,7 +130,7 @@ final class ProximityPresenter {
         }
         let hWalletToken = try await TokenGenerator.requestWalletToken(purpose: .LIST_VC_AND_PRESENT_VP)
 
-        // If no docRequest has any candidate the SDK throws (06600) — convert it into the not-held notice (PRES-E-04).
+        // If no docRequest has any candidate the SDK throws (06600) — convert it into the not-held notice.
         do {
             matched = try WalletAPI.shared.matchMdocRequest(hWalletToken: hWalletToken,
                                                             deviceRequest: deviceRequest)
@@ -150,7 +150,7 @@ final class ProximityPresenter {
 
         let stored = try WalletAPI.shared.getAllOID4VCs(hWalletToken: hWalletToken)
             .compactMap { $0 as? MdocCredentialItem }
-        // Only ACTIVE ones become candidates (PRES-B-06). See `CredentialStore.submittableIds` for the decision ladder.
+        // Only ACTIVE ones become candidates. See `CredentialStore.submittableIds` for the decision ladder.
         let submittable = await CredentialStore.shared.submittableIds(
             among: orderedIds.compactMap { id in stored.first { $0.id == id } }
         )
@@ -174,7 +174,7 @@ final class ProximityPresenter {
         }
         guard !documents.isEmpty else { throw NoSubmittableCredentialError() }
 
-        // Neither SDK provides the reader's name (readerAuth not interpreted) — fixed label. Pending reply on PRES-B-09.
+        // Neither SDK provides the reader's name (readerAuth not interpreted) — fixed label. Pending a reply on the design spec.
         return VpPresentationSummary(verifierName: "Proximity Verifier", documents: documents)
     }
 
@@ -184,7 +184,7 @@ final class ProximityPresenter {
     ///
     /// Consent is expressed by **trimming and appending to** the `matchMdocRequest` result — elements of unpicked credentials
     /// are removed from the array, and out-of-request elements the user turned on (OPTIONAL) are appended after that credential's
-    /// `claimCodes` using the `consentItems` codes as-is (PRES-B-10, SDK 841ba5f~). Requested elements cannot be turned off.
+    /// `claimCodes` using the `consentItems` codes as-is (SDK 841ba5f~). Requested elements cannot be turned off.
     /// - parameter selectedCodes: credential id → OPTIONAL codes the user turned on.
     /// - parameter passcode: the input value for PIN auth, nil for BIO (the SDK shows the biometric prompt at signing time).
     func respond(selectedCodes: [String: Set<String>], passcode: String?) async throws {
@@ -274,18 +274,18 @@ extension MdocProximityError {
     /// The design spec has no exception spec for proximity sessions, so these are provisional messages — pending reply.
     var userMessage: String {
         switch self {
-        // Messages follow design spec PRES-E-06~09 (9/15 edition). After OK, all return to Certs — coordinator `failProximity`.
-        // PRES-E-06 — does not distinguish turned-off from permission-denied; puts the remedy in one sentence.
+        // Messages follow the design spec. After OK, all return to Certs — coordinator `failProximity`.
+        // Bluetooth off / no permission — does not distinguish turned-off from permission-denied; puts the remedy in one sentence.
         case .configurationRequired(.enableBluetooth), .configurationRequired(.grantPermission):
             return "Turn on Bluetooth and allow access to present in person."
-        // PRES-E-07 — a hardware/OS reason the user can't fix, so no turn-on/allow guidance is added.
+        // BLE unavailable — a hardware/OS reason the user can't fix, so no turn-on/allow guidance is added.
         case .bleUnavailable:
             return "Bluetooth is not available on this device."
-        // PRES-E-08 — no common transport to advertise (result of a settings combination such as BLE Transfer Mode). No specific
-        // guidance on which setting to change (same policy as BLE-E-01 — compatibility guidance belongs to the operations guide).
+        // Unsupported transport — no common transport to advertise (result of a settings combination such as BLE Transfer Mode). No specific
+        // guidance on which setting to change (compatibility guidance belongs to the operations guide).
         case .unsupportedTransmissionTechnology:
             return "This device can't present in person with the current transfer settings."
-        // PRES-E-09 — the four session errors.
+        // The four session errors.
         case .engagementTimeout:
             return "No verifier connected in time. Try again."
         case .peerDisconnected, .terminatedByPeer:

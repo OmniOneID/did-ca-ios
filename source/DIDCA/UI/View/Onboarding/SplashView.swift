@@ -28,7 +28,7 @@ struct Splash: View {
                 .resizable()
                 .frame(width: 120, height: 120)
 
-            // SPL-01 — hide the spinner while the server settings popup is shown (its space is kept).
+            // Hide the spinner while the server settings popup is shown (its space is kept).
             DotSpinner()
                 .padding()
                 .opacity(vm.isServerSetupPending ? 0 : 1)
@@ -37,7 +37,7 @@ struct Splash: View {
         .background(Color.backgroundGray.ignoresSafeArea())
         .task {
             await vm.promptServerSetupIfNeeded(coordinator: coordinator)
-            // Pushing the Server URL screen (SPL-03) covers Splash and cancels this task; returning via pop starts
+            // Pushing the Server URL screen covers Splash and cancels this task; returning via pop starts
             // a new task. A cancelled task that received the answer backs off here and leaves initialization/routing to the new task —
             // if both proceeded, createWallet would silently die with -999 or setRoot would be called twice.
             guard !Task.isCancelled else { return }

@@ -25,7 +25,7 @@ struct ActionSheetContent : Identifiable
     var icon : ImageResource? = nil
     var title : String
     /// nil means an icon row, otherwise a **selection row** — design spec BottomSheet `select` mode. Only the current-value row
-    /// has a paleOrange background and a check on the right (BLE-02).
+    /// has a paleOrange background and a check on the right.
     var selected : Bool? = nil
     var action : () -> Void
 }

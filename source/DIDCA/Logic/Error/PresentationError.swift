@@ -18,7 +18,7 @@
 
 import Foundation
 
-/// No credential available for presentation (PRES-E-04).
+/// No credential available for presentation — shown as the "No available certificates" notice.
 ///
 /// **The two cases are not distinguished** — not holding the requested credential at all, and holding it but
 /// with 0 ACTIVE (all Inactive/Expired), are treated the same. The action the user should take differs by situation,

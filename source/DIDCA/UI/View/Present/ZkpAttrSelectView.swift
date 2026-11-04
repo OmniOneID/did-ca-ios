@@ -42,6 +42,7 @@ struct ZkpAttrSelectView: View {
                         .foregroundStyle(.white)
                         .padding()
                 }
+                .accessibilityIdentifier("backButton")
                 Text(label)
                     .font(.pretendard(size: 17, weight: .semibold))
                     .foregroundStyle(.white)
@@ -85,6 +86,7 @@ struct ZkpAttrSelectView: View {
                             .padding(.vertical, 16)
                             .background(selectedIndex == idx ? Color.paleOrange : .white)
                         }
+                        .accessibilityIdentifier("optionLabel")
                         .buttonStyle(.plain)
 
                         if idx < availableValues.count - 1 {

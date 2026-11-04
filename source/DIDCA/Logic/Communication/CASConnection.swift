@@ -19,7 +19,7 @@ import Foundation
 import DIDWalletSDK
 
 enum CASConnection {
-    // Applied immediately on save (SRV-E-07) — not cached; read on every request.
+    // Applied immediately on save — not cached; read on every request.
     static var host: String { URLs.CAS_URL }
 }
 

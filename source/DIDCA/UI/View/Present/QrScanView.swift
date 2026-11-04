@@ -114,6 +114,7 @@ struct QrScanView: View {
                     Image(.icCloseWhite)
                         .padding()
                 }
+                .accessibilityIdentifier("closeButton")
             }
             .frame(height: 56)
 
@@ -149,7 +150,7 @@ struct QrScanView: View {
         return features.compactMap(\.messageString).first
     }
     #else
-    /// Camera permission check — request if undetermined; show the QR-E-01 notice if denied.
+    /// Camera permission check — request if undetermined; show the camera-permission notice if denied.
     private func resolveCameraPermission() async {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
@@ -165,8 +166,8 @@ struct QrScanView: View {
         }
     }
 
-    /// On permission denial — keep the QR scan screen and show the QR-E-01 notice dialog.
-    /// The user leaves the screen themselves via the top-left X (design QR-E-01 result screen: "QR scan · permission notice").
+    /// On permission denial — keep the QR scan screen and show the camera-permission notice dialog.
+    /// The user leaves the screen themselves via the top-left X (the design spec's "QR scan · permission notice" screen).
     private func showPermissionDeniedPopup() {
         OverlayManager.shared.showPopup(
             title: "Camera permission required",

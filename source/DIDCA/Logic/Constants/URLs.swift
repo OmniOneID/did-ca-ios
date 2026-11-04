@@ -18,10 +18,10 @@
 
 import Foundation
 
-/// The 6 server addresses — in the same order as the Endpoints card in design spec 29a (Settings · Server URL).
+/// The 6 server addresses — in the same order as the Endpoints card on the Settings · Server URL screen.
 ///
 /// `defaultValue` is **the build default and an immutable constant**. User settings (`ServerURLStore`) don't erase
-/// this value but layer on top of it, and resetting to Default (SRV-06) always returns here.
+/// this value but layer on top of it, and resetting to Default always returns here.
 nonisolated enum ServerEndpoint: String, CaseIterable, Sendable {
     case tas
     case cas
@@ -56,7 +56,7 @@ nonisolated enum ServerEndpoint: String, CaseIterable, Sendable {
 /// The address used by networking callers. If the user saved a Custom value on the Server URL screen, it's that value;
 /// otherwise `ServerEndpoint.defaultValue` (the build default).
 ///
-/// Reads the store every time — so a saved address takes effect from the very next request (SRV-E-07). Callers must
+/// Reads the store every time — so a saved address takes effect from the very next request. Callers must
 /// not store this value in a `static let`; read it every time a request is built.
 nonisolated enum URLs {
     static var TAS_URL      : String { ServerURLStore.value(.tas) }

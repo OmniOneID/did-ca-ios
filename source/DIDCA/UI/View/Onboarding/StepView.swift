@@ -198,6 +198,7 @@ struct StepView : View {
                     }
                     .shadow(color: .customPrimary.opacity(0.3), radius: 3, x: 0, y: 2)
             }
+            .accessibilityIdentifier("nextButton")
 
 
         }

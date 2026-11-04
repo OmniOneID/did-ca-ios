@@ -23,7 +23,7 @@ struct Popup: Identifiable, Equatable {
     let message: String
     let primaryButton: PopupButton
     let secondaryButton: PopupButton?
-    /// Text link placed **below** the button row (design spec DLG-05 · artboard 31a).
+    /// Text link placed **below** the button row.
     /// Meant only as an escape route that closes the dialog and sends to another screen, so not used for destructive actions.
     let linkButton: PopupButton?
     
@@ -47,11 +47,15 @@ struct PopupView: View {
     
     var body: some View {
         ZStack {
+            // A backdrop tap closes the dialog the same way its default button does:
+            // OK for a single-button dialog, Cancel (the secondary button) for a dual-button one. Every call site's
+            // actions already move on to the next screen, so closing never strands the user on a finished screen.
             Color.black.opacity(0.45)
                 .ignoresSafeArea()
-//                .onTapGesture {
-//                    onDismiss()
-//                }
+                .onTapGesture {
+                    (popup.secondaryButton ?? popup.primaryButton).action()
+                    onDismiss()
+                }
 
             VStack(spacing: 14) {
                 Text(LocalizedStringResource(stringLiteral:popup.title))
@@ -59,6 +63,7 @@ struct PopupView: View {
                     .foregroundStyle(.black)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("dialogTitle")
                 
                 Text(LocalizedStringResource(stringLiteral:popup.message))
                     .font(.pretendard(size: 14, weight: .regular))
@@ -90,6 +95,7 @@ struct PopupView: View {
                                         )
                                 )
                         }
+                        .accessibilityIdentifier("dialogCancelButton")
                     }
                     
                     Button {
@@ -110,11 +116,13 @@ struct PopupView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .shadow(color: .customPrimary.opacity(0.3), radius: 3, x: 0, y: 2)
                     }
+                    // A lone OK is `dialogButton`; with a secondary beside it the primary is the confirm action.
+                    .accessibilityIdentifier(popup.secondaryButton == nil ? "dialogButton" : "dialogConfirmButton")
                 }
 ////                .padding(.horizontal, 8)
 //                .padding(.bottom, 8)
 
-                // DLG-05 — OK is the default action and the link is reachable only via this path (never auto-selected).
+                // OK is the default action and the link is reachable only via this path (never auto-selected).
                 if let link = popup.linkButton {
                     Button {
                         link.action()
@@ -126,11 +134,15 @@ struct PopupView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 40)
                     }
+                    .accessibilityIdentifier("dialogLink")
                 }
             }
             .padding(24)
             .background(.white)
             .clipShape(RoundedRectangle(cornerRadius: 16))
+            // Taps on the card's empty area must not fall through to the backdrop.
+            .contentShape(RoundedRectangle(cornerRadius: 16))
+            .onTapGesture {}
             .padding(24)
             .transition(.scale(scale: 0.7).combined(with: .opacity))
         }

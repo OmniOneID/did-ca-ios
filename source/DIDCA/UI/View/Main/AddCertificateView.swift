@@ -81,6 +81,7 @@ struct AddCertificateView: View {
             Button(action: onBack) {
                 Image(.icBackWhite).padding()
             }
+            .accessibilityIdentifier("backButton")
 
             Text("Add certificate")
                 .font(.pretendard(size: 17, weight: .semibold))

@@ -54,7 +54,7 @@ final class OverlayManager {
         let secondary = secondaryButtonTitle.map {
             Popup.PopupButton(title: $0, action: secondaryAction ?? {})
         }
-        // DLG-05 — text link below the buttons. No action means no link (avoids a link with nothing to tap).
+        // Text link below the buttons. No action means no link (avoids a link with nothing to tap).
         let link = linkButtonTitle.flatMap { title in
             linkAction.map { Popup.PopupButton(title: title, action: $0) }
         }

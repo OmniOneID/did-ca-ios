@@ -28,7 +28,7 @@ final class StepViewModel {
     // (the lock choice is not asked again). The screen and view model are recreated when the Step changes, hence static.
     private static var pendingLockPasscode: String?
 
-    // ONB-E-04 — came back after Save in Server settings following a binding failure. Since the server changed, the Step 1
+    // Came back after Save in Server settings following a binding failure. Since the server changed, the Step 1
     // web view registration is redone, and after re-registration it goes to Step 2 with the previous lock choice (pendingLockPasscode), without the lock popup.
     private static var reregistering = false
 
@@ -48,11 +48,11 @@ final class StepViewModel {
         }
     }
 
-    // ONB-01 — opens the user registration web view. When registration finishes (ONB-03), saves userId · username and
-    // shows the lock popup. Binding is not done here but on entering Step 2 (ONB-03 · ONB-E-04).
+    // Opens the user registration web view. When registration finishes, saves userId · username and
+    // shows the lock popup. Binding is not done here but on entering Step 2.
     private func handleStep1Next(coordinator: AppCoordinator) {
         // Registration is done but Unlock PIN registration was closed with X, leaving us on Step 1 — treat it as no lock
-        // set and go straight to Step 2. Reopening the web view would register the same user twice (same reason as ONB-E-02).
+        // set and go straight to Step 2. Reopening the web view would register the same user twice (same reason Splash routes such a user to Step 2).
         if Preference.getUserId() != nil, !Self.reregistering {
             Self.pendingLockPasscode = nil
             coordinator.setRoot(.onboarding(step: .step2))
@@ -110,8 +110,8 @@ final class StepViewModel {
         !Preference.isUserBound() && !WalletState.hasHolderDID
     }
 
-    /// ONB-03 · ONB-E-04 — starts user binding right after entering Step 2. Input is blocked with loading while processing.
-    /// On failure, shows a COM-02-family popup (with a Server settings link if the server was unreachable) and stays on Step 2.
+    /// Starts user binding right after entering Step 2. Input is blocked with loading while processing.
+    /// On failure, shows an error popup (with a Server settings link if the server was unreachable) and stays on Step 2.
     func startBindingIfNeeded(step: StepEnum, coordinator: AppCoordinator) {
         guard step == .step2, needsBinding else { return }
         _ = runBinding(coordinator: coordinator)
@@ -205,7 +205,7 @@ final class StepViewModel {
     //       confirmUserRegistration
     private func handleStep3Next(coordinator: AppCoordinator) {
         Task {
-            // Don't close the auth screen until registration finishes — report failure on top of it (ONB-E-08).
+            // Don't close the auth screen until registration finishes — report failure on top of it.
             guard let pin = await coordinator.presentHeldPinAuth() else { return }
 
             OverlayManager.shared.showLoading()
@@ -256,9 +256,9 @@ final class StepViewModel {
 
     // MARK: - Error display
 
-    /// ONB-E-04 — error during a step. If the server was unreachable (COM-02), a Server settings link is attached at
+    /// Error during a step. If the server was unreachable, a Server settings link is attached at
     /// the bottom, and on returning from that screen without saving, **the same popup is shown again**. Staying on the
-    /// step where the error occurred is COM-05's (keep) policy, so the returned screen must not look blank with no guidance.
+    /// step where the error occurred is the design spec's policy, so the returned screen must not look blank with no guidance.
     /// If `onSaved` is given, it runs instead of the popup when returning via Save (binding failure → Step 1 re-registration).
     private func showStepError(title: String, error: Error, coordinator: AppCoordinator,
                                onSaved: (() -> Void)? = nil) {
@@ -277,7 +277,7 @@ final class StepViewModel {
         )
     }
 
-    /// ONB-E-08 — Step 3 user registration failure. Shown on top of the auth screen (not an inline PIN error); OK closes the
+    /// Step 3 user registration failure. Shown on top of the auth screen (not an inline PIN error); OK closes the
     /// auth screen and returns to Step 3. Server settings closes the auth screen and goes there, and returning via Save · Back ·
     /// Cancel stays on Step 3 — tapping NEXT starts again from authentication.
     private func showRegistrationError(error: Error, coordinator: AppCoordinator) {

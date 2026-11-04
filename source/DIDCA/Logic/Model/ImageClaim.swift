@@ -19,14 +19,14 @@
 import UIKit
 import DIDWalletSDK
 
-/// Image claim (portrait etc.) detection and value decoding — design spec VC-B-01 / VC-B-03.
+/// Image claim (portrait etc.) detection and value decoding.
 ///
 /// **The detection criterion differs per format.**
 /// - SD-JWT / mDoc: only the claim **name whitelist** is checked. These are formats whose issuance-metadata type info can't be trusted.
 /// - W3C (OpenDID) VC: uses the `claim.type` carried in the data model as-is. More accurate than guessing by name, and
 ///   existing image claims issued under names outside the whitelist don't regress to text.
 ///   (The design spec says "detect by name whitelist only", but that is the Android/EUDI mDoc basis — iOS
-///   splits by format. User decision 2026-08-11.)
+///   splits by format.)
 ///
 /// Even when detection differs, **the value decoding rules are shared**, and no error dialog is shown in any case
 /// (an empty optional item is a normal state). The fallback display depends on what remains — name detection (SD-JWT)
@@ -55,7 +55,7 @@ nonisolated enum ImageClaim {
 
     /// Display value of one mDoc element — the value is already bytes, so there is nothing to decode.
     ///
-    /// If it doesn't open as an image, write `"(N bytes)"` (design spec VC-B-01). The SD-JWT/W3C fallback is "the original
+    /// If it doesn't open as an image, write `"(N bytes)"`. The SD-JWT/W3C fallback is "the original
     /// text", but there is no original text here — faking bytes as a string leaves only garbled characters.
     static func claimValue(name: String, data: Data) -> ClaimValue {
         guard isImageName(name), !data.isEmpty, UIImage(data: data) != nil else {

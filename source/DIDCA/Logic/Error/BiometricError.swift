@@ -18,15 +18,18 @@
 
 import Foundation
 
-// Classification of biometric enrollment failures (screen design spec BIO-E). Messages are the design spec text verbatim.
-//   BIO-E-04 (cancel/timeout) and BIO-E-05 (unknown/device fault) share the same text in the design spec, so merged into .notCompleted.
-//   BIO-E-06 (Skip/Cancel button) is handled by BiometricsView, BIO-E-07 (OS prompt) by the OS — no separate code.
+// Classification of biometric enrollment failures. Messages are the design spec text verbatim.
+//   Cancel/timeout and unknown/device fault share the same text in the design spec, so merged into .notCompleted.
+//   The Skip/Cancel button is handled by BiometricsView, the OS prompt by the OS — no separate code.
 // Classification from LAError into this type is done by Biometrics.error(from:).
 enum BiometricError: Error {
-    case notEnrolled    // BIO-E-01
-    case notAvailable   // BIO-E-02
-    case lockedOut      // BIO-E-03
-    case notCompleted   // BIO-E-04 / BIO-E-05
+    case notEnrolled
+    case notAvailable
+    case lockedOut
+    case notCompleted   // cancel/timeout and unknown/device fault
+
+    /// Dialog title for every biometric error message — the design spec titles these error dialogs "Error".
+    static let dialogTitle = "Error"
 
     var message: String {
         switch self {

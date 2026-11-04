@@ -29,6 +29,7 @@ struct StatusBadge: View {
             Text(status.rawValue)
                 .font(.pretendard(size: 11, weight: .semibold))
                 .foregroundStyle(foreground)
+                .accessibilityIdentifier("statusText")
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3)

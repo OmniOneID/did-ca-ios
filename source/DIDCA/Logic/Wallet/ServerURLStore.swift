@@ -18,13 +18,13 @@
 
 import Foundation
 
-/// **The set of Custom entries and their values** saved by the Server URL screen (design spec 29a~29d · SRV-01~09).
+/// **The set of Custom entries and their values** saved by the Server URL screen.
 ///
-/// The unit of storage is one thing: "which endpoints are Custom + their values" (SRV-07). Default entries use the build
+/// The unit of storage is one thing: "which endpoints are Custom + their values". Default entries use the build
 /// defaults as is and aren't stored — if only the 6 values were stored, a custom value that happens to equal the default
-/// (SRV-E-04) couldn't be restored to the Custom section on re-entry. Key present means Custom; absent means Default.
+/// couldn't be restored to the Custom section on re-entry. Key present means Custom; absent means Default.
 ///
-/// Saved values are used for networking **immediately on save** (SRV-E-07) — no launch-time snapshot; read every time.
+/// Saved values are used for networking **immediately on save** — no launch-time snapshot; read every time.
 /// In-flight requests complete with the URL already built; requests after that use the new address.
 nonisolated enum ServerURLStore {
 
@@ -36,7 +36,7 @@ nonisolated enum ServerURLStore {
         customValues()[endpoint] ?? endpoint.defaultValue
     }
 
-    /// The saved Custom set — the basis for restoring sections on screen entry (SRV-01) and the dirty check (SRV-09).
+    /// The saved Custom set — the basis for restoring sections on screen entry and the dirty check.
     static func customValues() -> [ServerEndpoint: String] {
         let stored = (defaults.dictionary(forKey: key) as? [String: String]) ?? [:]
         return stored.reduce(into: [:]) { acc, pair in
@@ -45,10 +45,10 @@ nonisolated enum ServerURLStore {
         }
     }
 
-    /// Saves the whole Custom set (SRV-07). If empty, removes the key itself (= all Default).
+    /// Saves the whole Custom set. If empty, removes the key itself (= all Default).
     ///
     /// - Returns: Whether the save succeeded. `UserDefaults` writes don't throw, so it reads back to confirm
-    ///   (the only way to detect SRV-E-05 "save failed").
+    ///   (the only way to detect "save failed").
     @discardableResult
     static func save(custom: [ServerEndpoint: String]) -> Bool {
         let trimmed = custom.reduce(into: [ServerEndpoint: String]()) { acc, pair in
@@ -63,7 +63,7 @@ nonisolated enum ServerURLStore {
         return customValues() == trimmed
     }
 
-    /// Deletes the Custom set — all 6 return to build defaults. Also called by app reset (SET-E-01 · SRV-E-08).
+    /// Deletes the Custom set — all 6 return to build defaults. Also called by app reset.
     static func clear() {
         defaults.removeObject(forKey: key)
     }

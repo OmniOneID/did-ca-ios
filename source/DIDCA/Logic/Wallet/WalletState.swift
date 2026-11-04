@@ -39,7 +39,7 @@ enum WalletState {
     /// Whether the holder DID document exists (for onboarding step branching).
     static var hasHolderDID: Bool { holderDID != nil }
 
-    /// The user name sent to the issuance web page. Uses the username from the onboarding registration webview as is (ONB-03)
+    /// The user name sent to the issuance web page. Uses the username from the onboarding registration webview as is
     /// (OpenDID `addVcInfo`'s `userName` and OID4VCI user initiation's `userName` are the same value — read once here so
     /// the two paths don't diverge).
     ///

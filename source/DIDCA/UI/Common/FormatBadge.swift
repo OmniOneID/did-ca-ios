@@ -31,6 +31,7 @@ struct FormatBadge: View {
                     .fill(background)
                     .stroke(foreground.opacity(0.2), lineWidth: 1)
             )
+            .accessibilityIdentifier("formatBadge")
     }
 
     private var foreground: Color {

@@ -76,6 +76,7 @@ struct VCDetailView: View {
                 Image(.icBackWhite)
                     .frame(width: 44, height: 44)
             }
+            .accessibilityIdentifier("backButton")
             Spacer()
             Button(action: { showDeleteConfirmation(onConfirm: onConfirmDelete) }) {
                 Image(.icDelete)
@@ -83,6 +84,8 @@ struct VCDetailView: View {
                     .foregroundStyle(.white)
                     .frame(width: 44, height: 44)
             }
+            .accessibilityLabel("Delete certificate")
+            .accessibilityIdentifier("deleteButton")
         }
         .padding(.horizontal, 6)
         .frame(height: 56)
@@ -192,7 +195,7 @@ struct ClaimRow: View {
         }
     }
 
-    // An image claim replaces the value text — the two are never shown together (VC-B-01).
+    // An image claim replaces the value text — the two are never shown together.
     // Sizing rules (original size · no upscaling · no height cap) belong to `ClaimImageView`.
     @ViewBuilder
     private var valueView: some View {

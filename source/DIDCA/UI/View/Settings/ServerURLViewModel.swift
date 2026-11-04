@@ -19,15 +19,15 @@
 import SwiftUI
 import Observation
 
-/// State of the Server URL screen (design spec 29a~29d · SRV-01~09 · SRV-E-01~08).
+/// State of the Server URL screen.
 ///
 /// The screen state is a single thing: **"which endpoints are in the Custom section and what their values are"** (`custom`).
 /// Endpoints without a key are in the Default section and use the build default as is, so they aren't held separately.
-/// Save, dirty and validity checks all look at this one set (SRV-09).
+/// Save, dirty and validity checks all look at this one set.
 @Observable
 final class ServerURLViewModel {
 
-    /// Saved values at the time the screen was entered — the baseline for the dirty check (SRV-09).
+    /// Saved values at the time the screen was entered — the baseline for the dirty check.
     private let saved: [ServerEndpoint: String]
 
     private(set) var custom: [ServerEndpoint: String]
@@ -41,28 +41,28 @@ final class ServerURLViewModel {
 
     // MARK: - Sections
 
-    /// Both sections keep the fixed endpoint order — the order doesn't change even when items move (SRV-02).
+    /// Both sections keep the fixed endpoint order — the order doesn't change even when items move.
     var customList: [ServerEndpoint] { ServerEndpoint.allCases.filter { custom[$0] != nil } }
     var defaultList: [ServerEndpoint] { ServerEndpoint.allCases.filter { custom[$0] == nil } }
 
-    /// Default → Custom (SRV-04) — moves it up as editable, pre-filled with the build default. Doesn't start blank.
+    /// Default → Custom — moves it up as editable, pre-filled with the build default. Doesn't start blank.
     func toCustom(_ endpoint: ServerEndpoint) {
         custom[endpoint] = endpoint.defaultValue
         errors[endpoint] = nil
     }
 
-    /// Custom → Default (SRV-06) — the custom value is discarded without confirmation. It's before save, so easy to undo.
+    /// Custom → Default — the custom value is discarded without confirmation. It's before save, so easy to undo.
     func toDefault(_ endpoint: ServerEndpoint) {
         custom[endpoint] = nil
         errors[endpoint] = nil
     }
 
-    /// Moves the whole Default section to Custom (SRV-04). Values of items already in Custom are untouched.
+    /// Moves the whole Default section to Custom. Values of items already in Custom are untouched.
     func allToCustom() {
         for endpoint in defaultList { toCustom(endpoint) }
     }
 
-    /// Moves the whole Custom section to Default (SRV-06) = restore all build defaults. Performed without confirmation.
+    /// Moves the whole Custom section to Default = restore all build defaults. Performed without confirmation.
     func allToDefault() {
         custom = [:]
         errors = [:]
@@ -75,7 +75,7 @@ final class ServerURLViewModel {
                 set: { self.setValue($0, for: endpoint) })
     }
 
-    /// Format check right on input (SRV-05 · SRV-E-01~03).
+    /// Format check right on input — empty, malformed URL, or bad port.
     private func setValue(_ value: String, for endpoint: ServerEndpoint) {
         custom[endpoint] = value
         errors[endpoint] = Self.validate(value)
@@ -83,7 +83,7 @@ final class ServerURLViewModel {
 
     // MARK: - Checks
 
-    /// Save enabled condition (SRV-09) — when the Custom set or its values differ from the saved ones, and Custom fields have no format errors.
+    /// Save enabled condition — when the Custom set or its values differ from the saved ones, and Custom fields have no format errors.
     /// Just moving sections changes the saved result, so it counts as a change. The Default section isn't checked.
     var canSave: Bool { isDirty && !hasError }
 
@@ -93,19 +93,19 @@ final class ServerURLViewModel {
 
     // MARK: - Actions
 
-    /// Save (SRV-07). Returns false on failure — the caller shows the SRV-E-05 notice.
+    /// Save. Returns false on failure — the caller shows the "failed to save" notice.
     func save() -> Bool {
         ServerURLStore.save(custom: custom)
     }
 
-    // MARK: - Format check (SRV-E-01 · E-02 · E-03)
+    // MARK: - Format check
 
     /// nil if it passes, otherwise the inline message to attach below the field.
     static func validate(_ raw: String) -> String? {
         let trimmed = raw.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty { return "Enter a URL." }
         guard ServerURLParts.parse(trimmed) != nil else {
-            // Only split into the port message when the port part isn't numeric or is out of range (SRV-E-02).
+            // Only split into the port message when the port part isn't numeric or is out of range.
             return ServerURLParts.hasPortProblem(trimmed)
                 ? "Port must be between 1 and 65535."
                 : "Enter a valid URL starting with http:// or https://."
@@ -115,7 +115,7 @@ final class ServerURLViewModel {
 }
 
 /// One `http(s)://host[:port][/path]` unit. URLComponents lumps a non-numeric port and a
-/// scheme typo into the same failure, making SRV-E-01/E-02 indistinguishable, so we split it ourselves.
+/// scheme typo into the same failure, making the malformed-URL and bad-port messages indistinguishable, so we split it ourselves.
 struct ServerURLParts {
     let scheme: String
     let host: String

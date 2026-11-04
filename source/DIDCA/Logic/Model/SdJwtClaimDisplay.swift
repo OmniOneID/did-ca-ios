@@ -62,7 +62,7 @@ nonisolated enum SdJwtClaimDisplay {
     /// - `isAmbiguous`: one code points to two or more claims. Which one was consented to can't be determined and
     ///   the SDK fails the submission, so consent that can't be honored is not collected.
     /// - `isSelectivelyDisclosable == false`: a claim the issuer put in plaintext, so there is no way to hide it.
-    ///   Excluded from the list like the current screen (decision 2026-08-12). On the submission screen, plaintext
+    ///   Excluded from the list like the current screen. On the submission screen, plaintext
     ///   codes the verifier requires are carried separately as `requiredCodes` and still go into the submission set.
     ///
     /// Nesting is determined **for display only** by prefix relations between codes — the codes themselves are neither split nor built.

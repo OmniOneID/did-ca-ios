@@ -1,13 +1,22 @@
 {
-  "originHash" : "d57572d35980c07a3145d194f27bb621b30c35b45c6fc28bb8e47bce0c52eedd",
+  "originHash" : "a025c83cb14b8016b0de5373fe929b1473882aaa9b33312bcb1f21907dcc867a",
   "pins" : [
     {
       "identity" : "did-client-sdk-ios",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/OmniOneID/did-client-sdk-ios",
       "state" : {
-        "branch" : "jhpark/feature/oid4vc",
-        "revision" : "3c0018564394d392979a80290d3892fcb4093ade"
+        "revision" : "c9b4eac57e82b57b81e86315aaf4e8c215e219f3",
+        "version" : "3.0.0"
+      }
+    },
+    {
+      "identity" : "did-proximity-sdk-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/OmniOneID/did-proximity-sdk-ios",
+      "state" : {
+        "revision" : "9914f28cf4772bb699a75f27147a08ebbd4f8cef",
+        "version" : "1.0.0"
       }
     },
     {

@@ -29,7 +29,7 @@ enum Root: Hashable {
 /// A screen pushed on top of main — an element of the `NavigationStack` path.
 /// Every screen here has `←` at the top. Screens closed with `X` go to `AppModal`, not the stack.
 enum Screen: Hashable {
-    /// Issuance protocol selection (screen design spec 18a) — picks Open DID / OID4VCI when entering via "From list".
+    /// Issuance protocol selection — picks Open DID / OID4VCI when entering via "From list".
     /// Open DID → addCertificate (current plan list), OID4VCI → oid4vciIssuerList.
     case protocolSelect
     case addCertificate
@@ -49,9 +49,9 @@ enum Screen: Hashable {
     case zkpAttrSelect(key: String)
     case vcDetail(Credential)
     case menu
-    /// Settings · Server URL (design spec 29a). Pushed not only from Settings but also from the
-    /// server-unreachable popups in Splash/Onboarding (ONB-E-01 · ONB-E-04) — there is one stack whatever the root.
-    /// Server URL — when coming from the first-launch Splash server-settings popup (SPL-03), the AppBar has no back button (29d).
+    /// Settings · Server URL. Pushed not only from Settings but also from the
+    /// server-unreachable popups in Splash/Onboarding — there is one stack whatever the root.
+    /// Server URL — when coming from the first-launch Splash server-settings popup, the AppBar has no back button.
     case serverUrl(fromSplash: Bool = false)
 }
 
@@ -66,7 +66,7 @@ enum AppModal: Hashable {
     case issueWebForm(URL)
     // OID4VCI user claim input WebView (Issuer user initiation). Carries the start URL and allowed hosts.
     case oid4vciWebView(url: URL, allowedHost: String)
-    // Onboarding Step 1 user registration WebView (design spec 02a · ONB-01, `DEMO_URL/addUserInfo`). Carries the connection URL.
+    // Onboarding Step 1 user registration WebView (`DEMO_URL/addUserInfo`). Carries the connection URL.
     case userInfoWebView(URL)
     // QR scan modal — shared by issuance/presentation.
     case qrScan
@@ -74,7 +74,7 @@ enum AppModal: Hashable {
     // length/description are injected from the offer's tx_code metadata. A separate input unrelated to PIN auth (pinAuth).
     case txCode(length: Int, description: String)
     // Unlock PIN auth modal — shown right after Splash / on scenePhase background→active when isLock()==true.
-    // X button, system back and swipe-down all exit(0) (UNLK-A-E-02). Split into its own case because
+    // X button, system back and swipe-down all exit(0). Split into its own case because
     // its X behavior differs from pinAuth(isLockAuth:true).
     case lockAuth
 }
@@ -132,7 +132,7 @@ final class AppCoordinator {
 
     // What to run when leaving the Server URL screen via Back — decided by the caller.
     // Nothing for Settings (just pop), Splash retries initialization, Onboarding re-shows the error popup
-    // (ONB-E-04 "Back returns to that step and the popup is shown again").
+    // (Back returns to that step and the popup is shown again).
     @ObservationIgnored private var serverURLReturn: ((_ saved: Bool) -> Void)?
 
     // Continuation for PIN modals that must return a value (shared by pinRegister / pinLockRegister).
@@ -157,7 +157,7 @@ final class AppCoordinator {
     // OID4VCI tx_code input result — the code string on completion, nil on cancel/close.
     @ObservationIgnored private var txCodeContinuation: CheckedContinuation<String?, Never>?
 
-    // User registration WebView result — the user on registration complete (ONB-03), nil on close/load failure.
+    // User registration WebView result — the user on registration complete, nil on close/load failure.
     @ObservationIgnored private var userInfoWebViewContinuation: CheckedContinuation<RegisteredUser?, Never>?
 
     // OID4VCI claim input WebView result — the completion redirect URL string, nil on cancel/close.
@@ -223,7 +223,7 @@ final class AppCoordinator {
 
     /// Sends to the Server URL screen. `onReturn` runs exactly once after that screen closes via Cancel/Back/Save,
     /// and receives whether it was closed via Save.
-    /// - parameter fromSplash: the first-launch server-settings popup (SPL-03) path — the screen gets no back button.
+    /// - parameter fromSplash: the first-launch server-settings popup path — the screen gets no back button.
     func presentServerURL(fromSplash: Bool = false, onReturn: ((_ saved: Bool) -> Void)? = nil) {
         serverURLReturn = onReturn
         push(.serverUrl(fromSplash: fromSplash))
@@ -317,7 +317,7 @@ final class AppCoordinator {
     }
 
     /// PIN auth modal — does not close when input ends; only returns the PIN. The caller closes it with
-    /// `dismissModal()` after finishing follow-up work. Used when a task failure must be reported over the auth screen (ONB-E-08).
+    /// `dismissModal()` after finishing follow-up work. Used when a task failure must be reported over the auth screen.
     func presentHeldPinAuth() async -> String? {
         let pin = await presentPinModal(.pinAuth(), holdsOnComplete: true)
         if pin == nil { holdsPinModal = false }
@@ -451,7 +451,7 @@ final class AppCoordinator {
         }
     }
 
-    /// Change success notice (PIN-C-B-01 / UNLK-C-B-01) — shown over the last PIN screen; OK closes the modal and
+    /// PIN / Unlock PIN change success notice — shown over the last PIN screen; OK closes the modal and
     /// returns to Settings. It never happens that only the popup closes and you're left on the finished PIN screen.
     private func showPinChanged(title: String, message: String) {
         OverlayManager.shared.showPopup(
@@ -504,10 +504,10 @@ final class AppCoordinator {
         OverlayManager.shared.showLoading(animated: false)
     }
 
-    /// For VP submit — forces the auth method branch according to the VerifyAuthType the verifier requires (VAUTH-01~04).
+    /// For VP submit — forces the auth method branch according to the VerifyAuthType the verifier requires (PIN / BIO / PIN_OR_BIO / PIN_AND_BIO).
     /// authType nil/other → treated as no verifier requirement, uses the existing local-availability-based presentAuth().
     /// Auth unrelated to a verifier, such as issuance/revocation, keeps using the existing presentAuth().
-    /// VAUTH-04 (PIN_AND_BIO) has no reference, so it is implemented as "PIN signature + local biometric gate" — server contract needs confirmation (best-guess).
+    /// PIN_AND_BIO has no reference, so it is implemented as "PIN signature + local biometric gate" — server contract needs confirmation (best-guess).
     func presentAuth(for authType: VerifyAuthType?) async -> AuthChoice? {
         guard let authType else { return await presentAuth() }
 
@@ -515,10 +515,10 @@ final class AppCoordinator {
         let needBio = authType.contains(.bio)
         let needBoth = authType.contains(.and)
 
-        // VAUTH-04 PIN_AND_BIO: biometric gate after PIN auth, signing uses #pin.
+        // PIN_AND_BIO: biometric gate after PIN auth, signing uses #pin.
         if needPin && needBio && needBoth {
             if let bioErr = Biometrics.signingReadiness() {
-                OverlayManager.shared.showPopup(title: "Notification", message: bioErr.message, primaryButtonTitle: "OK")
+                OverlayManager.shared.showPopup(title: BiometricError.dialogTitle, message: bioErr.message, primaryButtonTitle: "OK")
                 return nil
             }
             guard let pin = await presentPinAuth() else { return nil }
@@ -527,23 +527,23 @@ final class AppCoordinator {
             return .pin(pin)
         }
 
-        // VAUTH-03 PIN_OR_BIO: both allowed → same as the local availability policy.
+        // PIN_OR_BIO: both allowed → same as the local availability policy.
         // Selection sheet if bio is available; PIN directly if unregistered/unavailable (quiet fallback without an error popup).
         if needPin && needBio {
             return await presentAuth()
         }
 
-        // VAUTH-02 BIO: biometrics directly without a sheet. Abort if biometrics are required but unregistered/unavailable.
+        // BIO: biometrics directly without a sheet. Abort if biometrics are required but unregistered/unavailable.
         if needBio {
             if let bioErr = Biometrics.signingReadiness() {
-                OverlayManager.shared.showPopup(title: "Notification", message: bioErr.message, primaryButtonTitle: "OK")
+                OverlayManager.shared.showPopup(title: BiometricError.dialogTitle, message: bioErr.message, primaryButtonTitle: "OK")
                 return nil
             }
             beginAuthLoading()
             return .bio
         }
 
-        // VAUTH-01 PIN: PIN directly without a sheet.
+        // PIN: PIN directly without a sheet.
         if needPin {
             guard let pin = await presentPinAuth() else { return nil }
             beginAuthLoading()
@@ -636,7 +636,7 @@ final class AppCoordinator {
 
     // MARK: Modal — User registration WebView (onboarding Step 1)
 
-    /// User registration WebView modal. The user on registration complete (ONB-03), nil on X/load failure (ONB-E-07 · ONB-E-05).
+    /// User registration WebView modal. The user on registration complete, nil on X/load failure.
     func presentUserInfoWebView(url: URL) async -> RegisteredUser? {
         if let prev = userInfoWebViewContinuation {
             userInfoWebViewContinuation = nil
@@ -767,12 +767,12 @@ final class AppCoordinator {
     /// the server document. UpdateUserProtocol runs updateHolderDIDDocument → request/confirm-update-diddoc
     /// to add #bio to the published document. The PIN is needed to sign the document update (#pin), so it's taken first.
     func addBiometricsFromSettings() async {
-        // Pre-check for already registered (SET-E-03) / unregistered·unsupported·locked (BIO-E-01/02/03) —
+        // Pre-check for already registered / unregistered·unsupported·locked —
         // blocked before PIN entry (same place as campusID).
         if let blocked = Biometrics.enrollmentBlock() {
             OverlayManager.shared.showPopup(
-                title: "Notification",
-                message: blocked,
+                title: blocked.title,
+                message: blocked.message,
                 primaryButtonTitle: "OK"
             )
             return
@@ -794,13 +794,13 @@ final class AppCoordinator {
 
         guard let pin = passcode else { return }
         // The PIN layer was already cleaned up by completePin. The biometric screen stays until registration finishes,
-        // since the success notice (BIO-B-01) must appear over it; on failure it is closed and then the notice shown. No key
+        // since the success notice must appear over it; on failure it is closed and then the notice shown. No key
         // has been created before reaching here (the bio key is created inside addBioKey), so there is nothing to roll back on a mid-way cancel.
         OverlayManager.shared.showLoading()
         defer { OverlayManager.shared.hideLoading() }
         do {
             try await UpdateUserProtocol.addBioKey(passcode: pin)
-            // BIO-B-01 — shown over the Biometric screen; OK closes the screen and returns to Settings.
+            // Success notice — shown over the Biometric screen; OK closes the screen and returns to Settings.
             OverlayManager.shared.showPopup(
                 title: "Biometrics registered",
                 message: "Biometric authentication has been set up successfully.",
@@ -809,9 +809,9 @@ final class AppCoordinator {
             )
         } catch let bioErr as BiometricError {
             dismissModal()
-            // BIO-E-04/05: biometric prompt cancelled/failed/other — notify with the design spec wording.
+            // Biometric prompt cancelled/failed/other — notify with the design spec wording.
             OverlayManager.shared.showPopup(
-                title: "Notification",
+                title: BiometricError.dialogTitle,
                 message: bioErr.message,
                 primaryButtonTitle: "OK"
             )
@@ -931,7 +931,7 @@ final class AppCoordinator {
         do {
             try WalletAPI.shared.deleteWallet(deleteAll: true)
         } catch {
-            // SET-E-02: deletion failed → notify (some data may remain), abort the reset (stay in Settings).
+            // Deletion failed → notify (some data may remain), abort the reset (stay in Settings).
             OverlayManager.shared.showPopup(
                 title: "Notification",
                 message: "Failed to reset. Try again.",

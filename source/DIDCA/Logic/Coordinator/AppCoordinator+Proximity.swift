@@ -15,7 +15,7 @@
  */
 
 import Foundation
-import MdocProximitySDK
+import MdocDevice
 
 // Proximity presentation (ISO/IEC 18013-5) flow — QR engagement → receive request → consent screen → auth → response.
 //
@@ -25,7 +25,7 @@ import MdocProximitySDK
 // the next proximity presentation cannot open.
 extension AppCoordinator {
 
-    /// ProximityView entry — opens the session and shows the QR. Failures (BLE off, etc.) → popup → back to Certs (PRES-E-06~08).
+    /// ProximityView entry — opens the session and shows the QR. Failures (BLE off, etc.) → popup → back to Certs.
     func startProximity() async {
         // If already open (screen re-entry), leave it as is.
         guard proximity == nil else { return }
@@ -65,7 +65,7 @@ extension AppCoordinator {
         pop()
     }
 
-    /// Consent screen back = Reject (PRES-B-12) — sends only status 20 and returns to Certs.
+    /// Consent screen back = Reject — sends only status 20 and returns to Certs.
     /// There is no separate screen announcing the rejection.
     func rejectProximity() async {
         await proximity?.reject()
@@ -77,7 +77,7 @@ extension AppCoordinator {
     ///
     /// As with OID4VP, the auth method is decided by the **binding key set at issuance of the items being submitted** (`presentAuth(forBindingKeyIds:)`).
     /// - parameter selectedCodes: the **one selected item** VPRequestView sent — the key is the credential to submit,
-    ///   the value is the out-of-request elements (OPTIONAL) the user turned on. Requested elements are always included even if absent from the value (PRES-B-10).
+    ///   the value is the out-of-request elements (OPTIONAL) the user turned on. Requested elements are always included even if absent from the value.
     func submitProximity(selectedCodes: [String: Set<String>]) async {
         guard let proximity else { return }
         let credentialIds = Set(selectedCodes.keys)
@@ -107,7 +107,7 @@ extension AppCoordinator {
         } catch {
             // A send failure also arrives once more via the SDK callback (`.failed`), so only whichever arrives first is reported.
             guard isCurrent(proximity) else { return }
-            failProximity(error, title: "Failed to submit")
+            failProximity(error)
         }
     }
 
@@ -126,8 +126,8 @@ extension AppCoordinator {
         }
     }
 
-    /// Request arrived — matches during receive progress (PRES-B-11), and moves to the consent screen if there are candidates.
-    /// With 0 candidates, shows PRES-E-04 and returns to Certs. Either way the reader must get a response or termination, so
+    /// Request arrived — matches while showing receive progress, and moves to the consent screen if there are candidates.
+    /// With 0 candidates, shows the "no submittable credential" notice and returns to Certs. Either way the reader must get a response or termination, so
     /// every failure path closes the session via `endProximity()`.
     private func receiveProximityRequest() async {
         guard let proximity else { return }
@@ -156,12 +156,14 @@ extension AppCoordinator {
         }
     }
 
-    /// Failure termination — closes the session and shows a popup, back to Certs on OK. The same whether it's a start failure (PRES-E-06~08) or a session error (E-09),
+    /// Failure termination — closes the session and shows a popup, back to Certs on OK. The same whether it's a start failure (Bluetooth off, etc.) or a session error (timeout, disconnect),
     /// and whether on the QR waiting screen or the progress/submit screen — even if it expires while waiting on QR, it does not stay on screen and reissue the QR;
-    /// re-presenting is a new session by pressing Present again from Certs (design spec 9/15 16:08 edition). Communication SDK
+    /// re-presenting is a new session by pressing Present again from Certs. Communication SDK
     /// errors would show their case names verbatim, so they are shown via `userMessage` instead. Others (wallet SDK, token) follow the existing
     /// error popup rules.
-    private func failProximity(_ error: Error, title: String = "Failed to present") {
+    /// The design spec gives no title for these proximity errors (bodies only); "Error" matches the Android app.
+    /// It also keeps the title apart from the catch-all body "Failed to present. Try again."
+    private func failProximity(_ error: Error, title: String = "Error") {
         endProximity()
         let fallback = (error as? MdocProximityError)?.userMessage
         OverlayManager.shared.showErrorPopup(

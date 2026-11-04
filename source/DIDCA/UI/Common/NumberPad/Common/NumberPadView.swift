@@ -49,6 +49,7 @@ struct NumberPadView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(NumKeyButtonStyle())
+            .accessibilityIdentifier("pinKeyDelete")
         }
         .padding(.top, 8)
         .padding(.horizontal, 12)

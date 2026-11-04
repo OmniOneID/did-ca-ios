@@ -21,12 +21,12 @@ import Foundation
 // walletId is managed by DIDWalletSDK's Properties (set at requestRegisterWallet).
 // userRegistered is whether step3 (end of onboarding) is complete — used by splash to branch into main.
 enum PreferenceKey: String, CaseIterable {
-    // Values passed via the JS bridge by the onboarding Step 1 user registration webview (DEMO_URL/addUserInfo) (ONB-03).
-    // userId is used for the wallet token and KYC; userName for the Settings display (SET-E-06) and the issuance web page.
+    // Values passed via the JS bridge by the onboarding Step 1 user registration webview (DEMO_URL/addUserInfo).
+    // userId is used for the wallet token and KYC; userName for the Settings display and the issuance web page.
     case userId
     case userName
     // Whether user binding (bindUser, plus registerLock if lock was chosen) is complete. Kept separately so that if the
-    // app is killed between registration (userId present) and binding, only binding is redone without reopening the webview (ONB-E-02).
+    // app is killed between registration (userId present) and binding, only binding is redone without reopening the webview.
     case userBound
     case userRegistered
     // [vcId: issuer endpoint] mapping for VCs issued in proxy mode — kept so revocation can look up by vcId
@@ -37,14 +37,14 @@ enum PreferenceKey: String, CaseIterable {
     case oid4vcIssuers
     case oid4vcCredentialIssuers
     // User-configured addresses saved on the Server URL screen (`ServerURLStore`). They are in allCases, so
-    // app reset (SET-E-01) wipes them too and the build defaults come back.
+    // app reset wipes them too and the build defaults come back.
     case serverURLs
     // Settings · Proximity · BLE Transfer Mode (`BleTransferMode`). It is in allCases, so
-    // app reset (SET-E-01) wipes it too and it returns to the default Both (BLE-E-04).
+    // app reset wipes it too and it returns to the default Both.
     case bleTransferMode
 }
 
-/// BLE role the wallet takes in proximity presentation (design spec BLE-01~06). Sheet order = this order (Both is the default and recommended).
+/// BLE role the wallet takes in proximity presentation. Sheet order = this order (Both is the default and recommended).
 ///
 /// The value is passed to the communication SDK's `MdocDeviceConfiguration.bleAdvertiseMode` to narrow the set of modes
 /// put into device engagement — Both advertises both modes and the reader picks; a single mode advertises only that one.

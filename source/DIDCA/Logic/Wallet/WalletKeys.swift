@@ -48,7 +48,7 @@ nonisolated enum WalletKeys {
     }
 
     /// #bio — biometric signing key. iOS shows the Face ID/Touch ID prompt at creation time, so
-    /// failures such as cancellation or lockout are converted to BiometricError (BIO-E) and thrown.
+    /// failures such as cancellation or lockout are converted to BiometricError and thrown.
     /// (Server/SDK errors occur outside this step — handled separately by the caller's catch.)
     static func generateBio(hWalletToken: String) throws {
         do {

@@ -18,19 +18,19 @@
 
 import SwiftUI
 
-/// Settings · Server URL (design spec 29a~29d · SRV-01~09).
+/// Settings · Server URL.
 ///
-/// From the top, two cards — the Custom section and the Default section — run in a single scroll (SRV-02). Each of the
+/// From the top, two cards — the Custom section and the Default section — run in a single scroll. Each of the
 /// 6 endpoints is in exactly one of the two sections, and moves only via the item's right button (Custom / Default) and the
 /// section header's bulk button (All Custom / All Default). Saving is committed only by Save and applies to networking immediately
-/// (SRV-07 · SRV-E-07) — there is no completion dialog or restart notice.
+/// — there is no completion dialog or restart notice.
 struct ServerURLView: View {
 
-    /// false when entered from the server settings popup on first-launch Splash (SPL-03) — the app hasn't been entered yet,
-    /// so there is no AppBar back and the bottom Cancel is the only exit (SRV-01 · 29d).
+    /// false when entered from the server settings popup on first-launch Splash — the app hasn't been entered yet,
+    /// so there is no AppBar back and the bottom Cancel is the only exit.
     var showsBack: Bool = true
     /// Cancel · Back · system back · Save all close through this one — returning on the stack is the caller's job.
-    /// `saved` tells whether it closed via Save — used where the return path depends on whether it was saved (ONB-E-04).
+    /// `saved` tells whether it closed via Save — used where the return path depends on whether it was saved (e.g. onboarding).
     var onClose: (_ saved: Bool) -> Void = { _ in }
 
     @State private var viewModel = ServerURLViewModel()
@@ -38,14 +38,19 @@ struct ServerURLView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Button(action: { onClose(false) }) {
-                    Image(.icBack)
-                        .renderingMode(.template)
-                        .foregroundStyle(.white)
-                        .padding()
+                if showsBack {
+                    Button(action: { onClose(false) }) {
+                        Image(.icBack)
+                            .renderingMode(.template)
+                            .foregroundStyle(.white)
+                            .padding()
+                    }
+                    .accessibilityIdentifier("backButton")
+                } else {
+                    // Same-size placeholder keeps the title centered. A transparent, disabled button would
+                    // still be exposed to VoiceOver and UI tests, so no button is drawn at all.
+                    Image(.icBack).padding().hidden()
                 }
-                .opacity(showsBack ? 1 : 0)
-                .disabled(!showsBack)
                 Text("Server URL")
                     .font(.pretendard(size: 17, weight: .semibold))
                     .foregroundStyle(.white)
@@ -76,6 +81,7 @@ struct ServerURLView: View {
                 // Bulk Default (move down) is gray — if both were primary you couldn't tell which is the current state.
                 ServerURLRowButton(title: "All Default", muted: true,
                                    disabled: viewModel.customList.isEmpty,
+                                   identifier: "allDefaultButton",
                                    action: viewModel.allToDefault)
             }
             card {
@@ -109,6 +115,7 @@ struct ServerURLView: View {
             sectionHead("Default") {
                 ServerURLRowButton(title: "All Custom",
                                    disabled: viewModel.defaultList.isEmpty,
+                                   identifier: "allCustomButton",
                                    action: viewModel.allToCustom)
             }
             card {
@@ -119,13 +126,16 @@ struct ServerURLView: View {
                     HStack(alignment: .center, spacing: 12) {
                         VStack(alignment: .leading, spacing: 4) {
                             rowLabel(endpoint)
-                            // Shown in full without truncation — URLs have no spaces, so they wrap **per character** (SRV-03).
+                            // Shown in full without truncation — URLs have no spaces, so they wrap **per character**.
                             // SwiftUI can't set the line-break mode directly, so zero-width spaces are inserted between characters
                             // so it can break after any character (display-only text, not a copy target).
                             Text(Self.charWrappable(endpoint.defaultValue))
                                 .font(.pretendard(size: 13, weight: .regular))
                                 .foregroundStyle(.customGray)
                                 .fixedSize(horizontal: false, vertical: true)
+                                // Expose the original URL, not the zero-width-space display copy.
+                                .accessibilityLabel(endpoint.defaultValue)
+                                .accessibilityIdentifier("rowUrl")
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         ServerURLRowButton(title: "Custom") {
@@ -141,7 +151,7 @@ struct ServerURLView: View {
 
     // MARK: - Pieces
 
-    /// Section header — the same marker as SectionHeader, with a bulk-move button on the right (SRV-02).
+    /// Section header — the same marker as SectionHeader, with a bulk-move button on the right.
     private func sectionHead<Action: View>(_ title: String,
                                            @ViewBuilder action: () -> Action) -> some View {
         HStack(spacing: 8) {
@@ -171,7 +181,7 @@ struct ServerURLView: View {
             )
     }
 
-    /// An empty section keeps its card and shows a notice instead (SRV-02). Left-aligned; line breaks are set by the text.
+    /// An empty section keeps its card and shows a notice instead. Left-aligned; line breaks are set by the text.
     private func emptyNote(_ text: String) -> some View {
         Text(text)
             .font(.pretendard(size: 13, weight: .regular))
@@ -197,7 +207,7 @@ struct ServerURLView: View {
 
     private var bottomBar: some View {
         HStack(spacing: 10) {
-            // Cancel is always enabled — closes without confirmation regardless of changes (SRV-08 · SRV-E-06).
+            // Cancel is always enabled — closes without confirmation regardless of changes.
             Button(action: { onClose(false) }) {
                 Text("Cancel")
                     .font(.pretendard(size: 16, weight: .semibold))
@@ -209,6 +219,7 @@ struct ServerURLView: View {
                             .stroke(.customPrimary, lineWidth: 1.5)
                     )
             }
+            .accessibilityIdentifier("cancelButton")
 
             Button(action: save) {
                 Text("Save")
@@ -225,6 +236,7 @@ struct ServerURLView: View {
                     .shadow(color: viewModel.canSave ? .customPrimary.opacity(0.3) : .clear,
                             radius: 3, x: 0, y: 2)
             }
+            .accessibilityIdentifier("saveButton")
             .disabled(!viewModel.canSave)
         }
         .padding(16)
@@ -237,10 +249,10 @@ struct ServerURLView: View {
 
     // MARK: - Actions
 
-    /// SRV-07 — closes immediately after saving. No completion dialog. Saved values are used from the next request on (SRV-E-07).
+    /// Closes immediately after saving. No completion dialog. Saved values are used from the next request on.
     private func save() {
         guard viewModel.save() else {
-            // SRV-E-05 — leave the input values and section layout on screen as is and don't touch the existing settings.
+            // On failure, leave the input values and section layout on screen as is and don't touch the existing settings.
             OverlayManager.shared.showPopup(
                 title: "Failed to save",
                 message: "Failed to save. Try again.",
@@ -257,6 +269,7 @@ private struct ServerURLRowButton: View {
     let title: String
     var muted: Bool = false
     var disabled: Bool = false
+    var identifier: String = "rowActionButton"
     let action: () -> Void
 
     var body: some View {
@@ -272,11 +285,11 @@ private struct ServerURLRowButton: View {
                 )
         }
         .disabled(disabled)
+        .accessibilityIdentifier(identifier)
     }
 }
 
-/// Single-line URL input — on a format error, the border turns the error color and an inline message is attached below
-/// (SRV-E-01 · E-02 · E-03).
+/// Single-line URL input — on a format error, the border turns the error color and an inline message is attached below.
 private struct ServerURLField: View {
     @Binding var text: String
     let placeholder: String
@@ -298,6 +311,7 @@ private struct ServerURLField: View {
                         .fill(.white)
                         .stroke(error == nil ? Color.borderGray : .customRed, lineWidth: 1.5)
                 )
+                .accessibilityIdentifier("rowInput")
 
             if let error {
                 Text(error)

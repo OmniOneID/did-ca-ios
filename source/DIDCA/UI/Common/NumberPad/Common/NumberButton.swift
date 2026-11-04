@@ -31,6 +31,7 @@ struct NumberButton: View {
                 .foregroundStyle(.black)
         }
         .buttonStyle(NumKeyButtonStyle())
+        .accessibilityIdentifier("pinKey\(number)")
     }
 }
 

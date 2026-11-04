@@ -19,10 +19,10 @@
 import SwiftUI
 import Observation
 
-// Input screen for the tx_code included in the OID4VCI Credential Offer's pre-authorized_code grant (design spec screen 22, TX Code · Empty).
-// Once the input fills up to length, isCompleted is raised and it moves on to the token request without a separate Submit (TXC-B-01).
+// Input screen for the tx_code included in the OID4VCI Credential Offer's pre-authorized_code grant.
+// Once the input fills up to length, isCompleted is raised and it moves on to the token request without a separate Submit.
 //
-// **This screen has no error display** — TXC-E-01 specifies that even with a wrong code the screen just closes and a dialog
+// **This screen has no error display** — even with a wrong code the screen just closes and a dialog
 // is shown on top of the calling screen (Certs). This view model must not hold error messages or input-reset state.
 // Actual handling is in QRRouter.handleOID4VCI's catch (failIssuance fallback "Wrong code.").
 @Observable
@@ -56,7 +56,7 @@ class TxCodeViewModel {
             code.append(digit)
         }
 
-        // TXC-B-01: once filled up to length, automatically proceed to the token request step without a separate Submit.
+        // Once filled up to length, automatically proceed to the token request step without a separate Submit.
         if code.count == length {
             isCompleted = true
         }

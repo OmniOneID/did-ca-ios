@@ -76,7 +76,8 @@ struct DraggableActionSheet: View {
                     .multilineTextAlignment(.leading)
                     .frame(height: 25)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
+                    .accessibilityIdentifier("sheetTitle")
+
                 Text(viewModel.message)
                     .font(.pretendard(size: 13, weight: .regular))
                     .foregroundStyle(.customGray)
@@ -100,11 +101,18 @@ struct DraggableActionSheet: View {
                             Text(content.title)
                                 .font(.pretendard(size: 16, weight: .medium))
                                 .foregroundStyle(.black)
+                                .accessibilityIdentifier("selectLabel")
                             Spacer()
-                            Image(.icCheckOrange)
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                                .opacity(selected ? 1 : 0)
+                            // Drawn only on the current value — a transparent check would still be an accessibility element,
+                            // and UI tests read the selection from which row has `selectCheck`.
+                            if selected {
+                                Image(.icCheckOrange)
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                    .accessibilityIdentifier("selectCheck")
+                            } else {
+                                Color.clear.frame(width: 20, height: 20)
+                            }
                         }
                         .padding(.vertical, 16)
                         .padding(.horizontal, 24)

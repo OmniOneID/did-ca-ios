@@ -25,7 +25,7 @@ import DIDWalletSDK
 ///
 /// Element values are CBOR, not JSON, so they can't be handled as strings only. Three branches matter in particular.
 /// - `.bytes` is a byte string. If the name is in the image whitelist and it actually opens as an image, draw it as a picture;
-///   otherwise write `"(N bytes)"` (design spec VC-B-01). Bytes are not faked as a string.
+///   otherwise write `"(N bytes)"`. Bytes are not faked as a string.
 /// - `.fullDate` is kept **as the string**. It has no time or time zone, so converting it to `Date` can shift it
 ///   by a day on display (SDK doc section 3).
 /// - Only `.dateTime` is an actual point in time, so it is formatted.

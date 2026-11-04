@@ -18,7 +18,7 @@
 import SwiftUI
 import UIKit
 
-/// Image claim (portrait, etc.) rendering — design spec VC-B-02 / PRES-B-04. Shared by the detail screen and the VP presentation screen.
+/// Image claim (portrait, etc.) rendering. Shared by the detail screen and the VP presentation screen.
 ///
 /// - Drawn **at original size**. Never enlarged.
 /// - Shrunk, preserving aspect ratio, only when it exceeds the available width. Never cropped.
@@ -35,7 +35,7 @@ struct ClaimImageView: View {
 
     var body: some View {
         // The value was already confirmed to open as an image at the mapping stage (`ImageClaim.decode`).
-        // If it still fails, nothing is drawn — no error dialog is shown (VC-B-03).
+        // If it still fails, nothing is drawn — no error dialog is shown.
         if let uiImage = UIImage(data: data) {
             let natural = naturalSize(of: uiImage)
             Image(uiImage: uiImage)
@@ -43,6 +43,7 @@ struct ClaimImageView: View {
                 .scaledToFit()
                 // The cap is the original size so no enlargement happens; if the width is narrow it shrinks preserving the ratio.
                 .frame(maxWidth: natural.width, maxHeight: natural.height)
+                .accessibilityIdentifier("claimImage")
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }

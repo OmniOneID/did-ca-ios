@@ -110,7 +110,8 @@ enum QRRouter {
                 await presentFromQR(data: data, on: coordinator)
             }
         } catch {
-            OverlayManager.shared.showErrorPopup(title: "Invalid QR code", error: error)
+            // The decode error's raw text is not for users; the popup shows "Error" / "Invalid QR code." instead.
+            OverlayManager.shared.showErrorPopup(title: "Error", error: error, fallback: "Invalid QR code.")
         }
     }
 
@@ -146,7 +147,7 @@ enum QRRouter {
     private static func handleOID4VCI(_ qrString: String,
                                       expecting: OID4VciExpectation? = nil,
                                       on coordinator: AppCoordinator) async {
-        // Whether a tx_code was entered — used only to decide whether to change the failure wording to TXC-E-01 (catch below).
+        // Whether a tx_code was entered — used only to decide whether to change the failure wording to "Wrong code." (catch below).
         var enteredTxCode = false
         do {
             OverlayManager.shared.showLoading()
@@ -194,8 +195,8 @@ enum QRRouter {
                 pinCode = nil
             }
 
-            // Token request — done before holder auth (TXC-B-01: once code entry ends, go straight to the token step).
-            // If the tx_code is wrong it fails here and ends in an error dialog without PIN entry (TXC-E-01).
+            // Token request — done before holder auth (once code entry ends, go straight to the token step).
+            // If the tx_code is wrong it fails here and ends in an error dialog without PIN entry.
             OverlayManager.shared.showLoading()
             try await issue.requestToken(txCode: pinCode)
             OverlayManager.shared.hideLoading()
@@ -215,8 +216,8 @@ enum QRRouter {
             let credentialId = try await issue.requestCredential(passcode: auth.passcode)
             await coordinator.completeIssuance(vcId: credentialId)
         } catch IssueOID4VcError.tokenRequestFailed(let underlying) {
-            // TXC-E-01 — the tx_code check applies **only at the token request step**. If the response has an error message,
-            // show it (COM-04); only when there is no message, substitute "Wrong code.".
+            // The tx_code check applies **only at the token request step**. If the response has an error message,
+            // show it; only when there is no message, substitute "Wrong code.".
             // The TX Code screen already closed when the code was handed over, so the dialog appears over the calling
             // screen (Certs) — no inline error is left on the input screen.
             coordinator.failIssuance(underlying, fallback: enteredTxCode ? "Wrong code." : nil)
@@ -344,7 +345,7 @@ enum QRRouter {
         }
     }
 
-    /// PRES-E-04 — no submittable credential. Not holding one and 0 ACTIVE items are not distinguished in the wording.
+    /// "No submittable credential" notice. Not holding one and 0 ACTIVE items are not distinguished in the wording.
     /// Closing with OK returns to Certs (main) — leaving it on the scan screen would show a request that can't be fulfilled again.
     private static func showNoSubmittableCredential(on coordinator: AppCoordinator) {
         OverlayManager.shared.showPopup(

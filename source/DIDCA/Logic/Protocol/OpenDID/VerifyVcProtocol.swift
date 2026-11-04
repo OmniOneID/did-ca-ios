@@ -160,7 +160,7 @@ extension VerifyVcProtocol {
         // Submitted = requiredCodes ∪ checked. Code order is meaningless — SDK `VCManager.makePresentation`
         // walks the VC's claim order and uses this list only for membership.
         let claimInfos: [ClaimInfo] = summary.documents.compactMap { doc in
-            // The screen sends **only the one selected candidate** — no key means an unchosen candidate (PRES-B-05).
+            // The screen sends **only the one selected candidate** — no key means an unchosen candidate.
             guard let checked = selectedCodes[doc.credentialId] else { return nil }
             // Submit even with 0 checks if there are REQUIRED items — OPTIONAL defaults to unchecked, so
             // "0 checks" cannot be read as "send nothing" (a REQUIRED-only setup is the normal path).
@@ -213,7 +213,7 @@ extension VerifyVcProtocol {
             }
             guard !candidates.isEmpty else { continue }
 
-            // [2-1] Only ACTIVE ones become candidates (PRES-B-06) — Inactive/Expired are not submittable.
+            // [2-1] Only ACTIVE ones become candidates — Inactive/Expired are not submittable.
             // For the decision ladder (fresh lookup → last looked-up status → expiry date) see `CredentialStore.submittableIds`.
             // The lookup source is the server `vc-meta` (a per-VC API), so unlike SD-JWT/mDoc there is no way to batch — ask one at a time.
             var active: [VerifiableCredential] = []
@@ -246,7 +246,7 @@ extension VerifyVcProtocol {
                 }
                 vc = matched
                 // [5] Exposed = displayClaims ∪ requiredClaims, keeping VC claim order. All if unspecified.
-                // Required ones are merged in because of PRES-B-06 — even items the user can't remove must be
+                // Required ones are merged in so they are never hidden — even items the user can't remove must be
                 // visible on screen so the user can see what gets submitted. [4] only passes VCs holding all required
                 // claims, so caption/value come straight from here.
                 let allCodes = vc.credentialSubject.claims.map(\.code)
@@ -263,7 +263,7 @@ extension VerifyVcProtocol {
                 return VpPresentationClaim(
                     code: code,
                     label: claim.caption,
-                    // Image claims (portrait etc.) are drawn as images instead of value text — PRES-B-04.
+                    // Image claims (portrait etc.) are drawn as images instead of value text.
                     value: ImageClaim.claimValue(type: claim.type, encoded: claim.value),
                     required: requiredCodes.contains(code)
                 )
@@ -274,7 +274,7 @@ extension VerifyVcProtocol {
                 requiredCodes: requiredCodes,
                 bindingKeyId: nil))   // Plain VP is W3C-only — the signing key depends on whether a passcode is present.
         }
-        // [2] No schema had any candidate — not holding one and 0 ACTIVE are not distinguished (PRES-E-04).
+        // [2] No schema had any candidate — not holding one and 0 ACTIVE are not distinguished (same "no submittable credential" notice).
         guard !documents.isEmpty else { throw NoSubmittableCredentialError() }
         return VpPresentationSummary(verifierName: verifierName, documents: documents)
     }

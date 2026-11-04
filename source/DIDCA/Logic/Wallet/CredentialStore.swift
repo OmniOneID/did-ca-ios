@@ -195,6 +195,14 @@ final class CredentialStore {
         }
     }
 
+    /// Whether a Status List read that **succeeded** in this run said the issuer revoked this SD-JWT·mDoc (INVALID).
+    /// Deletion uses it to skip server revocation and its auth — there is nothing left to revoke.
+    /// The cache only holds successful reads, and INVALID is terminal on the server, so a cached INVALID can't go stale.
+    /// Expiry, RESERVED and an unknown status (never read, or the cache cleared on return from background) don't count.
+    func isConfirmedRevoked(credentialId: String) -> Bool {
+        statusListCache[credentialId] == .invalid
+    }
+
     /// Status List status → display status. RESERVED is filtered out as a failure at lookup time.
     private static func displayStatus(_ status: StatusListStatus) -> CredentialStatus {
         switch status {
@@ -208,7 +216,7 @@ final class CredentialStore {
     /// Notice for lookup/verification failure. Says the status was not replaced with "valid" but fell back to the expiry-based display.
     static let statusCheckFailureMessage = "Couldn't check the credential status."
 
-    // MARK: - Presentation candidate decision (PRES-B-06)
+    // MARK: - Presentation candidate decision
 
     /// Determines **in one go** which credentials can be offered as presentation candidates — returns the set of ids that are ACTIVE.
     /// Inactive·Expired are excluded from both the single/multiple decision and the option list.
@@ -551,7 +559,7 @@ final class CredentialStore {
     /// and overwrites it.
     ///
     /// If the claims can't be read (`consentItems` throws — issuer JWT payload corrupted), **returns nil to drop it from
-    /// the list** (decision 2026-08-12). An empty card without claims is not presented as if it were normal.
+    /// the list**. An empty card without claims is not presented as if it were normal.
     private static func makeSDJWTCredential(_ issued: SdJwtCredentialItem,
                                             payload: [String: Any]) -> Credential? {
         // Claim composition uses **the same basis and rules** as the VP presentation consent screen — see SdJwtClaimDisplay.
@@ -626,7 +634,7 @@ final class CredentialStore {
     ///
     /// **Drawn flat, not grouped by namespace** — labels are the raw `elementIdentifier`
     /// (same rule as the VP screen). Element names already include the namespace, so no prefix is added.
-    /// Elements with empty values are not filtered out but included as is (decision 2026-08-11).
+    /// Elements with empty values are not filtered out but included as is.
     private static func mdocClaims(_ items: [MdocConsentItem]) -> [ClaimEntry] {
         items.map { mdocEntry($0) }
     }

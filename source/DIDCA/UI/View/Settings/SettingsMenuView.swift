@@ -30,12 +30,12 @@ struct SettingsMenuView: View {
     var onResetApp: () -> Void = {}
     var onServerUrl: () -> Void = {}
 
-    /// username provided by the registration web view (SET-E-06). If empty, the name row is hidden.
+    /// username provided by the registration web view. If empty, the name row is hidden.
     var userName: String? = Preference.getUserName()
 
     /// Copy toast message — hidden when nil. Each row has a different message (DID · User name).
     @State private var copiedToast: String? = nil
-    /// BLE Transfer Mode selection sheet (BLE-02). Preference holds the source of truth; the screen keeps a copy only for display.
+    /// BLE Transfer Mode selection sheet. Preference holds the source of truth; the screen keeps a copy only for display.
     @State private var showBleModeSheet: Bool = false
     @State private var bleMode: BleTransferMode = Preference.bleTransferMode
     /// The sheet model keeps a single instance and only swaps `contents` — recreating the sheet (id change) cuts off
@@ -62,6 +62,7 @@ struct SettingsMenuView: View {
                         .foregroundStyle(.white)
                         .padding()
                 }
+                .accessibilityIdentifier("backButton")
                 Text("Settings")
                     .font(.pretendard(size: 17, weight: .semibold))
                     .foregroundStyle(.white)
@@ -74,16 +75,18 @@ struct SettingsMenuView: View {
             VStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 0) {
                     SectionHeader(title: "Information")
-                    // SET-E-06 — each row is label + value + copy button. First row User Name, second row DID.
+                    // Each row is label + value + copy button. First row User Name, second row DID.
                     // If the name is empty, only the DID row remains, with no empty row or placeholder.
                     VStack(spacing: 0) {
                         if let userName, !userName.isEmpty {
                             infoRow(label: "User Name", value: userName,
-                                    toast: "User name copied to clipboard")
+                                    toast: "User name copied to clipboard",
+                                    valueID: "userNameText", copyID: "copyUserNameButton")
                             Rectangle().fill(.borderGray).frame(height: 1)
                         }
                         infoRow(label: "DID", value: did, toast: "DID copied to clipboard",
-                                breaksAnywhere: true)
+                                breaksAnywhere: true,
+                                valueID: "didText", copyID: "copyDidButton")
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 4)
@@ -97,7 +100,7 @@ struct SettingsMenuView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     SectionHeader(title: "General")
                     VStack(spacing: 0) {
-                        // Design spec 29 · top of General.
+                        // Top of General.
                         SettingsRow(title: "Server URL", action: onServerUrl)
                         Rectangle().fill(.borderGray).frame(height: 1)
                         SettingsRow(title: "Change PIN", action: onChangePin)
@@ -124,10 +127,10 @@ struct SettingsMenuView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
 
-                // BLE has no platform constraints, so it's shown on both Android · iOS (SET-E-05).
+                // BLE has no platform constraints, so it's shown on both Android · iOS.
                 VStack(alignment: .leading, spacing: 0) {
                     SectionHeader(title: "Proximity")
-                    // Both the label and current value are long and would be cut off on small devices in a single right-aligned line — 2-line stack (BLE-01).
+                    // Both the label and current value are long and would be cut off on small devices in a single right-aligned line — 2-line stack.
                     // This one row is the whole setting, with no screen navigation.
                     Button(action: { showBleModeSheet = true }) {
                         HStack(spacing: 14) {
@@ -138,6 +141,7 @@ struct SettingsMenuView: View {
                                 Text(bleMode.label)
                                     .font(.pretendard(size: 13, weight: .regular))
                                     .foregroundStyle(.customGray)
+                                    .accessibilityIdentifier("bleTransferModeValue")
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -147,6 +151,7 @@ struct SettingsMenuView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("bleTransferModeRow")
                     .background(
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(.borderGray, lineWidth: 1)
@@ -177,7 +182,7 @@ struct SettingsMenuView: View {
         }
     }
 
-    /// BLE-02~06 — lists the three options in Both → Central → Peripheral order; tapping saves and closes immediately.
+    /// Lists the three options in Both → Central → Peripheral order; tapping saves and closes immediately.
     /// Closing by dim tap · drag leaves the value unchanged. When the current value changes, only the row's checkmark position updates.
     private var bleModeSheet: some View {
         DraggableActionSheet(isPresented: $showBleModeSheet, viewModel: bleModeSheetModel)
@@ -196,10 +201,11 @@ struct SettingsMenuView: View {
         }
     }
 
-    /// - Parameter breaksAnywhere: per-character wrapping (SET-E-06 DID) — inserts zero-width spaces into the display string only
+    /// - Parameter breaksAnywhere: per-character wrapping (used for the DID) — inserts zero-width spaces into the display string only
     ///   so a value without spaces doesn't break only after `:`. The copied value is the original as is.
     private func infoRow(label: String, value: String, toast: String,
-                         breaksAnywhere: Bool = false) -> some View {
+                         breaksAnywhere: Bool = false,
+                         valueID: String, copyID: String) -> some View {
         HStack(alignment: .center, spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
@@ -210,12 +216,16 @@ struct SettingsMenuView: View {
                     .foregroundStyle(.black)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
+                    // Expose the original value, not the zero-width-space display copy.
+                    .accessibilityLabel(value)
+                    .accessibilityIdentifier(valueID)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Button { copy(value, toast: toast) } label: {
                 Image(.icCopy)
             }
+            .accessibilityIdentifier(copyID)
         }
         .padding(.vertical, 12)
     }

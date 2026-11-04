@@ -17,7 +17,7 @@
 
 import SwiftUI
 
-/// Issuance protocol selection screen (screen design spec 18a). Shown ahead of addCertificate when entering via "From list".
+/// Issuance protocol selection screen. Shown ahead of addCertificate when entering via "From list".
 /// - Open DID: goes to the current TAS plan list (AddCertificateView).
 /// - OID4VCI: not currently offered — shows a notice toast. Follow-up work planned (directory provider URL change).
 struct ProtocolSelectView: View {
@@ -62,6 +62,7 @@ struct ProtocolSelectView: View {
             Button(action: onBack) {
                 Image(.icBackWhite).padding()
             }
+            .accessibilityIdentifier("backButton")
 
             Text("Add certificate")
                 .font(.pretendard(size: 17, weight: .semibold))

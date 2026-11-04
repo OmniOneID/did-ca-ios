@@ -34,14 +34,14 @@ struct VpPresentationClaim {
     /// Text or image (portrait etc.). An image replaces the value text — see `ImageClaim` for detection.
     let value: ClaimValue
     /// Belongs to the REQUIRED section — the user can't remove it and it is always submitted. **No checkbox is drawn**
-    /// (no greyed-out disabled checkbox is used — PRES-B-02).
+    /// (no greyed-out disabled checkbox is used).
     /// `false` means the OPTIONAL section, and it **starts unchecked** (opt-in).
     ///
     /// Required-ness only flows down from the parent and propagates to the whole subtree — if the parent is REQUIRED, so are the children.
     let required: Bool
     /// Child items. If empty, shown as a single row; otherwise as a collapsible group (only one level is drawn).
     ///
-    /// **Children have no individual checkboxes** — a group is toggled as a whole by the single parent checkbox (PRES-B-03).
+    /// **Children have no individual checkboxes** — a group is toggled as a whole by the single parent checkbox.
     /// A child's `code` is used only when building the submission set (turning on the parent sends the child codes too).
     /// Always empty for W3C VCs.
     var children: [VpPresentationClaim] = []
@@ -59,7 +59,7 @@ struct VpPresentationDocument {
     let claims: [VpPresentationClaim]
     /// Codes always submitted regardless of toggles — the same set as the REQUIRED rows (and their children) of the exposed set.
     ///
-    /// **Required items are not hidden from the screen** (PRES-B-06) — even if the OpenDID profile's `requiredClaims` lie
+    /// **Required items are not hidden from the screen** — even if the OpenDID profile's `requiredClaims` lie
     /// outside `displayClaims`, they are merged into the exposed set and drawn. This set is still carried separately
     /// so the submission output doesn't depend on traversing the exposed tree (child codes are gathered in one place).
     let requiredCodes: Set<String>
@@ -73,8 +73,8 @@ struct VpPresentationDocument {
 
 /// Verifier name + list of submission **candidates** — for VPRequestView display.
 ///
-/// With 2+ candidates the screen splits into radio option cards and **only one of them is submitted** (PRES-B-05).
-/// Only ACTIVE candidates are included (PRES-B-06) — if 0, the protocol layer aborts as not submittable.
+/// With 2+ candidates the screen splits into radio option cards and **only one of them is submitted**.
+/// Only ACTIVE candidates are included — if 0, the protocol layer aborts as not submittable.
 struct VpPresentationSummary {
     let verifierName: String
     let documents: [VpPresentationDocument]

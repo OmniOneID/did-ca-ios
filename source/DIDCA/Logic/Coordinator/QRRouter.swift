@@ -99,8 +99,12 @@ enum QRRouter {
     private static func handleOpenDID(_ qrString: String,
                                       intent: ScanIntent,
                                       on coordinator: AppCoordinator) async {
+        // Kept outside the do so the failure wording can follow the flow the QR names: a presentation QR whose
+        // payload can't be decoded reads "Invalid verifier request.", anything else "Invalid QR code.".
+        var payloadType: String?
         do {
             let dataPayload = try DataPayload(from: qrString)
+            payloadType = dataPayload.payloadType
             let data = try MultibaseUtils.decode(encoded: dataPayload.payload)
             if dataPayload.payloadType == "ISSUE_VC" {
                 guard intent.accepts(.issue) else { return reject(intent) }
@@ -110,8 +114,13 @@ enum QRRouter {
                 await presentFromQR(data: data, on: coordinator)
             }
         } catch {
-            // The decode error's raw text is not for users; the popup shows "Error" / "Invalid QR code." instead.
-            OverlayManager.shared.showErrorPopup(title: "Error", error: error, fallback: "Invalid QR code.")
+            // The decode error's raw text is not for users; the popup shows "Error" with a fixed message instead.
+            let isPresentation = payloadType != nil && payloadType != "ISSUE_VC"
+            OverlayManager.shared.showErrorPopup(
+                title: "Error",
+                error: error,
+                fallback: isPresentation ? "Invalid verifier request." : "Invalid QR code."
+            )
         }
     }
 

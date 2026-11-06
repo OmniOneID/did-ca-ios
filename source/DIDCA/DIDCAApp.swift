@@ -14,6 +14,7 @@ struct DIDCAApp: App {
     init() {
         #if DEBUG
         WalletLogger.setEnable(true)
+        WalletLogger.setLogLevel(.verbose)
         Self.resetForUITestIfRequested()
         #endif
     }

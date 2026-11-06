@@ -249,7 +249,24 @@ final class AppCoordinator {
 
     // Holds deep links arriving via onOpenURL until ready. Processing is deferred during cold launch (splash)
     // and lock, and drained on transitioning to main + no modal. Same gating as scan entry.
-    @ObservationIgnored private var pendingDeepLink: String?
+    @ObservationIgnored private var pendingDeepLink: String? = AppCoordinator.uiTestPayload()
+
+    #if DEBUG
+    /// UI-test hook: launching with `-uiTestPayload <base64>` feeds the decoded string in as if it had been scanned.
+    /// OpenDID payloads (a PayloadData JSON object) have no URL scheme, so a physical device has no other way to
+    /// receive one without the camera. It goes through the deep-link buffer, so it starts only once the app reaches
+    /// main with nothing on top — the same gating as a real deep link. Base64 keeps the JSON's quotes and braces
+    /// intact through devicectl, and the raw argv is read because UserDefaults would try to parse it as a plist.
+    private static func uiTestPayload() -> String? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-uiTestPayload"),
+              arguments.indices.contains(index + 1),
+              let data = Data(base64Encoded: arguments[index + 1]) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+    #else
+    private static func uiTestPayload() -> String? { nil }
+    #endif
 
     /// State in which a scan/deep-link flow may start — main (empty stack) + no modal.
     /// (Same gating as QR scanning originally being possible only from main.)

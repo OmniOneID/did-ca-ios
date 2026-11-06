@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C994EAD92FB6B29D00687132 /* DIDWalletSDK in Frameworks */ = {isa = PBXBuildFile; productRef = C994EAD82FB6B29D00687132 /* DIDWalletSDK */; };
+		C97E4DFA309C80EC00DCA49A /* DIDWalletSDK in Frameworks */ = {isa = PBXBuildFile; productRef = C97E4DF9309C80EC00DCA49A /* DIDWalletSDK */; };
 		C9A1F00000000000000000B2 /* MdocDevice in Frameworks */ = {isa = PBXBuildFile; productRef = C9A1F00000000000000000B1 /* MdocDevice */; };
 /* End PBXBuildFile section */
 
@@ -41,7 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C994EAD92FB6B29D00687132 /* DIDWalletSDK in Frameworks */,
+				C97E4DFA309C80EC00DCA49A /* DIDWalletSDK in Frameworks */,
 				C9A1F00000000000000000B2 /* MdocDevice in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -85,8 +85,8 @@
 			);
 			name = DIDCA;
 			packageProductDependencies = (
-				C994EAD82FB6B29D00687132 /* DIDWalletSDK */,
 				C9A1F00000000000000000B1 /* MdocDevice */,
+				C97E4DF9309C80EC00DCA49A /* DIDWalletSDK */,
 			);
 			productName = DIDCA;
 			productReference = C96B28C62FB16D3B00DC718D /* DIDCA.app */;
@@ -118,8 +118,8 @@
 			mainGroup = C96B28BD2FB16D3B00DC718D;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				C994EAD72FB6B29D00687132 /* XCRemoteSwiftPackageReference "did-client-sdk-ios" */,
 				C9A1F00000000000000000B0 /* XCRemoteSwiftPackageReference "did-proximity-sdk-ios" */,
+				C97E4DF8309C80EC00DCA49A /* XCRemoteSwiftPackageReference "did-client-sdk-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C96B28C72FB16D3B00DC718D /* Products */;
@@ -285,8 +285,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DIDCA/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "DID CA";
-				INFOPLIST_KEY_NSCameraUsageDescription = "DIDCA use the camera to issue and verification for VC";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Bluetooth is used to present your credential to a nearby verifier.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "DIDCA use the camera to issue and verification for VC";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to access your private key";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -326,8 +326,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DIDCA/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "DID CA";
-				INFOPLIST_KEY_NSCameraUsageDescription = "DIDCA use the camera to issue and verification for VC";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Bluetooth is used to present your credential to a nearby verifier.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "DIDCA use the camera to issue and verification for VC";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to access your private key";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -379,7 +379,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		C994EAD72FB6B29D00687132 /* XCRemoteSwiftPackageReference "did-client-sdk-ios" */ = {
+		C97E4DF8309C80EC00DCA49A /* XCRemoteSwiftPackageReference "did-client-sdk-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/OmniOneID/did-client-sdk-ios";
 			requirement = {
@@ -398,9 +398,9 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		C994EAD82FB6B29D00687132 /* DIDWalletSDK */ = {
+		C97E4DF9309C80EC00DCA49A /* DIDWalletSDK */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = C994EAD72FB6B29D00687132 /* XCRemoteSwiftPackageReference "did-client-sdk-ios" */;
+			package = C97E4DF8309C80EC00DCA49A /* XCRemoteSwiftPackageReference "did-client-sdk-ios" */;
 			productName = DIDWalletSDK;
 		};
 		C9A1F00000000000000000B1 /* MdocDevice */ = {

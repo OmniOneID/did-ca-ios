@@ -8,6 +8,8 @@
 
 OpenDID 프로토콜과 더불어 OpenID for Verifiable Credentials 계열도 지원합니다. OpenID4VCI(pre-authorized code 방식, `tx_code` 포함)를 통한 발급, OpenID4VP를 통한 제출, SD-JWT VC 크레덴셜, Token Status List 기반 폐기·정지 상태 확인을 제공합니다.
 
+또한 OmniOne 근접 SDK를 사용해 mDoc 크레덴셜을 가까이 있는 리더에 대면 제출할 수 있습니다(ISO/IEC 18013-5 근접 제출: QR engagement 후 BLE 세션).
+
 
 ## S/W 사양
 | 구분              | 내용                                    |
@@ -15,7 +17,7 @@ OpenDID 프로토콜과 더불어 OpenID for Verifiable Credentials 계열도 �
 | OS                | iOS 17                                |
 | Language          | Swift 5                               |
 | UI Framework      | SwiftUI                               |
-| IDE               | Xcode 26.2                            |
+| IDE               | Xcode 27.2                            |
 | Build System      | Xcode 기본 빌드 시스템                    |
 | Compatibility     | iOS 17 or higher                      |
 | Test Environment  | iPhone 시뮬레이터(iOS 17.5) 및 실제 기기    |
@@ -45,17 +47,20 @@ Xcode의 기본 빌드 시스템을 사용하여 앱을 컴파일하고 테스�
 
 
 ## SDK 적용 방법
-아래 `iOS framework를 DIDWalletSDK`로 지칭합니다.
-DIDWalletSDK 프로젝트 클론 및 체크아웃 후 release 폴더에 최신버전을 다운받아 사용하거나 SPM을 사용하길 권장합니다.
-```
-git https://github.com/OmniOneID/did-client-sdk-ios
-```
-- `DIDWalletSDK.framework`
+앱은 OmniOne SDK 두 개에 의존하며, 둘 다 SPM으로 받아옵니다.
+
+| SDK | 저장소 | 앱이 쓰는 제품 | 버전 |
+|-----|--------|----------------|------|
+| 월렛 SDK(아래 `DIDWalletSDK`) | `https://github.com/OmniOneID/did-client-sdk-ios` | `DIDWalletSDK` | 3.0.0 (고정) |
+| 근접 SDK | `https://github.com/OmniOneID/did-proximity-sdk-ios` | `MdocDevice` | 1.0.0 (고정) |
+
+`MdocDevice`는 근접 SDK(패키지명 `MdocProximitySDK`)의 홀더용 제품이며 `MdocProximityCore`를 다시 내보내므로, 근접 코드에서는 `import MdocDevice`만 하면 됩니다.
 
 <br>
 
 SDK가 사용하는 타사 라이브러리에 대한 자체 라이선스는 해당 링크를 참고해주세요. <br>
-[Client SDK License-dependencies](https://github.com/OmniOneID/did-client-sdk-ios/blob/main/dependencies-license.md)
+[Client SDK License-dependencies](https://github.com/OmniOneID/did-client-sdk-ios/blob/main/dependencies-license.md) <br>
+[Proximity SDK License-dependencies](https://github.com/OmniOneID/did-proximity-sdk-ios/blob/main/dependencies-license.md)
 
 <br>
 
@@ -63,15 +68,16 @@ SDK가 사용하는 타사 라이브러리에 대한 자체 라이선스는 해�
 
 ### SPM을 통한 Framework 추가 (권장)
 
-DIDCA 프로젝트 자체가 이 방식으로 SDK를 참조합니다. 의존성이 `source/DIDCA.xcodeproj`에 이미 선언되어 있어 클론 직후 별도 작업이 필요 없습니다. 다른 프로젝트에 적용하려면 다음과 같이 합니다.
+DIDCA 프로젝트 자체가 이 방식으로 두 SDK를 참조합니다. 의존성이 `source/DIDCA.xcodeproj`에 각각 정확한 릴리스 버전으로 고정되어 선언되어 있어 클론 직후 별도 작업이 필요 없습니다. 다른 프로젝트에 적용하려면 다음과 같이 합니다.
 
 - 앱 프로젝트의 `Package Dependencies`에서 `+`를 눌러 다음 항목을 추가합니다.
 ```text
 https://github.com/OmniOneID/did-client-sdk-ios.git
+https://github.com/OmniOneID/did-proximity-sdk-ios.git
 ```
-- **Version ≥ 3.0.0**을 선택하거나, “Up to Next Major” 규칙을 선택합니다.
-- 패키지를 타겟에 추가합니다.
-- `OrderedCollections`(Swift Collections)는 전이 의존성으로 함께 받아지므로 따로 추가하지 않아도 됩니다.
+- 각각 버전 규칙을 정합니다. DIDCA는 월렛 SDK에 **Exact Version 3.0.0**, 근접 SDK에 **Exact Version 1.0.0**을 사용합니다.
+- `DIDWalletSDK`와 `MdocDevice`를 타겟에 추가합니다. 근접 SDK는 mDoc 대면 제출에만 필요합니다.
+- `OrderedCollections`(Swift Collections)는 월렛 SDK의 전이 의존성으로 함께 받아지므로 따로 추가하지 않아도 됩니다.
 
 ### 기존 적용 방식 사용  
 
@@ -107,18 +113,24 @@ https://github.com/OmniOneID/did-client-sdk-ios.git
 
 ### Import 및 사용
 
-먼저 `source/DIDCA/Logic/Constants/URLs.swift` 파일에서 각 사업자의 URL정보를 수정합니다. 아래 값은 개발망 주소이므로 실제 운영 환경 주소로 교체해야 합니다. 이 주소에 접근되지 않으면 온보딩·발급·제출이 모두 실패합니다.
+먼저 각 사업자의 서버 주소를 설정합니다. 빌드 기본값은 `source/DIDCA/Logic/Constants/URLs.swift`의 `ServerEndpoint` `defaultValue`입니다. 아래 값은 개발망 주소이므로 실제 운영 환경 주소로 교체해야 합니다. 이 주소에 접근되지 않으면 온보딩·발급·제출이 모두 실패합니다.
 ```swift
-struct URLs
-{
-    static let TAS_URL       : String = "http://192.168.3.110:8090"
-    static let VERIFIER_URL  : String = "http://192.168.3.110:8092"
-    static let CAS_URL       : String = "http://192.168.3.110:8094"
-    static let WALLET_URL    : String = "http://192.168.3.110:8095"
-    static let API_URL       : String = "http://192.168.3.110:8093"
-    static let DEMO_URL      : String = "http://192.168.3.110:8099"
+nonisolated enum ServerEndpoint: String, CaseIterable, Sendable {
+    case tas, cas, apiGateway, wallet, verifier, demo
+
+    var defaultValue: String {
+        switch self {
+        case .tas:        "http://192.168.3.110:8090"
+        case .cas:        "http://192.168.3.110:8094"
+        case .apiGateway: "http://192.168.3.110:8093"
+        case .wallet:     "http://192.168.3.110:8095"
+        case .verifier:   "http://192.168.3.110:8092"
+        case .demo:       "http://192.168.3.110:8099"
+        }
+    }
 }
 ```
+주소는 다시 빌드하지 않고 실행 중에도 바꿀 수 있습니다. 첫 실행 시 앱이 **Use default** 또는 **Server settings**를 묻고, 이후에는 **Settings › Server URL** 화면에서 엔드포인트별로 사용자 주소를 저장합니다. 저장한 주소는 빌드 기본값 위에 덧씌워지며(초기화하면 기본값으로 돌아감), `URLs.TAS_URL` 등의 접근자가 매번 저장값을 읽으므로 다음 요청부터 바로 적용됩니다.
 
 그리고 프로젝트의 소스 파일에서 DIDWalletSDK의 모듈을 사용해야 합니다. 사용할 클래스나 메서드가 있는 소스 파일의 최상단에 다음과 같이 임포트합니다.
 ```swift

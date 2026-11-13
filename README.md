@@ -9,6 +9,8 @@ This document is a guide for using the OpenDID authentication client, and provid
 
 In addition to the OpenDID protocol, the app supports the OpenID for Verifiable Credentials family — credential issuance over OpenID4VCI (pre-authorized code flow, including `tx_code`) and presentation over OpenID4VP — as well as SD-JWT VC credentials and Token Status List based revocation/suspension checks.
 
+mDoc credentials can also be presented in person to a nearby reader (ISO/IEC 18013-5 proximity presentation: QR engagement followed by a BLE session), using the OmniOne proximity SDK.
+
 
 ## S/W Specifications
 | Category         | Details                                         |
@@ -16,7 +18,7 @@ In addition to the OpenDID protocol, the app supports the OpenID for Verifiable 
 | OS               | iOS 17                                          |
 | Language         | Swift 5                                         |
 | UI Framework     | SwiftUI                                         |
-| IDE              | Xcode 26.2                                      |
+| IDE              | Xcode 27.2                                      |
 | Build System     | Xcode Basic build system                        |
 | Compatibility    | iOS 17 or higher                                |
 | Test Environment | iPhone Simulator (iOS 17.5) and physical device |
@@ -45,17 +47,22 @@ How to compile and test your app using Xcode's default build system.
 
 
 ## SDK Application Method
-Below, we refer to `iOS framework as DIDWalletSDK`. We recommend that you clone and check out the DIDWalletSDK project, then either download the latest version from the release folder or use SPM.
-```
-git https://github.com/OmniOneID/did-client-sdk-ios
-```
-- `DIDWalletSDK.framework`
+The app depends on two OmniOne SDKs, both resolved through SPM.
+
+| SDK | Repository | Product used by the app | Version |
+|-----|------------|-------------------------|---------|
+| Wallet SDK (below, `DIDWalletSDK`) | `https://github.com/OmniOneID/did-client-sdk-ios` | `DIDWalletSDK` | 3.0.0 (exact) |
+| Proximity SDK | `https://github.com/OmniOneID/did-proximity-sdk-ios` | `MdocDevice` | 1.0.0 (exact) |
+
+`MdocDevice` is the holder-side product of the proximity SDK (package `MdocProximitySDK`) and re-exports `MdocProximityCore`, so `import MdocDevice` is all the proximity code needs.
 
 <br>
 
 Please refer to the respective links for their own licenses for third-party libraries used by SDKs.
 <br>
 [Client SDK License-dependencies](https://github.com/OmniOneID/did-client-sdk-ios/blob/main/dependencies-license.md)
+<br>
+[Proximity SDK License-dependencies](https://github.com/OmniOneID/did-proximity-sdk-ios/blob/main/dependencies-license.md)
                                 
 <br>
 
@@ -63,15 +70,16 @@ Please refer to the respective links for their own licenses for third-party libr
 
 ### Apply Framework via SPM (recommended)
 
-This is how the DIDCA project itself resolves the SDK — the dependency is already declared in `source/DIDCA.xcodeproj`, so a fresh clone needs no manual step. To wire it into another project:
+This is how the DIDCA project itself resolves both SDKs — the dependencies are already declared in `source/DIDCA.xcodeproj`, each pinned to an exact release version, so a fresh clone needs no manual step. To wire them into another project:
 
 - In the app project’s `Package Dependencies`, click the `+` to add the following items.
 ```text
 https://github.com/OmniOneID/did-client-sdk-ios.git
+https://github.com/OmniOneID/did-proximity-sdk-ios.git
 ```
-- Select **Version ≥ 3.0.0** (or choose a version rule such as “Up to Next Major”).
-- Add the package to your target.
-- `OrderedCollections` (Swift Collections) is pulled in transitively, so it does not need to be added by hand.
+- Choose a version rule for each: DIDCA uses **Exact Version 3.0.0** for the wallet SDK and **Exact Version 1.0.0** for the proximity SDK.
+- Add `DIDWalletSDK` and `MdocDevice` to your target. The proximity SDK is needed only for in-person mDoc presentation.
+- `OrderedCollections` (Swift Collections) is pulled in transitively by the wallet SDK, so it does not need to be added by hand.
 <br>
 
 ### Using the framework’s own application method.
@@ -107,18 +115,24 @@ https://github.com/OmniOneID/did-client-sdk-ios.git
 
 ### Import and Use
 
-First, modify the URL information for each business in `source/DIDCA/Logic/Constants/URLs.swift`. The values below point at a development LAN and must be replaced with your own deployment — onboarding, issuance and presentation all fail until these hosts are reachable.
+First, set the server address for each business. The build defaults are the `defaultValue`s of `ServerEndpoint` in `source/DIDCA/Logic/Constants/URLs.swift`. The values below point at a development LAN and must be replaced with your own deployment — onboarding, issuance and presentation all fail until these hosts are reachable.
 ```swift
-struct URLs
-{
-    static let TAS_URL       : String = "http://192.168.3.110:8090"
-    static let VERIFIER_URL  : String = "http://192.168.3.110:8092"
-    static let CAS_URL       : String = "http://192.168.3.110:8094"
-    static let WALLET_URL    : String = "http://192.168.3.110:8095"
-    static let API_URL       : String = "http://192.168.3.110:8093"
-    static let DEMO_URL      : String = "http://192.168.3.110:8099"
+nonisolated enum ServerEndpoint: String, CaseIterable, Sendable {
+    case tas, cas, apiGateway, wallet, verifier, demo
+
+    var defaultValue: String {
+        switch self {
+        case .tas:        "http://192.168.3.110:8090"
+        case .cas:        "http://192.168.3.110:8094"
+        case .apiGateway: "http://192.168.3.110:8093"
+        case .wallet:     "http://192.168.3.110:8095"
+        case .verifier:   "http://192.168.3.110:8092"
+        case .demo:       "http://192.168.3.110:8099"
+        }
+    }
 }
 ```
+The addresses can also be changed at run time without rebuilding: on first launch the app offers **Use default** or **Server settings**, and later the **Settings › Server URL** screen saves a custom address per endpoint. A saved address layers on top of the build default (resetting returns to it) and applies from the next request, because `URLs.TAS_URL` and the other accessors read the stored value every time.
 
 And you need to use the DIDWalletSDK module in your project's source files. Import it at the top of the source file that contains the class or method you want to use, like this:
 ```swift

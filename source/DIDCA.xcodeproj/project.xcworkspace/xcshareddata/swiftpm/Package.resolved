@@ -6,7 +6,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/OmniOneID/did-client-sdk-ios",
       "state" : {
-        "revision" : "b4036b67da71e260c1bd16b456172f6958666d91",
+        "revision" : "3ab95c38ce4487d792f6fbe07b90e68ea4ab57db",
         "version" : "3.0.0"
       }
     },
@@ -15,7 +15,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/OmniOneID/did-proximity-sdk-ios",
       "state" : {
-        "revision" : "bb909559439dc36a48abd83e264b799fe779e82d",
+        "revision" : "1c86d9a6242d7e2112ac9d908fdf62416472ed27",
         "version" : "1.0.0"
       }
     },

@@ -2,9 +2,10 @@
 
 ### This project uses the following third-party libraries, each under its own license:
 
-The app declares a single dependency, `DIDWalletSDK` (OmniOne, Apache-2.0). The libraries below are
-not declared by the app but are linked into the app binary through that SDK, so their notices apply
-to anything built from this project.
+The app declares two dependencies, both OmniOne SDKs under Apache-2.0: `DIDWalletSDK` (did-client-sdk-ios)
+and `MdocDevice` (did-proximity-sdk-ios). The proximity SDK uses no third-party libraries. The libraries
+below are not declared by the app but are linked into the app binary through the wallet SDK, so their
+notices apply to anything built from this project.
 
 <br>
 
@@ -21,7 +22,7 @@ BigInt(5.5.1) — MIT
 <br>
 
 **swift-collections**
-swift-collections(1.6.0) — Apache-2.0
+swift-collections(1.7.5) — Apache-2.0
 (https://github.com/apple/swift-collections)
 
 <br>

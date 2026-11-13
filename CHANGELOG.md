@@ -7,10 +7,19 @@
 - Verifiable presentation over OpenID4VP, with DCQL-based credential matching
 - SD-JWT VC credentials, including selective disclosure of nested claims
 - Credential revocation and suspension checks based on Token Status List
+- mDoc credentials over OpenID4VCI and OpenID4VP
+- In-person mDoc presentation to a nearby reader (ISO/IEC 18013-5: QR engagement and BLE session), including optional data elements the reader did not request
+- Server revocation of OpenID4VCI credentials when they are deleted
+- Server URL settings to override each backend address at run time
+- User information registration during onboarding
+- Credential titles and cached status shown while offline
 
 ### 🔄 Changes
 - Rewrote the wallet app in SwiftUI
 - Raised the minimum supported version from iOS 15 to iOS 17
+- Resolve the wallet SDK (`DIDWalletSDK` 3.0.0) and the proximity SDK (`MdocDevice` 1.0.0) through SPM, each pinned to an exact release version
+- Read and presentation wallet tokens are issued locally, so listing credentials works offline
+- Aligned dialog titles and backdrop behavior with the screen design specification
 
 ## v2.0.1 (2025-12-12)
 

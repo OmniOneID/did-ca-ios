@@ -1,6 +1,6 @@
 # Changelog
 
-## v3.0.0 (2026-08-10)
+## v3.0.0 (2026-11-13)
 
 ### 🚀 New Features
 - Credential issuance over OpenID4VCI (pre-authorized code flow, including `tx_code` entry)

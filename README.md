@@ -52,7 +52,7 @@ The app depends on two OmniOne SDKs, both resolved through SPM.
 | SDK | Repository | Product used by the app | Version |
 |-----|------------|-------------------------|---------|
 | Wallet SDK (below, `DIDWalletSDK`) | `https://github.com/OmniOneID/did-client-sdk-ios` | `DIDWalletSDK` | 3.0.0 (exact) |
-| Proximity SDK | `https://github.com/OmniOneID/did-proximity-sdk-ios` | `MdocDevice` | 1.0.0 (exact) |
+| Proximity SDK | `https://github.com/OmniOneID/did-proximity-sdk-ios` | `MdocDevice` | 3.0.0 (exact) |
 
 `MdocDevice` is the holder-side product of the proximity SDK (package `MdocProximitySDK`) and re-exports `MdocProximityCore`, so `import MdocDevice` is all the proximity code needs.
 
@@ -77,7 +77,7 @@ This is how the DIDCA project itself resolves both SDKs — the dependencies are
 https://github.com/OmniOneID/did-client-sdk-ios.git
 https://github.com/OmniOneID/did-proximity-sdk-ios.git
 ```
-- Choose a version rule for each: DIDCA uses **Exact Version 3.0.0** for the wallet SDK and **Exact Version 1.0.0** for the proximity SDK.
+- Choose a version rule for each: DIDCA uses **Exact Version 3.0.0** for the wallet SDK and **Exact Version 3.0.0** for the proximity SDK.
 - Add `DIDWalletSDK` and `MdocDevice` to your target. The proximity SDK is needed only for in-person mDoc presentation.
 - `OrderedCollections` (Swift Collections) is pulled in transitively by the wallet SDK, so it does not need to be added by hand.
 <br>

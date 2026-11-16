@@ -17,7 +17,7 @@
 ### 🔄 Changes
 - Rewrote the wallet app in SwiftUI
 - Raised the minimum supported version from iOS 15 to iOS 17
-- Resolve the wallet SDK (`DIDWalletSDK` 3.0.0) and the proximity SDK (`MdocDevice` 1.0.0) through SPM, each pinned to an exact release version
+- Resolve the wallet SDK (`DIDWalletSDK` 3.0.0) and the proximity SDK (`MdocDevice` 3.0.0) through SPM, each pinned to an exact release version
 - Read and presentation wallet tokens are issued locally, so listing credentials works offline
 - Aligned dialog titles and backdrop behavior with the screen design specification
 

@@ -52,7 +52,7 @@ Xcode의 기본 빌드 시스템을 사용하여 앱을 컴파일하고 테스�
 | SDK | 저장소 | 앱이 쓰는 제품 | 버전 |
 |-----|--------|----------------|------|
 | 월렛 SDK(아래 `DIDWalletSDK`) | `https://github.com/OmniOneID/did-client-sdk-ios` | `DIDWalletSDK` | 3.0.0 (고정) |
-| 근접 SDK | `https://github.com/OmniOneID/did-proximity-sdk-ios` | `MdocDevice` | 1.0.0 (고정) |
+| 근접 SDK | `https://github.com/OmniOneID/did-proximity-sdk-ios` | `MdocDevice` | 3.0.0 (고정) |
 
 `MdocDevice`는 근접 SDK(패키지명 `MdocProximitySDK`)의 홀더용 제품이며 `MdocProximityCore`를 다시 내보내므로, 근접 코드에서는 `import MdocDevice`만 하면 됩니다.
 
@@ -75,7 +75,7 @@ DIDCA 프로젝트 자체가 이 방식으로 두 SDK를 참조합니다. 의존
 https://github.com/OmniOneID/did-client-sdk-ios.git
 https://github.com/OmniOneID/did-proximity-sdk-ios.git
 ```
-- 각각 버전 규칙을 정합니다. DIDCA는 월렛 SDK에 **Exact Version 3.0.0**, 근접 SDK에 **Exact Version 1.0.0**을 사용합니다.
+- 각각 버전 규칙을 정합니다. DIDCA는 월렛 SDK에 **Exact Version 3.0.0**, 근접 SDK에 **Exact Version 3.0.0**을 사용합니다.
 - `DIDWalletSDK`와 `MdocDevice`를 타겟에 추가합니다. 근접 SDK는 mDoc 대면 제출에만 필요합니다.
 - `OrderedCollections`(Swift Collections)는 월렛 SDK의 전이 의존성으로 함께 받아지므로 따로 추가하지 않아도 됩니다.
 
